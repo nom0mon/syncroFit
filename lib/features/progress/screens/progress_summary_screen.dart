@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../providers/progress_provider.dart';
@@ -41,22 +42,41 @@ class _ProgressContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SummaryStats(state: state),
-          const SizedBox(height: AppSpacing.lg),
-          _WeightHistoryChart(data: state.weightHistory),
-          const SizedBox(height: AppSpacing.lg),
-          _BmiHistoryChart(data: state.bmiHistory),
-          const SizedBox(height: AppSpacing.lg),
-          _WeeklyStatsChart(data: state.weeklyStats),
-          const SizedBox(height: AppSpacing.lg),
-          _RecentWorkouts(sessions: state.recentSessions),
-        ],
-      ),
+    return Stack(
+      children: [
+        // Scrollable content
+        SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SummaryStats(state: state),
+              const SizedBox(height: AppSpacing.lg),
+              _WeightHistoryChart(data: state.weightHistory),
+              const SizedBox(height: AppSpacing.lg),
+              _BmiHistoryChart(data: state.bmiHistory),
+              const SizedBox(height: AppSpacing.lg),
+              _WeeklyStatsChart(data: state.weeklyStats),
+              const SizedBox(height: AppSpacing.lg),
+              _RecentWorkouts(sessions: state.recentSessions),
+            ],
+          ),
+        ),
+        // Top edge fade gradient
+        const Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: EdgeFadeGradient(isTop: true),
+        ),
+        // Bottom edge fade gradient
+        const Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: EdgeFadeGradient(isTop: false),
+        ),
+      ],
     );
   }
 }

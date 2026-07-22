@@ -33,7 +33,9 @@ abstract final class RouteNames {
   static const String community = '/community';
   static const String postDetail = '/community/post/:id';
 
-  // Tab 5 — Settings
+
+
+  // Settings
   static const String settings = '/settings';
   static const String notificationSettings = '/settings/notifications';
   static const String changePassword = '/settings/change-password';

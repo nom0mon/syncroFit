@@ -34,13 +34,30 @@ class DashboardState {
   /// Consecutive workout day streak.
   final int streak;
 
+  /// All completed workout sessions (used by calendar and chart widgets).
+  final List<WorkoutSession> sessions;
+
   const DashboardState({
     this.todaysWorkout,
     this.completedDays = 0,
     this.plannedDays = 0,
     this.goalPercentage = 0,
     this.streak = 0,
+    this.sessions = const [],
   });
+
+  /// Derives a set of dates (year/month/day only) with completed workouts.
+  Set<DateTime> get completedDates => sessions
+      .map((s) => DateTime(s.completedAt.year, s.completedAt.month, s.completedAt.day))
+      .toSet();
+
+  /// Returns sessions completed on the given [date].
+  List<WorkoutSession> sessionsForDate(DateTime date) => sessions
+      .where((s) =>
+          s.completedAt.year == date.year &&
+          s.completedAt.month == date.month &&
+          s.completedAt.day == date.day)
+      .toList();
 }
 
 /// Provides the dashboard data as an async value, managed by [DashboardNotifier].
@@ -106,6 +123,7 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
       plannedDays: weeklyProgress.planned,
       goalPercentage: goalPercentage,
       streak: summary.currentStreak,
+      sessions: sessions,
     );
   }
 

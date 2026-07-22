@@ -33,25 +33,27 @@ abstract final class AppTheme {
     );
   }
 
-  /// Dark theme — black background, white text, bordered cards.
+  /// Dark theme — jet black background, white text, bordered cards.
+  /// Pure monochrome Geist-inspired aesthetic with zero elevation.
   static ThemeData get darkTheme {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.white,
-      brightness: Brightness.dark,
-      primary: Colors.white,
-      onPrimary: Colors.black,
-      surface: Colors.black,
-      onSurface: Colors.white,
-      surfaceContainerHighest: AppColors.grey900,
+    const colorScheme = ColorScheme.dark(
+      primary: AppColors.textPrimary,
+      onPrimary: AppColors.scaffoldBlack,
+      secondary: AppColors.textSecondary,
+      onSecondary: AppColors.scaffoldBlack,
+      surface: AppColors.scaffoldBlack,
+      onSurface: AppColors.textPrimary,
+      surfaceContainerHighest: AppColors.cardFill,
+      outline: AppColors.cardBorder,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: AppTextStyles.textTheme,
-      scaffoldBackgroundColor: Colors.black,
+      scaffoldBackgroundColor: AppColors.scaffoldBlack,
       elevatedButtonTheme: ComponentThemes.elevatedButtonTheme(colorScheme),
-      inputDecorationTheme: ComponentThemes.inputDecorationTheme(colorScheme),
+      inputDecorationTheme: ComponentThemes.inputDecorationThemeDark(),
       cardTheme: ComponentThemes.cardThemeDark(),
       appBarTheme: ComponentThemes.appBarTheme(colorScheme),
       navigationBarTheme: ComponentThemes.navigationBarTheme(colorScheme),

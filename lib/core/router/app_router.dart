@@ -16,6 +16,7 @@ import '../../features/consultation/screens/trainer_profile_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/profile/screens/profile_edit_screen.dart';
 import '../../features/profile/screens/profile_setup_screen.dart';
+
 import '../../features/settings/screens/change_password_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/settings_main_screen.dart';
@@ -29,6 +30,7 @@ import '../../features/workout/screens/rest_timer_screen.dart';
 import '../../features/workout/screens/workout_active_screen.dart';
 import '../../features/workout/screens/workout_detail_screen.dart';
 import '../../features/workout/screens/workout_summary_screen.dart';
+import '../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../shared/widgets/page_not_found_screen.dart';
 import 'guards.dart';
 import 'route_names.dart';
@@ -39,6 +41,7 @@ final _dashboardNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard'
 final _exercisesNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'exercises');
 final _progressNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'progress');
 final _communityNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'community');
+
 
 /// Provides the configured [GoRouter] instance.
 ///
@@ -241,6 +244,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
+
         ],
       ),
     ],
@@ -252,7 +257,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 // ─── Shell scaffold with bottom navigation ─────────────────────────────────
 
-/// The main shell screen that wraps tabbed content with a [NavigationBar].
+/// The main shell screen that wraps tabbed content with a [FloatingPillNavBar].
 class _MainShellScreen extends StatelessWidget {
   const _MainShellScreen({required this.navigationShell});
 
@@ -262,50 +267,18 @@ class _MainShellScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: navigationShell,
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(60, 0, 60, 16),
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF424242),
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: NavigationBar(
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: (index) {
-              navigationShell.goBranch(
-                index,
-                initialLocation: index == navigationShell.currentIndex,
-              );
-            },
-            height: 56,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: '',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.list_alt_outlined),
-                selectedIcon: Icon(Icons.list_alt),
-                label: '',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.bar_chart_outlined),
-                selectedIcon: Icon(Icons.bar_chart),
-                label: '',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.people_outlined),
-                selectedIcon: Icon(Icons.people),
-                label: '',
-              ),
-            ],
-          ),
-        ),
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: navigationShell,
+      ),
+      bottomNavigationBar: FloatingPillNavBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
       ),
     );
   }

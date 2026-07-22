@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Named color constants for the SyncroFit palette.
 ///
 /// Pure monochrome aesthetic — black, white, and greys only.
-/// Matches the Figma design with high-contrast dark cards and clean
+/// Geist-inspired dark palette with high-contrast dark cards and clean
 /// white auth screens.
 abstract final class AppColors {
   // Primary palette — monochrome
@@ -17,10 +17,43 @@ abstract final class AppColors {
   static const Color surfaceContainerLight = Color(0xFFF5F5F5);
   static const Color surfaceContainerDark = Color(0xFF1A1A1A);
 
-  // Fitness-specific colors — kept minimal
+  // --- Geist dark palette ---
+
+  // Backgrounds
+  static const Color scaffoldBlack = Color(0xFF000000);
+  static const Color cardFill = Color(0xFF1A1A1A);
+  static const Color cardBorder = Color(0xFF2A2A2A);
+  static const Color containerBorder = Color(0xFF3D3D3D);
+
+  // Navigation
+  static const Color navBarFill = Color(0xFF424242);
+  static const Color iconInactive = Color(0xFF6B6B6B);
+
+  // Text
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xB3FFFFFF); // 70% white
+  static const Color textHint = Color(0x99FFFFFF); // 60% white
+
+  // Interactive states
+  static const Color pressedOverlay = Color(0x33FFFFFF); // 20% white
+  static const Color focusBorder = Color(0xFFFFFFFF);
+  static const Color disabledText = Color(0x66FFFFFF); // 40% white
+
+  // --- Deprecated fitness-specific colors ---
+  // These chromatic colors are deprecated and should not be used in default
+  // component styling. Use white text with descriptive labels for status
+  // indication instead (see Requirement 2.7). Kept for backwards compatibility.
+
+  /// @deprecated Use white text with descriptive labels for success states.
   static const Color successGreen = Color(0xFF4CAF50);
+
+  /// @deprecated Use white text with descriptive labels for rest states.
   static const Color restBlue = Color(0xFF78909C);
+
+  /// @deprecated Use white text with descriptive labels for warning states.
   static const Color warningOrange = Color(0xFFFFA726);
+
+  /// @deprecated Use white text with descriptive labels for error states.
   static const Color errorRed = Color(0xFFD32F2F);
 
   // Monochrome greys

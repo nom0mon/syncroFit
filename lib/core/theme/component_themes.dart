@@ -79,14 +79,14 @@ abstract final class ComponentThemes {
     );
   }
 
-  /// Card theme for dark mode — black with white/grey border (Figma dashboard).
+  /// Card theme for dark mode — lighter fill with visible border for readability.
   static CardThemeData cardThemeDark() {
     return CardThemeData(
-      color: Colors.black,
+      color: const Color(0xFF262626),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.white, width: 1),
+        side: const BorderSide(color: Color(0xFF3D3D3D), width: 1),
       ),
       margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -106,12 +106,13 @@ abstract final class ComponentThemes {
     );
   }
 
-  /// Navigation bar — rounded pill with dark background matching Figma.
+  /// Navigation bar — icon-only with white active / grey inactive, labels hidden.
   static NavigationBarThemeData navigationBarTheme(ColorScheme colorScheme) {
     return NavigationBarThemeData(
-      backgroundColor: AppColors.grey800,
+      backgroundColor: AppColors.navBarFill,
       elevation: 0,
       indicatorColor: Colors.transparent,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(
@@ -122,15 +123,76 @@ abstract final class ComponentThemes {
         }
         return const TextStyle(
           fontSize: 11,
-          color: AppColors.grey500,
+          color: AppColors.iconInactive,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const IconThemeData(color: Colors.white, size: 24);
         }
-        return const IconThemeData(color: AppColors.grey500, size: 24);
+        return const IconThemeData(color: AppColors.iconInactive, size: 24);
       }),
     );
   }
+
+  /// Input decoration for dark mode — grey borders, no chromatic error colors.
+  static InputDecorationTheme inputDecorationThemeDark() {
+    return const InputDecorationTheme(
+      filled: false,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: AppColors.containerBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: AppColors.containerBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: AppColors.focusBorder, width: 1),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: AppColors.containerBorder),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: AppColors.focusBorder, width: 1),
+      ),
+      hintStyle: TextStyle(color: AppColors.textHint),
+      labelStyle: TextStyle(color: AppColors.textSecondary),
+      errorStyle: TextStyle(color: AppColors.textPrimary),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Interactive state helpers
+  // ---------------------------------------------------------------------------
+
+  /// Pressed state decoration — 20% white overlay on dark surfaces.
+  static BoxDecoration pressedStateDecoration({
+    BorderRadius borderRadius = const BorderRadius.all(Radius.circular(8)),
+  }) {
+    return BoxDecoration(
+      color: AppColors.pressedOverlay,
+      borderRadius: borderRadius,
+    );
+  }
+
+  /// Focused state decoration — 1px white border for keyboard/accessibility focus.
+  static BoxDecoration focusedStateDecoration({
+    BorderRadius borderRadius = const BorderRadius.all(Radius.circular(8)),
+  }) {
+    return BoxDecoration(
+      border: Border.all(color: AppColors.focusBorder, width: 1),
+      borderRadius: borderRadius,
+    );
+  }
+
+  /// Disabled opacity value — 40% white for disabled interactive elements.
+  static const double disabledOpacity = 0.4;
 }

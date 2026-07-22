@@ -51,7 +51,7 @@ class MockAuthRepository implements AuthRepository {
   ) async {
     await Future.delayed(const Duration(milliseconds: 350));
 
-    // Simulate validation: current password must be at least 8 characters
+
     // and match a known password (mock: "password123")
     if (currentPassword != 'password123') {
       return Failure(AuthError(reason: 'Current password is incorrect'));

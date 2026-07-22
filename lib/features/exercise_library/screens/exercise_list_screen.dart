@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/exercise.dart';
+import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../providers/exercise_provider.dart';
+import '../widgets/exercise_row.dart';
 
 /// Displays a browsable list of exercises with search and filter controls.
 ///
@@ -58,7 +59,23 @@ class _ExerciseListContent extends ConsumerWidget {
                   icon: Icons.search_off,
                   message: 'No exercises found matching your filters',
                 )
-              : _ExerciseListView(exercises: state.filteredExercises),
+              : Stack(
+                  children: [
+                    _ExerciseListView(exercises: state.filteredExercises),
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: EdgeFadeGradient(isTop: true),
+                    ),
+                    const Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: EdgeFadeGradient(isTop: false),
+                    ),
+                  ],
+                ),
         ),
       ],
     );
@@ -207,7 +224,7 @@ class _FilterControls extends ConsumerWidget {
   }
 }
 
-/// Scrollable list of exercise items (Req 8.1).
+/// Scrollable list of exercise items (Req 3.1, 3.5).
 class _ExerciseListView extends StatelessWidget {
   const _ExerciseListView({required this.exercises});
 
@@ -217,110 +234,13 @@ class _ExerciseListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
       itemCount: exercises.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
       itemBuilder: (context, index) {
-        return _ExerciseListItem(exercise: exercises[index]);
+        return ExerciseRow(exercise: exercises[index]);
       },
-    );
-  }
-}
-
-/// Individual exercise list item showing name, muscle group, difficulty,
-/// and image placeholder (Req 8.1). Tappable to navigate to detail (Req 8.4).
-class _ExerciseListItem extends StatelessWidget {
-  const _ExerciseListItem({required this.exercise});
-
-  final Exercise exercise;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      child: InkWell(
-        onTap: () {
-          context.go('/exercises/${exercise.id}');
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Image placeholder
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.fitness_center,
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              // Exercise info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exercise.name,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      exercise.muscleGroup,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Difficulty badge
-              _DifficultyBadge(difficulty: exercise.difficulty),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A colored badge indicating exercise difficulty level.
-class _DifficultyBadge extends StatelessWidget {
-  const _DifficultyBadge({required this.difficulty});
-
-  final DifficultyLevel difficulty;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = _difficultyColor(difficulty);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        _difficultyLabel(difficulty),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }
@@ -331,14 +251,5 @@ String _difficultyLabel(DifficultyLevel level) {
     DifficultyLevel.beginner => 'Beginner',
     DifficultyLevel.intermediate => 'Intermediate',
     DifficultyLevel.advanced => 'Advanced',
-  };
-}
-
-/// Returns a color associated with a difficulty level.
-Color _difficultyColor(DifficultyLevel level) {
-  return switch (level) {
-    DifficultyLevel.beginner => AppColors.successGreen,
-    DifficultyLevel.intermediate => AppColors.warningOrange,
-    DifficultyLevel.advanced => AppColors.errorRed,
   };
 }

@@ -30,19 +30,19 @@ class SettingsMainScreen extends ConsumerWidget {
             leading: const Icon(Icons.person_outline),
             title: const Text('Edit Profile'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/settings/edit-profile'),
+            onTap: () => context.push('/settings/edit-profile'),
           ),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('Notification Settings'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/settings/notifications'),
+            onTap: () => context.push('/settings/notifications'),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),
             title: const Text('Change Password'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/settings/change-password'),
+            onTap: () => context.push('/settings/change-password'),
           ),
           const Divider(),
           SwitchListTile(

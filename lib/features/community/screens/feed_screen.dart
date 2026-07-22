@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
@@ -49,97 +50,117 @@ class FeedScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            itemCount: state.posts.length,
-            itemBuilder: (context, index) {
-              final post = state.posts[index];
-              final truncatedContent =
-                  CommunityNotifier.truncateContent(post.content);
+          return Stack(
+            children: [
+              ListView.builder(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                itemCount: state.posts.length,
+                itemBuilder: (context, index) {
+                  final post = state.posts[index];
+                  final truncatedContent =
+                      CommunityNotifier.truncateContent(post.content);
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: InkWell(
-                  onTap: () {
-                    context.go('/community/post/${post.id}');
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Author name
-                        Text(
-                          post.authorName,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-
-                        // Truncated content
-                        Text(
-                          truncatedContent,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-
-                        // Like count, comment count, timestamp
-                        Row(
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: InkWell(
+                      onTap: () {
+                        context.go('/community/post/${post.id}');
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              post.isLikedByCurrentUser
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 16,
-                              color: post.isLikedByCurrentUser
-                                  ? Theme.of(context).colorScheme.error
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
+                            // Author name
                             Text(
-                              '${post.likeCount}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Icon(
-                              Icons.comment_outlined,
-                              size: 16,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              '${post.comments.length}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const Spacer(),
-                            Text(
-                              formatRelativeTimestamp(post.timestamp),
+                              post.authorName,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodySmall
+                                  .titleSmall
                                   ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+
+                            // Truncated content
+                            Text(
+                              truncatedContent,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+
+                            // Like count, comment count, timestamp
+                            Row(
+                              children: [
+                                Icon(
+                                  post.isLikedByCurrentUser
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  size: 16,
+                                  color: post.isLikedByCurrentUser
+                                      ? Theme.of(context).colorScheme.error
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  '${post.likeCount}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                Icon(
+                                  Icons.comment_outlined,
+                                  size: 16,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  '${post.comments.length}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const Spacer(),
+                                Text(
+                                  formatRelativeTimestamp(post.timestamp),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+              // Top edge fade gradient
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: EdgeFadeGradient(isTop: true),
+              ),
+              // Bottom edge fade gradient
+              const Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: EdgeFadeGradient(isTop: false),
+              ),
+            ],
           );
         },
       ),
