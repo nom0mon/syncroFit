@@ -43,11 +43,12 @@ void main() {
     colors.add(MapEntry('colorScheme.primary', darkColorScheme.primary));
     colors.add(MapEntry('colorScheme.onPrimary', darkColorScheme.onPrimary));
     colors.add(MapEntry('colorScheme.secondary', darkColorScheme.secondary));
-    colors.add(MapEntry('colorScheme.onSecondary', darkColorScheme.onSecondary));
+    colors
+        .add(MapEntry('colorScheme.onSecondary', darkColorScheme.onSecondary));
     colors.add(MapEntry('colorScheme.surface', darkColorScheme.surface));
     colors.add(MapEntry('colorScheme.onSurface', darkColorScheme.onSurface));
-    colors.add(MapEntry(
-        'colorScheme.surfaceContainerHighest', darkColorScheme.surfaceContainerHighest));
+    colors.add(MapEntry('colorScheme.surfaceContainerHighest',
+        darkColorScheme.surfaceContainerHighest));
     colors.add(MapEntry('colorScheme.outline', darkColorScheme.outline));
 
     // CardTheme — same as ComponentThemes.cardThemeDark()
@@ -56,14 +57,16 @@ void main() {
       colors.add(MapEntry('cardTheme.color', cardTheme.color!));
     }
     final cardShape = cardTheme.shape;
-    if (cardShape is RoundedRectangleBorder && cardShape.side != BorderSide.none) {
+    if (cardShape is RoundedRectangleBorder &&
+        cardShape.side != BorderSide.none) {
       colors.add(MapEntry('cardTheme.borderColor', cardShape.side.color));
     }
 
     // NavigationBarTheme — same as ComponentThemes.navigationBarTheme(colorScheme)
     final navBarTheme = ComponentThemes.navigationBarTheme(darkColorScheme);
     if (navBarTheme.backgroundColor != null) {
-      colors.add(MapEntry('navBarTheme.backgroundColor', navBarTheme.backgroundColor!));
+      colors.add(MapEntry(
+          'navBarTheme.backgroundColor', navBarTheme.backgroundColor!));
     }
     // Check active/inactive icon colors via iconTheme resolver
     final iconTheme = navBarTheme.iconTheme;
@@ -71,10 +74,12 @@ void main() {
       final activeIconTheme = iconTheme.resolve({WidgetState.selected});
       final inactiveIconTheme = iconTheme.resolve(<WidgetState>{});
       if (activeIconTheme?.color != null) {
-        colors.add(MapEntry('navBarTheme.activeIconColor', activeIconTheme!.color!));
+        colors.add(
+            MapEntry('navBarTheme.activeIconColor', activeIconTheme!.color!));
       }
       if (inactiveIconTheme?.color != null) {
-        colors.add(MapEntry('navBarTheme.inactiveIconColor', inactiveIconTheme!.color!));
+        colors.add(MapEntry(
+            'navBarTheme.inactiveIconColor', inactiveIconTheme!.color!));
       }
     }
 
@@ -82,10 +87,12 @@ void main() {
     final appBarTheme = ComponentThemes.appBarTheme(darkColorScheme);
     if (appBarTheme.backgroundColor != null &&
         appBarTheme.backgroundColor != Colors.transparent) {
-      colors.add(MapEntry('appBarTheme.backgroundColor', appBarTheme.backgroundColor!));
+      colors.add(MapEntry(
+          'appBarTheme.backgroundColor', appBarTheme.backgroundColor!));
     }
     if (appBarTheme.foregroundColor != null) {
-      colors.add(MapEntry('appBarTheme.foregroundColor', appBarTheme.foregroundColor!));
+      colors.add(MapEntry(
+          'appBarTheme.foregroundColor', appBarTheme.foregroundColor!));
     }
 
     // InputDecorationTheme — same as ComponentThemes.inputDecorationThemeDark()
@@ -100,10 +107,12 @@ void main() {
     _extractInputBorderColor(
         inputTheme.focusedErrorBorder, 'inputTheme.focusedErrorBorder', colors);
     if (inputTheme.hintStyle?.color != null) {
-      colors.add(MapEntry('inputTheme.hintStyle.color', inputTheme.hintStyle!.color!));
+      colors.add(
+          MapEntry('inputTheme.hintStyle.color', inputTheme.hintStyle!.color!));
     }
     if (inputTheme.labelStyle?.color != null) {
-      colors.add(MapEntry('inputTheme.labelStyle.color', inputTheme.labelStyle!.color!));
+      colors.add(MapEntry(
+          'inputTheme.labelStyle.color', inputTheme.labelStyle!.color!));
     }
 
     return colors;
@@ -115,14 +124,14 @@ void main() {
 
       // Ensure we're actually testing something meaningful
       expect(themeColors.length, greaterThan(10),
-          reason: 'Should extract a significant number of colors from the dark theme');
+          reason:
+              'Should extract a significant number of colors from the dark theme');
 
       for (final entry in themeColors) {
         expect(
           isAchromatic(entry.value),
           isTrue,
-          reason:
-              '${entry.key} is not achromatic: '
+          reason: '${entry.key} is not achromatic: '
               'R=${entry.value.red}, G=${entry.value.green}, B=${entry.value.blue} '
               '(0x${entry.value.value.toRadixString(16).padLeft(8, '0')})',
         );
@@ -138,8 +147,7 @@ void main() {
         expect(
           isAchromatic(entry.value),
           isTrue,
-          reason:
-              '${entry.key} is not achromatic: '
+          reason: '${entry.key} is not achromatic: '
               'R=${entry.value.red}, G=${entry.value.green}, B=${entry.value.blue}',
         );
       },

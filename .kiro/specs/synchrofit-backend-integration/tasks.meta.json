@@ -1,0 +1,865 @@
+{
+  "pbtResults": {
+    "3.3 Write property test for BMI computation": {
+      "status": "passed",
+      "lastRunTimestamp": 1784990827672
+    }
+  },
+  "executionHistory": {
+    "1.1 Initialize Laravel 12 project with Sanctum and configure MySQL 8": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654300
+      },
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986667251
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711103
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986747446
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784987569076
+      }
+    ],
+    "1.2 Create database migrations for all tables": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654435
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711174
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784987577800
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784987965153
+      }
+    ],
+    "1.3 Create Eloquent models with relationships": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654699
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711308
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784987971009
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988461601
+      }
+    ],
+    "1.4 Create exercise library seed data": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654773
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711361
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784987971403
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988463053
+      }
+    ],
+    "2.1 Implement RegisterController with FormRequest validation": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654847
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711415
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988468137
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988928325
+      }
+    ],
+    "2.2 Implement LoginController with FormRequest validation": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654908
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711477
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988468872
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988929009
+      }
+    ],
+    "2.3 Implement ForgotPasswordController with rate limiting": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986654968
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711529
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988469707
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988929760
+      }
+    ],
+    "2.4 Implement LogoutController": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655020
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711586
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988470404
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988930537
+      }
+    ],
+    "2.5 Write feature tests for authentication endpoints": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655133
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711643
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988936507
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990072301
+      }
+    ],
+    "3.1 Implement ProfileController with store/show/update actions": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655182
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711742
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988937263
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990072902
+      }
+    ],
+    "3.2 Write feature tests for profile endpoints": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655238
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711794
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990079881
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990853138
+      }
+    ],
+    "3.3 Write property test for BMI computation": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655287
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711860
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990080583
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990853666
+      }
+    ],
+    "4.1 Implement ExerciseController with index and show actions": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655352
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711923
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988471228
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988931389
+      }
+    ],
+    "4.2 Write feature tests for exercise endpoints": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655403
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986711966
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988938006
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990073807
+      }
+    ],
+    "5. Checkpoint - Backend core APIs": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655452
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712023
+      }
+    ],
+    "6.1 Implement RecommendationEngine service": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655512
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712127
+      },
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990081371
+      }
+    ],
+    "6.2 Implement adaptation logic in RecommendationEngine": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655588
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712176
+      }
+    ],
+    "6.3 Implement RecommendationController": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655653
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712228
+      }
+    ],
+    "6.4 Write unit tests for RecommendationEngine": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655705
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712280
+      }
+    ],
+    "6.5 Write property test for plan structure invariants": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655770
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712344
+      }
+    ],
+    "6.6 Write property test for recommendation differentiation": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655819
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712399
+      }
+    ],
+    "7.1 Implement WorkoutSessionController with state machine": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655869
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712445
+      }
+    ],
+    "7.2 Create or update ProgressRecord on workout completion": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655920
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712495
+      }
+    ],
+    "7.3 Write feature tests for workout session endpoints": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986655970
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712545
+      }
+    ],
+    "7.4 Write property test for duration excluding paused time": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656020
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712661
+      }
+    ],
+    "7.5 Write property test for invalid state transitions": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656095
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712716
+      }
+    ],
+    "8.1 Implement ProgressController": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656171
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712773
+      }
+    ],
+    "8.2 Write feature tests for progress endpoints": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656248
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712812
+      }
+    ],
+    "8.3 Write property test for streak calculation": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656300
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712878
+      }
+    ],
+    "9. Checkpoint - Backend feature APIs complete": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656351
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712925
+      }
+    ],
+    "10.1 Create ApiClient with Dio, token attachment, and error mapping": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656405
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986712977
+      }
+    ],
+    "10.2 Add JSON serialization to existing Flutter models": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656462
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713037
+      }
+    ],
+    "10.3 Write property tests for ApiClient response parsing": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656521
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713135
+      }
+    ],
+    "10.4 Write property test for token header management": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656571
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713194
+      }
+    ],
+    "10.5 Write property test for HTTP error mapping": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656637
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713245
+      }
+    ],
+    "11.1 Implement RemoteAuthRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656687
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713296
+      }
+    ],
+    "11.2 Implement RemoteProfileRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656751
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713346
+      }
+    ],
+    "11.3 Wire auth and profile providers to use remote repositories": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656803
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713413
+      }
+    ],
+    "11.4 Write unit tests for RemoteAuthRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656855
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713462
+      }
+    ],
+    "12.1 Implement RemoteExerciseRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656914
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713524
+      }
+    ],
+    "12.2 Implement RemoteWorkoutRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986656955
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713580
+      }
+    ],
+    "12.3 Implement RemoteProgressRepository": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657003
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713672
+      }
+    ],
+    "12.4 Wire exercise, workout, and progress providers to remote repositories": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657063
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713764
+      }
+    ],
+    "12.5 Write unit tests for remote repositories": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657117
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713858
+      }
+    ],
+    "13. Checkpoint - Frontend integration complete": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657166
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713912
+      }
+    ],
+    "14.1 Implement DeviceTokenController in Laravel": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657217
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986713975
+      }
+    ],
+    "14.2 Implement NotificationService in Laravel": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657268
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714026
+      }
+    ],
+    "14.3 Implement FCM integration in Flutter": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657319
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714080
+      }
+    ],
+    "14.4 Write feature tests for device token endpoint": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657369
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714142
+      }
+    ],
+    "15.1 Write property test for registration validation field specificity": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657465
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714196
+      }
+    ],
+    "15.2 Write property test for invalid credentials generic error": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657518
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714293
+      }
+    ],
+    "15.3 Write property test for forgot-password anti-enumeration": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657567
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714346
+      }
+    ],
+    "15.4 Write property test for exercise pagination and ordering": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657618
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714395
+      }
+    ],
+    "15.5 Write property test for exercise filter correctness": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657671
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714454
+      }
+    ],
+    "15.6 Write property test for weekly stats accuracy": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657732
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714495
+      }
+    ],
+    "15.7 Write property test for consistent API response envelope": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657822
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714555
+      }
+    ],
+    "16. Final checkpoint - All tests pass": [
+      {
+        "executionId": "c7426218-19b9-4721-a930-0fb4c62a85d8",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986657872
+      },
+      {
+        "executionId": "d66e0c22-3d56-4536-9950-1d67c22c14a5",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784986714610
+      }
+    ],
+    "1. Laravel project scaffolding and database migrations": [
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784988463126
+      }
+    ],
+    "2. Authentication API (Register, Login, Forgot Password, Logout)": [
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990072384
+      }
+    ],
+    "4. Exercise Library API": [
+      {
+        "executionId": "63c6cfee-496c-4cc9-957d-317e9f68c377",
+        "chatSessionId": "sess_4461415a-95da-411c-8bae-cca47ed68993",
+        "timestamp": 1784990073898
+      }
+    ]
+  }
+}
