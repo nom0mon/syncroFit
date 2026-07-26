@@ -1,20 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_progress_repository.dart';
-import '../../../data/mock/mock_workout_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_progress_repository.dart';
+import '../../../data/remote/remote_workout_repository.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [ProgressRepository] instance used by the progress module.
+///
+/// Uses [RemoteProgressRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
-  return MockProgressRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteProgressRepository(apiClient);
 });
 
 /// Provides the [WorkoutRepository] instance used by the progress module
 /// (for fetching completed session history).
+///
+/// Uses [RemoteWorkoutRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final progressWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  return MockWorkoutRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteWorkoutRepository(apiClient);
 });
 
 /// A single weight data point for charting.
@@ -91,8 +100,7 @@ final progressProvider =
 /// An [AsyncNotifier] that loads all progress tracking data from the
 /// progress and workout repositories.
 class ProgressNotifier extends AsyncNotifier<ProgressState> {
-  ProgressRepository get _progressRepo =>
-      ref.read(progressRepositoryProvider);
+  ProgressRepository get _progressRepo => ref.read(progressRepositoryProvider);
   WorkoutRepository get _workoutRepo =>
       ref.read(progressWorkoutRepositoryProvider);
 
@@ -107,11 +115,9 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     ]);
 
     final summaryResult = results[0] as Result<ProgressSummary, AppError>;
-    final recordsResult =
-        results[1] as Result<List<ProgressRecord>, AppError>;
+    final recordsResult = results[1] as Result<List<ProgressRecord>, AppError>;
     final weeklyStatsResult = results[2] as Result<Map<String, int>, AppError>;
-    final sessionsResult =
-        results[3] as Result<List<WorkoutSession>, AppError>;
+    final sessionsResult = results[3] as Result<List<WorkoutSession>, AppError>;
 
     // Extract summary stats
     final summary = switch (summaryResult) {

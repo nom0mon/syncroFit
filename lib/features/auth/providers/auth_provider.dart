@@ -1,22 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_auth_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_auth_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../shared/models/models.dart';
 import 'auth_state.dart';
 
 export 'auth_state.dart';
 
-/// Provides the [AuthRepository] implementation (currently mock).
+/// Provides the [AuthRepository] implementation.
+///
+/// Uses [RemoteAuthRepository] backed by the Laravel API. The provider can
+/// be overridden with a mock in tests via ProviderScope overrides.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return MockAuthRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return RemoteAuthRepository(apiClient, tokenStorage);
 });
 
 /// Provides the current authentication state, managed by [AuthNotifier].
 ///
 /// Screens and the router watch this provider to react to auth changes.
-final authStateProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(ref);
 });
 
@@ -28,6 +33,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final Ref _ref;
 
   AuthRepository get _repository => _ref.read(authRepositoryProvider);
+
+  /// Convenience getter for the remote auth repository which exposes logout.
+  RemoteAuthRepository get _remoteRepo =>
+      _ref.read(authRepositoryProvider) as RemoteAuthRepository;
 
   /// Attempts to log in with the given [email] and [password].
   ///
@@ -99,8 +108,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Signs the user out and resets the auth state.
-  void logout() {
+  /// Signs the user out by calling the backend logout endpoint, clearing
+  /// the stored token, and resetting local auth state.
+  ///
+  /// The token is always cleared locally regardless of whether the backend
+  /// call succeeds, ensuring the user is logged out even on network failure
+  /// (per Requirement 4.4).
+  Future<void> logout() async {
+    state = state.copyWith(isLoading: true);
+    await _remoteRepo.logout();
     state = const AuthState();
   }
 

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Exercise;
 use App\Models\User;
+use App\Models\WorkoutSession;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class RecommendationEngine
@@ -114,6 +116,9 @@ class RecommendationEngine
         $setRange = self::SETS_BY_LEVEL[$fitnessLevel] ?? self::SETS_BY_LEVEL['intermediate'];
         $restRange = self::REST_BY_GOAL[$goal] ?? self::REST_BY_GOAL['stay_fit'];
 
+        // Get adaptation factor based on workout history
+        $adaptationFactor = $this->getAdaptationFactor($user);
+
         // Get allowed equipment
         $allowedEquipment = self::EQUIPMENT_BY_PREFERENCE[$workoutPreference] ?? self::EQUIPMENT_BY_PREFERENCE['gym'];
 
@@ -155,12 +160,16 @@ class RecommendationEngine
                 $goal
             );
 
-            // Assign volume parameters to each exercise
+            // Assign volume parameters to each exercise with adaptation applied
             $exerciseList = [];
             foreach ($workoutExercises as $order => $exercise) {
-                $sets = rand($setRange['min'], $setRange['max']);
-                $reps = rand($repRange['min'], $repRange['max']);
+                $baseSets = rand($setRange['min'], $setRange['max']);
+                $baseReps = rand($repRange['min'], $repRange['max']);
                 $restSeconds = rand($restRange['min'], $restRange['max']);
+
+                // Apply adaptation factor to sets and reps
+                $sets = $this->applyAdaptation($baseSets, $adaptationFactor, 2, 5);
+                $reps = $this->applyAdaptation($baseReps, $adaptationFactor, 5, 20);
 
                 $exerciseList[] = [
                     'exercise_id' => $exercise->id,
@@ -185,6 +194,92 @@ class RecommendationEngine
         return [
             'workouts' => $workouts,
         ];
+    }
+
+    /**
+     * Apply adaptation factor to a base volume value.
+     * Rounds to nearest integer and clamps within the given bounds.
+     * Ensures at least +1 change when factor > 1.0 and base value allows it.
+     */
+    private function applyAdaptation(int $baseValue, float $factor, int $min, int $max): int
+    {
+        if ($factor === 1.0) {
+            return $baseValue;
+        }
+
+        $adapted = (int) round($baseValue * $factor);
+
+        // Ensure at least +1 change when increasing (if within bounds)
+        if ($factor > 1.0 && $adapted <= $baseValue && $baseValue < $max) {
+            $adapted = $baseValue + 1;
+        }
+
+        // Ensure at least -1 change when decreasing (if within bounds)
+        if ($factor < 1.0 && $adapted >= $baseValue && $baseValue > $min) {
+            $adapted = $baseValue - 1;
+        }
+
+        // Clamp to valid range
+        return max($min, min($max, $adapted));
+    }
+
+    /**
+     * Calculate the adaptation factor based on the user's workout history.
+     *
+     * Returns:
+     *   1.0 for no adaptation (baseline) — user has < 2 weeks of history
+     *   1.05 to 1.10 for volume increase — completion rate ≥ 80%
+     *   0.90 to 0.95 for volume decrease — skip rate ≥ 50%
+     *
+     * Completion takes priority if both thresholds would apply.
+     */
+    public function getAdaptationFactor(User $user): float
+    {
+        $twoWeeksAgo = Carbon::now()->subDays(14);
+
+        // Get completed workout sessions from the past 14 days
+        $recentSessions = WorkoutSession::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', $twoWeeksAgo)
+            ->get();
+
+        // If fewer than 2 completed sessions in the past 14 days, use baseline
+        if ($recentSessions->count() < 2) {
+            return 1.0;
+        }
+
+        // Get all session exercise records for these sessions
+        $sessionIds = $recentSessions->pluck('id');
+        $sessionExercises = \App\Models\SessionExercise::whereIn('workout_session_id', $sessionIds)->get();
+
+        $totalExercises = $sessionExercises->count();
+
+        // If there are no session exercises, use baseline
+        if ($totalExercises === 0) {
+            return 1.0;
+        }
+
+        $completedCount = $sessionExercises->where('status', 'completed')->count();
+        $skippedCount = $sessionExercises->where('status', 'skipped')->count();
+
+        $completionRate = $completedCount / $totalExercises;
+        $skipRate = $skippedCount / $totalExercises;
+
+        // Completion takes priority over skip rate
+        if ($completionRate >= 0.80) {
+            // Increase volume by 5–10% (scale linearly between 80-100% completion)
+            $scaleFactor = min(1.0, ($completionRate - 0.80) / 0.20);
+            return 1.05 + ($scaleFactor * 0.05); // 1.05 to 1.10
+        }
+
+        if ($skipRate >= 0.50) {
+            // Decrease volume by 5–10% (scale linearly between 50-100% skip rate)
+            $scaleFactor = min(1.0, ($skipRate - 0.50) / 0.50);
+            return 0.95 - ($scaleFactor * 0.05); // 0.95 to 0.90
+        }
+
+        // No adaptation needed
+        return 1.0;
     }
 
     /**

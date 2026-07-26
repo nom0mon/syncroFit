@@ -34,3 +34,13 @@ class NetworkError extends AppError {
   @override
   String get message => 'Network error occurred';
 }
+
+class ServerError extends AppError {
+  final int statusCode;
+  final String serverMessage;
+
+  ServerError({required this.statusCode, required this.serverMessage});
+
+  @override
+  String get message => serverMessage;
+}

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../data/mock/mock_auth_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_auth_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../shared/models/models.dart';
 
@@ -104,8 +105,7 @@ final notificationSettingsProvider =
 
 /// Manages notification preference toggles with SharedPreferences persistence.
 class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
-  NotificationSettingsNotifier(this._prefs)
-      : super(_loadSettings(_prefs));
+  NotificationSettingsNotifier(this._prefs) : super(_loadSettings(_prefs));
 
   final SharedPreferences _prefs;
 
@@ -170,7 +170,9 @@ class ChangePasswordState {
 
 /// Provides the [AuthRepository] for settings operations.
 final settingsAuthRepositoryProvider = Provider<AuthRepository>((ref) {
-  return MockAuthRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return RemoteAuthRepository(apiClient, tokenStorage);
 });
 
 /// Provides the change-password state and exposes the [changePassword] method.
@@ -182,8 +184,7 @@ final changePasswordProvider =
 
 /// Manages change-password logic calling the [AuthRepository].
 class ChangePasswordNotifier extends StateNotifier<ChangePasswordState> {
-  ChangePasswordNotifier(this._repository)
-      : super(const ChangePasswordState());
+  ChangePasswordNotifier(this._repository) : super(const ChangePasswordState());
 
   final AuthRepository _repository;
 

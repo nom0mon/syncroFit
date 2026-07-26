@@ -1,0 +1,8 @@
+00:00 +0: loading C:/system-projects/syncrofit/syncroFit/test/data/remote/remote_exercise_repository_test.dart
+00:00 +0: RemoteExerciseRepository - getAll calls correct endpoint with page_size=100
+00:00 +1: RemoteExerciseRepository - getAll returns parsed exercises on success
+00:00 +2: RemoteExerciseRepository - getAll returns error on failure
+00:00 +3: RemoteExerciseRepository - getById calls correct endpoint with id
+00:00 +4: RemoteExerciseRepository - filterByMuscleGroup passes muscle_group query parameter
+00:00 +5: RemoteExerciseRepository - filterByDifficulty passes difficulty query parameter
+00:00 +6: All tests passed!

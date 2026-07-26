@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_profile_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_profile_repository.dart';
 import '../../../data/repositories/profile_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [ProfileRepository] instance used throughout the app.
+///
+/// Uses [RemoteProfileRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return MockProfileRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteProfileRepository(apiClient);
 });
 
 /// Provides the user's profile as an async value, managed by [ProfileNotifier].
@@ -20,15 +25,13 @@ final profileProvider =
 
 /// An [AsyncNotifier] that manages loading and mutating the user's profile.
 class ProfileNotifier extends AsyncNotifier<UserProfile?> {
-  /// The user ID used to fetch and manage the profile.
-  /// In a real app this would come from auth state; here we use a hardcoded value.
-  static const _currentUserId = 'user-001';
-
   ProfileRepository get _repository => ref.read(profileRepositoryProvider);
 
   @override
   Future<UserProfile?> build() async {
-    final result = await _repository.getProfile(_currentUserId);
+    // The backend uses the auth token to identify the user, so we pass
+    // an empty string; the server ignores it and uses the token instead.
+    final result = await _repository.getProfile('');
 
     return switch (result) {
       Success(value: final profile) => profile,
@@ -58,7 +61,8 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
 
     state = switch (result) {
       Success(value: final saved) => AsyncValue.data(saved),
-      Failure(error: final error) => AsyncValue.error(error, StackTrace.current),
+      Failure(error: final error) =>
+        AsyncValue.error(error, StackTrace.current),
     };
   }
 

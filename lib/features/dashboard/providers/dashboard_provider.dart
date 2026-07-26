@@ -1,19 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_progress_repository.dart';
-import '../../../data/mock/mock_workout_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_progress_repository.dart';
+import '../../../data/remote/remote_workout_repository.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [WorkoutRepository] instance used by the dashboard.
+///
+/// Uses [RemoteWorkoutRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  return MockWorkoutRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteWorkoutRepository(apiClient);
 });
 
 /// Provides the [ProgressRepository] instance used by the dashboard.
+///
+/// Uses [RemoteProgressRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
-  return MockProgressRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteProgressRepository(apiClient);
 });
 
 /// The state exposed by the dashboard provider, containing all data needed
@@ -48,7 +57,8 @@ class DashboardState {
 
   /// Derives a set of dates (year/month/day only) with completed workouts.
   Set<DateTime> get completedDates => sessions
-      .map((s) => DateTime(s.completedAt.year, s.completedAt.month, s.completedAt.day))
+      .map((s) =>
+          DateTime(s.completedAt.year, s.completedAt.month, s.completedAt.day))
       .toSet();
 
   /// Returns sessions completed on the given [date].
@@ -132,7 +142,8 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     final now = DateTime.now();
     // Find the start of the current week (Monday)
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final weekStartDate = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final weekStartDate =
+        DateTime(weekStart.year, weekStart.month, weekStart.day);
 
     // Count sessions completed this week
     final completedThisWeek = sessions.where((session) {

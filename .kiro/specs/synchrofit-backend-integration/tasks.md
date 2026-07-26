@@ -95,11 +95,11 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Test single exercise detail, not found (404), page boundary edge cases
     - _Requirements: 14.1, 14.2_
 
-- [~] 5. Checkpoint - Backend core APIs
+- [x] 5. Checkpoint - Backend core APIs
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Recommendation Engine
-  - [-] 6.1 Implement RecommendationEngine service
+- [x] 6. Recommendation Engine
+  - [x] 6.1 Implement RecommendationEngine service
     - Create `app/Services/RecommendationEngine.php`
     - Filter exercises by user's workout_preference and fitness_level
     - Apply volume rules by goal (lose_weight: 12–20 reps, build_muscle: 6–12 reps, stay_fit: 8–15 reps, increase_stamina: 15–20 reps)
@@ -108,37 +108,37 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Each workout: 4–8 exercises, rest periods 30–120s
     - _Requirements: 8.1, 8.7_
 
-  - [~] 6.2 Implement adaptation logic in RecommendationEngine
+  - [x] 6.2 Implement adaptation logic in RecommendationEngine
     - When user has ≥2 weeks history: increase volume 5–10% if ≥80% completion, decrease 5–10% if ≥50% skip rate
     - For users with no history, use baseline volume without adaptation
     - _Requirements: 8.3, 8.5_
 
-  - [~] 6.3 Implement RecommendationController
+  - [x] 6.3 Implement RecommendationController
     - POST /api/recommendations/generate — invoke engine, store plan, return weekly plan
     - GET /api/recommendations/current — return most recent recommendation with workouts and exercises
     - Return 422 if profile is incomplete (missing goal or fitness_level)
     - Ensure generation completes within 5 seconds
     - _Requirements: 8.1, 8.2, 8.4, 8.6_
 
-  - [~] 6.4 Write unit tests for RecommendationEngine
+  - [x] 6.4 Write unit tests for RecommendationEngine
     - Test generation for all fitness levels × goals combinations
     - Test adaptation: high completion increases volume, high skip decreases volume
     - Test missing profile returns validation error
     - Test baseline generation with no history
     - _Requirements: 14.4_
 
-  - [~] 6.5 Write property test for plan structure invariants
+  - [x] 6.5 Write property test for plan structure invariants
     - **Property 11: Recommendation Plan Structure Invariants**
     - For random valid profiles, verify: one workout per availability day, 4–8 exercises per workout, sets in 2–5, reps in 5–20, rest_seconds in 30–120
     - **Validates: Requirements 8.1**
 
-  - [~] 6.6 Write property test for recommendation differentiation
+  - [x] 6.6 Write property test for recommendation differentiation
     - **Property 13: Recommendation Differentiation by Goal and Level**
     - For pairs of profiles differing only in goal OR only in fitness_level, verify generated plans differ in at least one aspect (exercise selection, rep range, set range, or rest range)
     - **Validates: Requirements 8.7**
 
-- [ ] 7. Workout Session Tracking API
-  - [~] 7.1 Implement WorkoutSessionController with state machine
+- [x] 7. Workout Session Tracking API
+  - [x] 7.1 Implement WorkoutSessionController with state machine
     - POST /api/sessions — create session (reject if active session exists)
     - PATCH /api/sessions/{id}/pause — pause active session
     - PATCH /api/sessions/{id}/resume — resume paused session
@@ -147,51 +147,51 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Validate state transitions: reject invalid transitions with error describing current state
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
 
-  - [~] 7.2 Create or update ProgressRecord on workout completion
+  - [x] 7.2 Create or update ProgressRecord on workout completion
     - On session complete: create/update ProgressRecord for the date, increment workouts_completed
     - Preserve existing weight_kg and bmi values
     - _Requirements: 10.5_
 
-  - [~] 7.3 Write feature tests for workout session endpoints
+  - [x] 7.3 Write feature tests for workout session endpoints
     - Test full lifecycle: start → pause → resume → complete
     - Test duplicate active session rejection (409)
     - Test invalid state transitions
     - Test skip exercise, duration calculation excluding paused time
     - _Requirements: 14.1, 14.2_
 
-  - [~] 7.4 Write property test for duration excluding paused time
+  - [x] 7.4 Write property test for duration excluding paused time
     - **Property 16: Workout Duration Excludes Paused Time**
     - Generate random sequences of start/pause/resume/complete timestamps, verify total_duration_seconds equals elapsed time minus sum of paused intervals
     - **Validates: Requirements 9.7**
 
-  - [~] 7.5 Write property test for invalid state transitions
+  - [x] 7.5 Write property test for invalid state transitions
     - **Property 15: Workout Session Invalid Transitions Rejected**
     - Generate random session states and random transition attempts, verify invalid transitions are rejected
     - **Validates: Requirements 9.5**
 
-- [ ] 8. Progress Tracking API
-  - [~] 8.1 Implement ProgressController
+- [x] 8. Progress Tracking API
+  - [x] 8.1 Implement ProgressController
     - GET /api/progress/summary — return total workouts, current streak, longest streak, latest weight
     - GET /api/progress/history — return all ProgressRecords ordered by date ascending
     - GET /api/progress/weekly-stats — return workouts completed per day for current week (Mon–Sun)
     - Handle no-data case: return zeros and null weight
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-  - [~] 8.2 Write feature tests for progress endpoints
+  - [x] 8.2 Write feature tests for progress endpoints
     - Test summary with data, summary with no data
     - Test history ordering, weekly stats accuracy
     - _Requirements: 14.1, 14.2_
 
-  - [~] 8.3 Write property test for streak calculation
+  - [x] 8.3 Write property test for streak calculation
     - **Property 17: Streak Calculation Correctness**
     - Generate random sets of completion dates, verify current_streak equals consecutive days ending today/yesterday, longest_streak equals max consecutive run
     - **Validates: Requirements 10.1**
 
-- [~] 9. Checkpoint - Backend feature APIs complete
+- [x] 9. Checkpoint - Backend feature APIs complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Flutter ApiClient and token management
-  - [~] 10.1 Create ApiClient with Dio, token attachment, and error mapping
+- [x] 10. Flutter ApiClient and token management
+  - [x] 10.1 Create ApiClient with Dio, token attachment, and error mapping
     - Create `lib/core/network/api_client.dart` using Dio HTTP client
     - Create `lib/core/network/api_config.dart` with base URL and 30s timeout
     - Create `lib/core/network/token_storage.dart` wrapping flutter_secure_storage
@@ -201,40 +201,40 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Expose per-request loading state via Riverpod provider
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-  - [~] 10.2 Add JSON serialization to existing Flutter models
+  - [x] 10.2 Add JSON serialization to existing Flutter models
     - Add `fromJson` factory and `toJson` method to: User, UserProfile, Exercise, Workout, WorkoutExercise, WorkoutSession, CompletedExercise, ProgressRecord, NotificationItem
     - Keep existing model structure unchanged, only add serialization
     - _Requirements: 5.2, 6.7_
 
-  - [~] 10.3 Write property tests for ApiClient response parsing
+  - [x] 10.3 Write property tests for ApiClient response parsing
     - **Property 1: API Response Parsing Round-Trip**
     - Generate random valid success/error envelope JSON, verify parsing produces correct Result types
     - Use `glados` package for property-based testing
     - **Validates: Requirements 5.2, 12.1, 12.2**
 
-  - [~] 10.4 Write property test for token header management
+  - [x] 10.4 Write property test for token header management
     - **Property 2: Token Header Management**
     - Verify: if token stored → Authorization header present with correct value; if no token → no Authorization header
     - **Validates: Requirements 2.5, 5.1, 5.7**
 
-  - [~] 10.5 Write property test for HTTP error mapping
+  - [x] 10.5 Write property test for HTTP error mapping
     - **Property 4: HTTP Error Mapping**
     - Generate random non-2xx status codes (excluding 401), verify Failure result with correct AppError; generate timeouts, verify NetworkError
     - **Validates: Requirements 5.5, 5.6**
 
-- [ ] 11. Flutter remote repositories — Auth and Profile
-  - [~] 11.1 Implement RemoteAuthRepository
+- [x] 11. Flutter remote repositories — Auth and Profile
+  - [x] 11.1 Implement RemoteAuthRepository
     - Create `lib/data/remote/remote_auth_repository.dart` implementing AuthRepository
     - Wire login, register, forgot-password, logout to ApiClient
     - Store token on successful login/register, clear on logout
     - _Requirements: 1.1, 1.4, 2.1, 2.4, 3.5, 4.2_
 
-  - [~] 11.2 Implement RemoteProfileRepository
+  - [x] 11.2 Implement RemoteProfileRepository
     - Create `lib/data/remote/remote_profile_repository.dart` implementing ProfileRepository
     - Wire create, get, update profile to ApiClient
     - _Requirements: 6.1, 6.3, 6.5, 6.7_
 
-  - [~] 11.3 Wire auth and profile providers to use remote repositories
+  - [x] 11.3 Wire auth and profile providers to use remote repositories
     - Create Riverpod provider overrides that swap mock implementations for remote ones
     - Update app initialization to use remote providers when backend is available
     - Ensure login success → store token + navigate to dashboard
@@ -242,19 +242,19 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Handle password mismatch validation client-side before sending request
     - _Requirements: 1.4, 1.5, 1.6, 2.4, 2.6, 2.7, 4.2, 4.3, 4.4_
 
-  - [~] 11.4 Write unit tests for RemoteAuthRepository
+  - [x] 11.4 Write unit tests for RemoteAuthRepository
     - Test login/register/logout API path construction and response handling
     - Test token storage on success, error mapping on failure
     - _Requirements: 14.1_
 
-- [ ] 12. Flutter remote repositories — Exercises, Recommendations, Workouts, Progress
-  - [~] 12.1 Implement RemoteExerciseRepository
+- [x] 12. Flutter remote repositories — Exercises, Recommendations, Workouts, Progress
+  - [x] 12.1 Implement RemoteExerciseRepository
     - Create `lib/data/remote/remote_exercise_repository.dart` implementing ExerciseRepository
     - Wire paginated listing with filters, single exercise detail
     - Implement infinite scroll: append next page when scrolling near bottom
     - _Requirements: 7.1, 7.2, 7.3, 7.7_
 
-  - [~] 12.2 Implement RemoteWorkoutRepository
+  - [x] 12.2 Implement RemoteWorkoutRepository
     - Create `lib/data/remote/remote_workout_repository.dart` implementing WorkoutRepository
     - Wire recommendation generation, current plan retrieval
     - Wire session start/pause/resume/skip/complete
@@ -262,37 +262,37 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Handle completion failure: retain data locally, allow retry
     - _Requirements: 8.6, 9.1, 9.3, 9.4, 9.6, 9.7, 9.8, 9.9, 9.10_
 
-  - [~] 12.3 Implement RemoteProgressRepository
+  - [x] 12.3 Implement RemoteProgressRepository
     - Create `lib/data/remote/remote_progress_repository.dart` implementing ProgressRepository
     - Wire summary, history, weekly-stats endpoints
     - _Requirements: 10.1, 10.3, 10.4, 10.6_
 
-  - [~] 12.4 Wire exercise, workout, and progress providers to remote repositories
+  - [x] 12.4 Wire exercise, workout, and progress providers to remote repositories
     - Update Riverpod providers to use remote implementations
     - Ensure dashboard, workout, exercise library, and progress screens render real data
     - _Requirements: 7.7, 8.6, 9.8, 9.9, 10.6_
 
-  - [~] 12.5 Write unit tests for remote repositories
+  - [x] 12.5 Write unit tests for remote repositories
     - Test correct API path construction, request body formatting, response deserialization
     - Test error handling for each repository method
     - _Requirements: 14.1_
 
-- [~] 13. Checkpoint - Frontend integration complete
+- [x] 13. Checkpoint - Frontend integration complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Push notifications (FCM)
-  - [~] 14.1 Implement DeviceTokenController in Laravel
+- [x] 14. Push notifications (FCM)
+  - [x] 14.1 Implement DeviceTokenController in Laravel
     - POST /api/device-tokens — store/replace device token for authenticated user
     - _Requirements: 11.3_
 
-  - [~] 14.2 Implement NotificationService in Laravel
+  - [x] 14.2 Implement NotificationService in Laravel
     - Create `app/Services/NotificationService.php` for sending FCM messages
     - Send workout reminder 15 minutes before scheduled time (include workout name and time in payload)
     - Support system notifications (plan updates, milestones) to all user device tokens
     - Skip delivery if user has no registered device token
     - _Requirements: 11.4, 11.5, 11.9_
 
-  - [~] 14.3 Implement FCM integration in Flutter
+  - [x] 14.3 Implement FCM integration in Flutter
     - Create `lib/data/remote/remote_notification_repository.dart` implementing NotificationRepository
     - Request FCM token on app init, send to backend via POST /api/device-tokens
     - Retry registration up to 3 times with exponential backoff (1s, 2s, 4s)
@@ -300,47 +300,47 @@ This plan implements the SynchroFit backend (Laravel 12 + MySQL 8 + Sanctum) and
     - Handle notification tap: navigate to workout detail or dashboard if workout unavailable
     - _Requirements: 11.1, 11.2, 11.6, 11.7, 11.8_
 
-  - [~] 14.4 Write feature tests for device token endpoint
+  - [x] 14.4 Write feature tests for device token endpoint
     - Test registration, token replacement, unauthenticated request
     - _Requirements: 14.1, 14.2_
 
-- [ ] 15. Backend validation property tests
-  - [~] 15.1 Write property test for registration validation field specificity
+- [x] 15. Backend validation property tests
+  - [x] 15.1 Write property test for registration validation field specificity
     - **Property 7: Registration Validation Field Specificity**
     - Generate random invalid registration payloads, verify 422 response has errors only for invalid fields, valid fields are absent from errors object
     - **Validates: Requirements 1.3**
 
-  - [~] 15.2 Write property test for invalid credentials generic error
+  - [x] 15.2 Write property test for invalid credentials generic error
     - **Property 5: Invalid Credentials Generic Error**
     - Generate random invalid credentials (wrong email, wrong password, both wrong), verify identical 401 response with same generic message
     - **Validates: Requirements 2.2**
 
-  - [~] 15.3 Write property test for forgot-password anti-enumeration
+  - [x] 15.3 Write property test for forgot-password anti-enumeration
     - **Property 6: Forgot-Password Anti-Enumeration**
     - Generate random valid-format emails (some existing, some not), verify identical 200 response structure regardless of existence
     - **Validates: Requirements 3.2**
 
-  - [~] 15.4 Write property test for exercise pagination and ordering
+  - [x] 15.4 Write property test for exercise pagination and ordering
     - **Property 9: Exercise List Ordering and Pagination Metadata**
     - Generate random page sizes, verify alphabetical ordering, correct current_page, accurate total_count and total_pages
     - **Validates: Requirements 7.1**
 
-  - [~] 15.5 Write property test for exercise filter correctness
+  - [x] 15.5 Write property test for exercise filter correctness
     - **Property 10: Exercise Filter Correctness**
     - Generate random filter combinations, verify every returned exercise matches ALL provided filters
     - **Validates: Requirements 7.2**
 
-  - [~] 15.6 Write property test for weekly stats accuracy
+  - [x] 15.6 Write property test for weekly stats accuracy
     - **Property 19: Weekly Stats Accuracy**
     - Generate random completed session dates within a week, verify returned counts per day match actual completed sessions
     - **Validates: Requirements 10.4**
 
-  - [~] 15.7 Write property test for consistent API response envelope
+  - [x] 15.7 Write property test for consistent API response envelope
     - **Property 20: Consistent API Response Envelope**
     - Hit various endpoints with valid/invalid data, verify all responses conform to the envelope structure with correct Content-Type header
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 
-- [~] 16. Final checkpoint - All tests pass
+- [x] 16. Final checkpoint - All tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

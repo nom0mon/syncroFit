@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_exercise_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_exercise_repository.dart';
 import '../../../data/repositories/exercise_repository.dart';
 import '../../../shared/models/models.dart';
 
-/// Provides the [ExerciseRepository] implementation (currently mock).
+/// Provides the [ExerciseRepository] implementation.
+///
+/// Uses [RemoteExerciseRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
-  return MockExerciseRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteExerciseRepository(apiClient);
 });
 
 /// Provides the current exercise library state managed by [ExerciseNotifier].
@@ -155,8 +160,7 @@ class ExerciseNotifier extends StateNotifier<ExerciseState> {
 
     final filtered = state.allExercises.where((exercise) {
       // Search filter: case-insensitive substring match on name
-      if (query.isNotEmpty &&
-          !exercise.name.toLowerCase().contains(query)) {
+      if (query.isNotEmpty && !exercise.name.toLowerCase().contains(query)) {
         return false;
       }
 

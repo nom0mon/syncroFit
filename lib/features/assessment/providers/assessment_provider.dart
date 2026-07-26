@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:synchrofit/data/mock/mock_profile_repository.dart';
 import 'package:synchrofit/data/repositories/profile_repository.dart';
+import 'package:synchrofit/features/profile/providers/profile_provider.dart';
 import 'package:synchrofit/shared/models/enums.dart';
 import 'package:synchrofit/shared/models/result.dart';
 import 'package:synchrofit/shared/models/user_profile.dart';
@@ -125,7 +125,11 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
       fitnessGoal: state.fitnessGoal ?? FitnessGoal.maintainFitness,
       fitnessLevel: FitnessLevel.beginner,
       workoutPreference: WorkoutPreference.gym,
-      workoutAvailability: [DayOfWeek.monday, DayOfWeek.wednesday, DayOfWeek.friday],
+      workoutAvailability: [
+        DayOfWeek.monday,
+        DayOfWeek.wednesday,
+        DayOfWeek.friday
+      ],
     );
 
     final result = await _profileRepository.saveProfile(profile);
@@ -136,9 +140,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 }
 
-/// Provider for the mock profile repository used by the assessment flow.
+/// Provider for the profile repository used by the assessment flow.
+/// Re-uses the app-wide profileRepositoryProvider (remote-backed).
 final assessmentProfileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return MockProfileRepository();
+  return ref.watch(profileRepositoryProvider);
 });
 
 /// Provider for the assessment state notifier.

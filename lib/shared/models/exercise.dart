@@ -24,4 +24,47 @@ class Exercise {
     required this.defaultReps,
     required this.imagePlaceholder,
   });
+
+  factory Exercise.fromJson(Map<String, dynamic> json) {
+    return Exercise(
+      id: json['id'].toString(),
+      name: json['name'] as String,
+      muscleGroup: json['muscle_group'] as String,
+      difficulty: _difficultyFromJson(json['difficulty'] as String),
+      instructions: (json['instructions'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      equipment: json['equipment'] as String?,
+      defaultDurationSeconds: json['default_duration_seconds'] as int,
+      defaultSets: json['default_sets'] as int,
+      defaultReps: json['default_reps'] as int,
+      imagePlaceholder: (json['image_url'] as String?) ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'muscle_group': muscleGroup,
+        'difficulty': difficulty.name,
+        'instructions': instructions,
+        'equipment': equipment,
+        'default_duration_seconds': defaultDurationSeconds,
+        'default_sets': defaultSets,
+        'default_reps': defaultReps,
+        'image_url': imagePlaceholder,
+      };
+
+  static DifficultyLevel _difficultyFromJson(String value) {
+    switch (value) {
+      case 'beginner':
+        return DifficultyLevel.beginner;
+      case 'intermediate':
+        return DifficultyLevel.intermediate;
+      case 'advanced':
+        return DifficultyLevel.advanced;
+      default:
+        return DifficultyLevel.beginner;
+    }
+  }
 }

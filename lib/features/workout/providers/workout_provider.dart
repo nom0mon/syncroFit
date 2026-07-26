@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/mock/mock_workout_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../../data/remote/remote_workout_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
-/// Provides the [WorkoutRepository] implementation (currently mock).
+/// Provides the [WorkoutRepository] implementation.
+///
+/// Uses [RemoteWorkoutRepository] backed by the Laravel API. The provider
+/// can be overridden with a mock in tests via ProviderScope overrides.
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  return MockWorkoutRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return RemoteWorkoutRepository(apiClient);
 });
 
 /// State representing the current workout session in progress.

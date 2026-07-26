@@ -4,7 +4,11 @@ namespace Tests\Unit;
 
 use App\Models\Exercise;
 use App\Models\Profile;
+use App\Models\Recommendation;
+use App\Models\SessionExercise;
 use App\Models\User;
+use App\Models\Workout;
+use App\Models\WorkoutSession;
 use App\Services\RecommendationEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -375,6 +379,291 @@ class RecommendationEngineTest extends TestCase
 
         // Reload user with profile relation
         return $user->fresh(['profile']);
+    }
+
+    // ===== Adaptation Logic Tests =====
+
+    public function test_adaptation_returns_baseline_with_no_history(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        // No workout sessions created — user has no history
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        $this->assertEquals(1.0, $factor);
+    }
+
+    public function test_adaptation_returns_baseline_with_only_one_completed_session(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        // Create only 1 completed session (need ≥2 for adaptation)
+        $workout = $this->createWorkoutForUser($user);
+        $session = $this->createCompletedSession($user, $workout, now()->subDays(3));
+        $exercise = Exercise::first();
+        SessionExercise::create([
+            'workout_session_id' => $session->id,
+            'exercise_id' => $exercise->id,
+            'status' => 'completed',
+            'sets_completed' => 3,
+            'reps_completed' => 10,
+        ]);
+
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        $this->assertEquals(1.0, $factor);
+    }
+
+    public function test_adaptation_increases_volume_with_high_completion(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        $workout = $this->createWorkoutForUser($user);
+        $exercise = Exercise::first();
+
+        // Create 3 completed sessions where ≥80% of exercises are 'completed'
+        for ($i = 1; $i <= 3; $i++) {
+            $session = $this->createCompletedSession($user, $workout, now()->subDays($i * 2));
+
+            // 5 exercises: 4 completed (80%) + 1 pending
+            for ($j = 0; $j < 4; $j++) {
+                SessionExercise::create([
+                    'workout_session_id' => $session->id,
+                    'exercise_id' => $exercise->id,
+                    'status' => 'completed',
+                    'sets_completed' => 3,
+                    'reps_completed' => 10,
+                ]);
+            }
+            SessionExercise::create([
+                'workout_session_id' => $session->id,
+                'exercise_id' => $exercise->id,
+                'status' => 'pending',
+                'sets_completed' => 0,
+                'reps_completed' => 0,
+            ]);
+        }
+
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        $this->assertGreaterThanOrEqual(1.05, $factor);
+        $this->assertLessThanOrEqual(1.10, $factor);
+    }
+
+    public function test_adaptation_decreases_volume_with_high_skip_rate(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        $workout = $this->createWorkoutForUser($user);
+        $exercise = Exercise::first();
+
+        // Create 3 completed sessions where ≥50% of exercises are 'skipped'
+        for ($i = 1; $i <= 3; $i++) {
+            $session = $this->createCompletedSession($user, $workout, now()->subDays($i * 2));
+
+            // 4 exercises: 2 skipped (50%) + 2 completed (50%)
+            for ($j = 0; $j < 2; $j++) {
+                SessionExercise::create([
+                    'workout_session_id' => $session->id,
+                    'exercise_id' => $exercise->id,
+                    'status' => 'skipped',
+                    'sets_completed' => 0,
+                    'reps_completed' => 0,
+                ]);
+            }
+            for ($j = 0; $j < 2; $j++) {
+                SessionExercise::create([
+                    'workout_session_id' => $session->id,
+                    'exercise_id' => $exercise->id,
+                    'status' => 'completed',
+                    'sets_completed' => 3,
+                    'reps_completed' => 10,
+                ]);
+            }
+        }
+
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        $this->assertGreaterThanOrEqual(0.90, $factor);
+        $this->assertLessThanOrEqual(0.95, $factor);
+    }
+
+    public function test_adaptation_returns_baseline_when_neither_threshold_met(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        $workout = $this->createWorkoutForUser($user);
+        $exercise = Exercise::first();
+
+        // Create 3 completed sessions where completion < 80% AND skip < 50%
+        for ($i = 1; $i <= 3; $i++) {
+            $session = $this->createCompletedSession($user, $workout, now()->subDays($i * 2));
+
+            // 5 exercises: 3 completed (60%), 1 skipped (20%), 1 pending (20%)
+            for ($j = 0; $j < 3; $j++) {
+                SessionExercise::create([
+                    'workout_session_id' => $session->id,
+                    'exercise_id' => $exercise->id,
+                    'status' => 'completed',
+                    'sets_completed' => 3,
+                    'reps_completed' => 10,
+                ]);
+            }
+            SessionExercise::create([
+                'workout_session_id' => $session->id,
+                'exercise_id' => $exercise->id,
+                'status' => 'skipped',
+                'sets_completed' => 0,
+                'reps_completed' => 0,
+            ]);
+            SessionExercise::create([
+                'workout_session_id' => $session->id,
+                'exercise_id' => $exercise->id,
+                'status' => 'pending',
+                'sets_completed' => 0,
+                'reps_completed' => 0,
+            ]);
+        }
+
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        $this->assertEquals(1.0, $factor);
+    }
+
+    public function test_adaptation_completion_takes_priority_over_skip(): void
+    {
+        $user = $this->createUserWithProfile([
+            'goal' => 'build_muscle',
+            'fitness_level' => 'intermediate',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday', 'wednesday', 'friday'],
+        ]);
+
+        $workout = $this->createWorkoutForUser($user);
+        $exercise = Exercise::first();
+
+        // Create 3 sessions where completion ≥80% — the high completion rate
+        // means the skip condition is irrelevant (completion takes priority)
+        for ($i = 1; $i <= 3; $i++) {
+            $session = $this->createCompletedSession($user, $workout, now()->subDays($i * 2));
+
+            // 5 exercises: 5 completed (100% completion)
+            for ($j = 0; $j < 5; $j++) {
+                SessionExercise::create([
+                    'workout_session_id' => $session->id,
+                    'exercise_id' => $exercise->id,
+                    'status' => 'completed',
+                    'sets_completed' => 3,
+                    'reps_completed' => 10,
+                ]);
+            }
+        }
+
+        $factor = $this->engine->getAdaptationFactor($user);
+
+        // Factor should be > 1.0 (increase) because completion takes priority
+        $this->assertGreaterThan(1.0, $factor);
+        $this->assertGreaterThanOrEqual(1.05, $factor);
+        $this->assertLessThanOrEqual(1.10, $factor);
+    }
+
+    public function test_all_goal_level_combinations_generate_valid_plans(): void
+    {
+        $goals = ['lose_weight', 'build_muscle', 'stay_fit', 'increase_stamina'];
+        $levels = ['beginner', 'intermediate', 'advanced'];
+
+        foreach ($goals as $goal) {
+            foreach ($levels as $level) {
+                $user = $this->createUserWithProfile([
+                    'goal' => $goal,
+                    'fitness_level' => $level,
+                    'workout_preference' => 'gym',
+                    'availability_days' => ['monday', 'wednesday', 'friday'],
+                ]);
+
+                $result = $this->engine->generate($user);
+
+                $this->assertArrayHasKey('workouts', $result, "Missing 'workouts' key for goal=$goal, level=$level");
+                $this->assertCount(3, $result['workouts'], "Expected 3 workouts for goal=$goal, level=$level");
+
+                foreach ($result['workouts'] as $workout) {
+                    $exerciseCount = count($workout['exercises']);
+                    $this->assertGreaterThanOrEqual(4, $exerciseCount, "Too few exercises for goal=$goal, level=$level");
+                    $this->assertLessThanOrEqual(8, $exerciseCount, "Too many exercises for goal=$goal, level=$level");
+
+                    foreach ($workout['exercises'] as $exercise) {
+                        $this->assertGreaterThanOrEqual(2, $exercise['sets'], "Sets too low for goal=$goal, level=$level");
+                        $this->assertLessThanOrEqual(5, $exercise['sets'], "Sets too high for goal=$goal, level=$level");
+                        $this->assertGreaterThanOrEqual(5, $exercise['reps'], "Reps too low for goal=$goal, level=$level");
+                        $this->assertLessThanOrEqual(20, $exercise['reps'], "Reps too high for goal=$goal, level=$level");
+                        $this->assertGreaterThanOrEqual(30, $exercise['rest_seconds'], "Rest too low for goal=$goal, level=$level");
+                        $this->assertLessThanOrEqual(120, $exercise['rest_seconds'], "Rest too high for goal=$goal, level=$level");
+                    }
+                }
+            }
+        }
+    }
+
+    // ===== Helper Methods for Adaptation Tests =====
+
+    /**
+     * Create a Workout record linked to the user (via Recommendation).
+     */
+    private function createWorkoutForUser(User $user): Workout
+    {
+        $recommendation = Recommendation::create([
+            'user_id' => $user->id,
+            'week_start' => now()->startOfWeek()->toDateString(),
+            'plan_data' => [],
+        ]);
+
+        return Workout::create([
+            'recommendation_id' => $recommendation->id,
+            'name' => 'Test Workout',
+            'day_of_week' => 1,
+            'estimated_duration_minutes' => 45,
+        ]);
+    }
+
+    /**
+     * Create a completed WorkoutSession record within the past 14 days.
+     */
+    private function createCompletedSession(User $user, Workout $workout, $completedAt): WorkoutSession
+    {
+        return WorkoutSession::create([
+            'user_id' => $user->id,
+            'workout_id' => $workout->id,
+            'status' => 'completed',
+            'started_at' => $completedAt->copy()->subHour(),
+            'completed_at' => $completedAt,
+            'total_duration_seconds' => 3600,
+            'pause_log' => [],
+        ]);
     }
 
     /**

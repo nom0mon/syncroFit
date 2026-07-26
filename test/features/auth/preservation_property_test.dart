@@ -5,6 +5,7 @@ import 'package:glados/glados.dart'
     hide expect, group, setUpAll, setUp, tearDown, test;
 import 'package:synchrofit/core/theme/app_colors.dart';
 import 'package:synchrofit/core/theme/app_theme.dart';
+import 'package:synchrofit/data/mock/mock_auth_repository.dart';
 import 'package:synchrofit/features/auth/providers/auth_provider.dart';
 import 'package:synchrofit/features/auth/screens/login_screen.dart';
 import 'package:synchrofit/features/auth/screens/register_screen.dart';
@@ -28,6 +29,9 @@ void main() {
 
         await tester.pumpWidget(
           ProviderScope(
+            overrides: [
+              authRepositoryProvider.overrideWithValue(MockAuthRepository()),
+            ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
               home: Consumer(
@@ -75,6 +79,9 @@ void main() {
 
         await tester.pumpWidget(
           ProviderScope(
+            overrides: [
+              authRepositoryProvider.overrideWithValue(MockAuthRepository()),
+            ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
               home: Consumer(
@@ -117,8 +124,7 @@ void main() {
         expect(
           result,
           isNull,
-          reason:
-              'Password of length $length should pass '
+          reason: 'Password of length $length should pass '
               'validation since it is >= 8 chars',
         );
       },
@@ -134,7 +140,13 @@ void main() {
         // Test the auth provider directly to verify register flow works.
         // We test at the provider level to avoid the GoRouter dependency
         // that fires on auth state change (context.go to profile setup).
-        final container = ProviderContainer();
+        // We override authRepositoryProvider with a mock so the test
+        // doesn't depend on a running backend.
+        final container = ProviderContainer(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(MockAuthRepository()),
+          ],
+        );
         addTearDown(container.dispose);
 
         // Call register directly on the provider
@@ -168,6 +180,9 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           ProviderScope(
+            overrides: [
+              authRepositoryProvider.overrideWithValue(MockAuthRepository()),
+            ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
               home: const RegisterScreen(),
@@ -446,8 +461,7 @@ void main() {
         expect(
           tabIndex,
           lessThan(4),
-          reason:
-              'Tab indices 0-3 must remain valid navigation destinations',
+          reason: 'Tab indices 0-3 must remain valid navigation destinations',
         );
         // Verify the four preserved destinations have distinct icons
         // (Dashboard=grid_view, Exercises=fitness_center, Progress=calendar, Community=chat)
