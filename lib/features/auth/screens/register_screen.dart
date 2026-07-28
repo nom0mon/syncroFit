@@ -102,7 +102,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -113,10 +114,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         // Title
                         Text(
                           'Sign Up',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w800,
+                              ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -124,9 +128,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         // Subtitle
                         Text(
                           'This will serve as your sign in credentials',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.grey600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.grey600,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.xl),
@@ -135,7 +140,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         TextFormField(
                           controller: _nameController,
                           decoration: const InputDecoration(
-                            hintText: 'E-mail',
+                            hintText: 'Username',
                           ),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
@@ -221,8 +226,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Text(
                     'SyncroFit\nCopyright ©2026',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.grey500,
-                    ),
+                          color: AppColors.grey500,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                 ),

@@ -29,8 +29,13 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
 
   @override
   Future<UserProfile?> build() async {
-    // The backend uses the auth token to identify the user, so we pass
-    // an empty string; the server ignores it and uses the token instead.
+    // Check if we have a token before making the request.
+    // If not authenticated, return null silently — no need to hit the server.
+    final token = await ref.read(tokenStorageProvider).getToken();
+    if (token == null) {
+      return null;
+    }
+
     final result = await _repository.getProfile('');
 
     return switch (result) {
@@ -40,20 +45,29 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Handles errors during initial profile load.
-  /// Returns null for not-found (profile hasn't been created yet),
-  /// throws for other errors so AsyncValue captures them.
+  /// Returns null for expected cases (not found, not authenticated, network issues),
+  /// throws for unexpected errors so AsyncValue captures them.
   UserProfile? _handleLoadError(AppError error) {
     if (error is NotFoundError) {
-      // Profile doesn't exist yet — this is expected for new users.
+      // Profile doesn't exist yet — expected for new users.
+      return null;
+    }
+    if (error is AuthError) {
+      // User is not authenticated — expected on app startup before login.
+      return null;
+    }
+    if (error is NetworkError) {
+      // Backend unreachable — don't crash the app, just return null.
+      return null;
+    }
+    if (error is ServerError && error.statusCode == 404) {
+      // Profile not found via server error envelope.
       return null;
     }
     throw error;
   }
 
   /// Saves a new user profile (initial profile setup).
-  ///
-  /// Sets loading state, calls the repository, and updates the async value
-  /// with the saved profile or an error.
   Future<void> saveProfile(UserProfile profile) async {
     state = const AsyncValue.loading();
 
@@ -67,9 +81,6 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Updates an existing user profile.
-  ///
-  /// Preserves the previous data during loading via [AsyncValue.guard]-like
-  /// pattern so the UI can still show stale data while the update completes.
   Future<void> updateProfile(UserProfile profile) async {
     final previous = state.valueOrNull;
     state = const AsyncValue.loading();

@@ -117,27 +117,18 @@ class ApiClient {
   }
 
   /// Core request handler that wraps all HTTP calls with:
-  /// - Loading state management
   /// - Response envelope parsing
   /// - Error mapping
   Future<Result<T, AppError>> _request<T>(
     Future<Response> Function() request, {
     T Function(dynamic json)? fromJson,
   }) async {
-    _ref.read(isLoadingProvider.notifier).state = true;
-
     try {
       final response = await request();
-      _ref.read(isLoadingProvider.notifier).state = false;
-
       return _parseResponse(response, fromJson: fromJson);
     } on DioException catch (e) {
-      _ref.read(isLoadingProvider.notifier).state = false;
-
       return Failure(_mapDioError(e));
     } catch (e) {
-      _ref.read(isLoadingProvider.notifier).state = false;
-
       return Failure(
         ServerError(
             statusCode: 0, serverMessage: 'An unexpected error occurred'),
