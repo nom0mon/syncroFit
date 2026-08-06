@@ -1,17 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
-import '../../../data/remote/remote_profile_repository.dart';
+import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/profile_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [ProfileRepository] instance used throughout the app.
 ///
-/// Uses [RemoteProfileRepository] backed by the Laravel API. The provider
-/// can be overridden with a mock in tests via ProviderScope overrides.
+/// Uses [CachingProfileRepository] which wraps the remote repository with
+/// local SQLite caching, PATCH-semantics offline mutations, and sync-queue
+/// integration. The provider can be overridden with a mock in tests via
+/// ProviderScope overrides.
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return RemoteProfileRepository(apiClient);
+  return ref.watch(cachingProfileRepositoryProvider);
 });
 
 /// Provides the user's profile as an async value, managed by [ProfileNotifier].
@@ -45,26 +46,25 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Handles errors during initial profile load.
-  /// Returns null for expected cases (not found, not authenticated, network issues),
-  /// throws for unexpected errors so AsyncValue captures them.
+  /// Returns null for all error cases so the app gracefully shows "no profile"
+  /// rather than crashing. The edit screen will redirect to profile setup.
   UserProfile? _handleLoadError(AppError error) {
     if (error is NotFoundError) {
-      // Profile doesn't exist yet — expected for new users.
       return null;
     }
     if (error is AuthError) {
-      // User is not authenticated — expected on app startup before login.
       return null;
     }
     if (error is NetworkError) {
-      // Backend unreachable — don't crash the app, just return null.
       return null;
     }
-    if (error is ServerError && error.statusCode == 404) {
-      // Profile not found via server error envelope.
+    if (error is ServerError) {
+      // Any server error during profile load — treat as "no profile available"
+      // This handles 404, 500, CORS issues, etc.
       return null;
     }
-    throw error;
+    // For any other unrecognized error type, still return null rather than crashing
+    return null;
   }
 
   /// Saves a new user profile (initial profile setup).

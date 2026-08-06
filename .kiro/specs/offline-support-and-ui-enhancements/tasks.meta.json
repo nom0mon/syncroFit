@@ -1,0 +1,692 @@
+{
+  "pbtResults": {
+    "11.3 Write property test: Sync queue round-trip persistence": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008073523
+    },
+    "11.5 Write property test: Successful sync removes mutation from queue": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008080452
+    },
+    "11.8 Write property test: Cache freshness triggers refresh": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008087730
+    },
+    "11.10 Write property test: Workout scheduler maps recommendations to availability days": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008161494
+    },
+    "11.9 Write property test: Exercise filtering preserves existing behavior": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008400492
+    },
+    "11.6 Write property test: Profile validation rejects out-of-range values": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008508665
+    },
+    "11.7 Write property test: Profile PATCH sends only changed fields": {
+      "status": "passed",
+      "lastRunTimestamp": 1786008513920
+    }
+  },
+  "executionHistory": {
+    "1.1 Add dependencies and create data models": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816648693
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816664374
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816973465
+      }
+    ],
+    "1.2 Create SQLite database schema and initialization": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816651646
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816978898
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817288303
+      }
+    ],
+    "1.3 Create DAO classes for each entity type": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816651894
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817294089
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817498673
+      }
+    ],
+    "2.1 Implement ConnectivityMonitor": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652024
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816979719
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817287333
+      }
+    ],
+    "2.2 Create ConnectivityMonitor Riverpod provider and ConnectivityNotifier": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652101
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817294979
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817499968
+      }
+    ],
+    "3.1 Implement CachingExerciseRepository": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652205
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817507315
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817761880
+      }
+    ],
+    "3.2 Implement CachingWorkoutRepository": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652276
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817507939
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817763118
+      }
+    ],
+    "3.3 Implement CachingProfileRepository": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652355
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817508603
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817763535
+      }
+    ],
+    "3.4 Implement CachingProgressRepository": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652424
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817509643
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817764412
+      }
+    ],
+    "4. Checkpoint — Foundation and caching layers": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652635
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820060981
+      }
+    ],
+    "5.1 Implement SyncQueue service": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652695
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817510339
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817765401
+      }
+    ],
+    "5.2 Implement ConflictResolver": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652764
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817776677
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785818503897
+      }
+    ],
+    "5.3 Implement SyncEngine": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652853
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785818510330
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819264438
+      }
+    ],
+    "5.4 Create SyncEngine Riverpod providers": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652912
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819271745
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819496671
+      }
+    ],
+    "6.1 Create ProfileEditNotifier with client-side validation": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816652995
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785818511019
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819265097
+      }
+    ],
+    "6.2 Create Profile Edit Screen UI": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653071
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819272705
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819497954
+      }
+    ],
+    "6.3 Add route and navigation for profile edit screen": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653142
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819506229
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819867595
+      }
+    ],
+    "7.1 Create ExerciseAndRecommendationsScreen with TabBar": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653210
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819273685
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819498771
+      }
+    ],
+    "7.2 Refactor existing exercise list into ExerciseLibraryTab": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653277
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819507150
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819869074
+      }
+    ],
+    "7.3 Create RecommendationsTab with WorkoutScheduler": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653347
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819507675
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819869407
+      }
+    ],
+    "7.4 Update navigation to use tabbed screen": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653422
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819878104
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820052466
+      }
+    ],
+    "8.1 Create WorkoutScheduler provider and logic": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653477
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785818511461
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819265818
+      }
+    ],
+    "8.2 Create WorkoutSchedulerWidget UI": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653544
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819274414
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819499462
+      }
+    ],
+    "9.1 Create OfflineIndicator banner widget": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653621
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819508746
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819870016
+      }
+    ],
+    "9.2 Create SyncPendingBadge and sync status widgets": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653675
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819509492
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819871418
+      }
+    ],
+    "9.3 Integrate offline indicators into app shell": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653744
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819879140
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820053493
+      }
+    ],
+    "10. Checkpoint — All features implemented": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653809
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820061629
+      }
+    ],
+    "11.1 Write property test: Sync queue preserves chronological order": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653878
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820356176
+      }
+    ],
+    "11.2 Write property test: Offline mutations reflected in local cache": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816653967
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820356965
+      },
+      {
+        "executionId": "88e95929-f891-4e7e-95d3-840e1ff96ee7",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1786006842043
+      }
+    ],
+    "11.3 Write property test: Sync queue round-trip persistence": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654068
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820357599
+      }
+    ],
+    "11.4 Write property test: Conflict resolution deterministic last-write-wins": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654154
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820358499
+      },
+      {
+        "executionId": "88e95929-f891-4e7e-95d3-840e1ff96ee7",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1786006838201
+      }
+    ],
+    "11.5 Write property test: Successful sync removes mutation from queue": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654236
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820359277
+      }
+    ],
+    "11.6 Write property test: Profile validation rejects out-of-range values": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654305
+      },
+      {
+        "executionId": "88e95929-f891-4e7e-95d3-840e1ff96ee7",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1786006849238
+      }
+    ],
+    "11.7 Write property test: Profile PATCH sends only changed fields": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654375
+      },
+      {
+        "executionId": "88e95929-f891-4e7e-95d3-840e1ff96ee7",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1786006850062
+      }
+    ],
+    "11.8 Write property test: Cache freshness triggers refresh": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654453
+      }
+    ],
+    "11.9 Write property test: Exercise filtering preserves existing behavior": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654509
+      }
+    ],
+    "11.10 Write property test: Workout scheduler maps recommendations to availability days": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654589
+      }
+    ],
+    "12.1 Replace remote repository providers with caching providers": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654657
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820067449
+      },
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820349198
+      }
+    ],
+    "12.2 Add pull-to-refresh support": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654726
+      }
+    ],
+    "12.3 Write integration tests for offline→online sync cycle": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654793
+      }
+    ],
+    "13. Final Checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785816654855
+      }
+    ],
+    "1. Foundation — Dependencies, SQLite schema, DAOs, database initialization": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817499157
+      }
+    ],
+    "2. Connectivity — ConnectivityMonitor and Riverpod provider": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817500505
+      }
+    ],
+    "3. Local Caching — CachingRepository implementations": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785817764554
+      }
+    ],
+    "5. Sync Engine — SyncQueue, SyncEngine, ConflictResolver": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819497292
+      }
+    ],
+    "8. Workout Scheduler — Weekly schedule widget and visual states": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819499954
+      }
+    ],
+    "6. Profile Customization — Edit screen, PATCH support, offline-aware updates": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785819868465
+      }
+    ],
+    "7. Tabbed UI — Exercise library and recommendations tabs": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820053168
+      }
+    ],
+    "9. Offline UI Indicators — Banner, badge, toast, conflict notifications": [
+      {
+        "executionId": "236cc314-0839-404c-8f8a-62e2506a95d5",
+        "chatSessionId": "sess_e7e958a2-8a35-4b86-bfe0-a2a1f6636db1",
+        "timestamp": 1785820054050
+      }
+    ]
+  }
+}

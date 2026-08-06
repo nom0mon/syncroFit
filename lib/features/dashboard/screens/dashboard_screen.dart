@@ -28,12 +28,6 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'SyncroFit',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
         actions: [
           IconButton(
             onPressed: () => _openSettingsOverlay(context, ref),
@@ -173,7 +167,10 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
             // Header with title and close (hamburger) button
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.md, AppSpacing.sm, AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.sm,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -181,8 +178,8 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
                   Text(
                     'Settings',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),

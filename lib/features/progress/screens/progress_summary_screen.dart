@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../data/local/database_provider.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
@@ -17,6 +18,19 @@ import '../providers/progress_provider.dart';
 class ProgressSummaryScreen extends ConsumerWidget {
   const ProgressSummaryScreen({super.key});
 
+  Future<void> _onRefresh(WidgetRef ref) async {
+    try {
+      final db = ref.read(localDatabaseProvider);
+      await db.cacheMetadataDao.updateLastSynced(
+        'progress',
+        DateTime(2000, 1, 1),
+      );
+    } catch (_) {
+      // Database not available on this platform
+    }
+    ref.invalidate(progressProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(progressProvider);
@@ -25,11 +39,22 @@ class ProgressSummaryScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Progress')),
       body: progressAsync.when(
         loading: () => const LoadingIndicator(),
-        error: (error, _) => ErrorDisplay(
-          message: error.toString(),
-          onRetry: () => ref.invalidate(progressProvider),
+        error: (error, _) => RefreshIndicator(
+          onRefresh: () => _onRefresh(ref),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              ErrorDisplay(
+                message: error.toString(),
+                onRetry: () => ref.invalidate(progressProvider),
+              ),
+            ],
+          ),
         ),
-        data: (state) => _ProgressContent(state: state),
+        data: (state) => RefreshIndicator(
+          onRefresh: () => _onRefresh(ref),
+          child: _ProgressContent(state: state),
+        ),
       ),
     );
   }
@@ -46,7 +71,9 @@ class _ProgressContent extends StatelessWidget {
       children: [
         // Scrollable content
         SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 100),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.md, AppSpacing.md, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -191,8 +218,10 @@ class _WeightHistoryChart extends StatelessWidget {
       return FlSpot(entry.key.toDouble(), entry.value.weightKg);
     }).toList();
 
-    final minY = data.map((d) => d.weightKg).reduce((a, b) => a < b ? a : b) - 2;
-    final maxY = data.map((d) => d.weightKg).reduce((a, b) => a > b ? a : b) + 2;
+    final minY =
+        data.map((d) => d.weightKg).reduce((a, b) => a < b ? a : b) - 2;
+    final maxY =
+        data.map((d) => d.weightKg).reduce((a, b) => a > b ? a : b) + 2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,28 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_client.dart';
-import '../../../data/remote/remote_progress_repository.dart';
-import '../../../data/remote/remote_workout_repository.dart';
+import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [WorkoutRepository] instance used by the dashboard.
 ///
-/// Uses [RemoteWorkoutRepository] backed by the Laravel API. The provider
-/// can be overridden with a mock in tests via ProviderScope overrides.
+/// Uses [CachingWorkoutRepository] which wraps the remote repository with
+/// local SQLite caching and offline support. The provider can be overridden
+/// with a mock in tests via ProviderScope overrides.
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return RemoteWorkoutRepository(apiClient);
+  return ref.watch(cachingWorkoutRepositoryProvider);
 });
 
 /// Provides the [ProgressRepository] instance used by the dashboard.
 ///
-/// Uses [RemoteProgressRepository] backed by the Laravel API. The provider
-/// can be overridden with a mock in tests via ProviderScope overrides.
+/// Uses [CachingProgressRepository] which wraps the remote repository with
+/// local SQLite caching and offline support. The provider can be overridden
+/// with a mock in tests via ProviderScope overrides.
 final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return RemoteProgressRepository(apiClient);
+  return ref.watch(cachingProgressRepositoryProvider);
 });
 
 /// The state exposed by the dashboard provider, containing all data needed

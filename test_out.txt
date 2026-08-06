@@ -1,0 +1,13 @@
+00:00 +0: loading C:/system-projects/syncrofit/syncroFit/test/integration/offline_sync_integration_test.dart
+00:00 +0: Integration: Offline mutation → reconnection → sync → cache refresh saves profile while offline → mutation enqueued → reconnect → sync processes queue → mutation removed
+00:00 +1: Integration: Offline mutation → reconnection → sync → cache refresh multiple offline mutations are synced in chronological order
+00:00 +2: Integration: Offline mutation → reconnection → sync → cache refresh sync engine emits correct events during processing
+00:00 +3: Integration: Profile edit while offline → sync with conflict profile edited offline → reconnect → server returns 409 with newer timestamp → conflict resolved as server wins → mutation marked completed
+00:00 +4: Integration: Profile edit while offline → sync with conflict profile edited offline → reconnect → server returns 409 with older timestamp → conflict resolved as local wins → mutation marked completed
+00:00 +5: Integration: Profile edit while offline → sync with conflict sync engine emits conflictDetected event on 409 response
+00:00 +6: Integration: Tab navigation with cached data serves from cache when data is fresh (< 15 min old)
+00:00 +7: Integration: Tab navigation with cached data fetches from remote when cache is stale (> 15 min old)
+00:00 +8: Integration: Tab navigation with cached data serves from cache when offline regardless of freshness
+00:00 +9: Integration: Tab navigation with cached data filter state is independent of cache — filtering operates on cached data
+00:00 +10: All tests passed!
+Terminate batch job (Y/N)? Terminate batch job (Y/N)? 

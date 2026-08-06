@@ -44,8 +44,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final state = ref.read(profileProvider);
     if (state.hasError) {
       setState(() => _isSaving = false);
+      final errorMessage = state.error is AppError
+          ? (state.error as AppError).message
+          : state.error.toString();
+      debugPrint('Profile save error: ${state.error}');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save profile. Please try again.')),
+        SnackBar(
+          content: Text('Failed to save profile: $errorMessage'),
+          duration: const Duration(seconds: 5),
+        ),
       );
       return;
     }

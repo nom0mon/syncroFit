@@ -30,7 +30,7 @@ class RemoteProfileRepository implements ProfileRepository {
   Future<Result<UserProfile, AppError>> saveProfile(UserProfile profile) async {
     final result = await _apiClient.post<UserProfile>(
       '/api/profile',
-      body: profile.toJson(),
+      body: profile.toApiJson(),
       fromJson: (json) => UserProfile.fromJson(json as Map<String, dynamic>),
     );
     return result;
@@ -41,7 +41,7 @@ class RemoteProfileRepository implements ProfileRepository {
       UserProfile profile) async {
     final result = await _apiClient.put<UserProfile>(
       '/api/profile',
-      body: profile.toJson(),
+      body: profile.toApiJson(),
       fromJson: (json) => UserProfile.fromJson(json as Map<String, dynamic>),
     );
     return result;

@@ -23,7 +23,7 @@ import '../../features/settings/screens/settings_main_screen.dart';
 import '../../features/community/screens/post_detail_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
-import '../../features/exercise_library/screens/exercise_list_screen.dart';
+import '../../features/exercise_library/screens/exercise_and_recommendations_screen.dart';
 import '../../features/progress/screens/progress_summary_screen.dart';
 import '../../features/progress/screens/session_detail_screen.dart';
 import '../../features/workout/screens/rest_timer_screen.dart';
@@ -31,17 +31,21 @@ import '../../features/workout/screens/workout_active_screen.dart';
 import '../../features/workout/screens/workout_detail_screen.dart';
 import '../../features/workout/screens/workout_summary_screen.dart';
 import '../../shared/widgets/floating_pill_nav_bar.dart';
+import '../../shared/widgets/offline_indicator.dart';
 import '../../shared/widgets/page_not_found_screen.dart';
+import '../../shared/widgets/sync_pending_badge.dart';
 import 'guards.dart';
 import 'route_names.dart';
 
 /// Global navigator keys for the shell and each tab branch.
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _dashboardNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
-final _exercisesNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'exercises');
+final _dashboardNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'dashboard');
+final _exercisesNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'exercises');
 final _progressNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'progress');
-final _communityNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'community');
-
+final _communityNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'community');
 
 /// Provides the configured [GoRouter] instance.
 ///
@@ -190,7 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RouteNames.exercises,
                 builder: (context, state) =>
-                    const ExerciseListScreen(),
+                    const ExerciseAndRecommendationsScreen(),
                 routes: [
                   GoRoute(
                     path: ':id',
@@ -210,8 +214,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: RouteNames.progress,
-                builder: (context, state) =>
-                    const ProgressSummaryScreen(),
+                builder: (context, state) => const ProgressSummaryScreen(),
                 routes: [
                   GoRoute(
                     path: 'session/:id',
@@ -244,8 +247,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-
-
         ],
       ),
     ],
@@ -258,27 +259,50 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 // ─── Shell scaffold with bottom navigation ─────────────────────────────────
 
 /// The main shell screen that wraps tabbed content with a [FloatingPillNavBar].
-class _MainShellScreen extends StatelessWidget {
+///
+/// Integrates offline-aware UI indicators:
+/// - [OfflineIndicator] banner at the top when the device is offline.
+/// - [SyncPendingBadge] in the app bar showing pending sync count.
+/// - [SyncStatusListener] for toast/snackbar notifications on sync events.
+class _MainShellScreen extends ConsumerWidget {
   const _MainShellScreen({required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 72),
-        child: navigationShell,
-      ),
-      bottomNavigationBar: FloatingPillNavBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SyncStatusListener(
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(
+          title: const Text('SyncroFit'),
+          actions: const [
+            Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: SyncPendingBadge(),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            const OfflineIndicator(),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 72),
+                child: navigationShell,
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: FloatingPillNavBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: (index) {
+            navigationShell.goBranch(
+              index,
+              initialLocation: index == navigationShell.currentIndex,
+            );
+          },
+        ),
       ),
     );
   }

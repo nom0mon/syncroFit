@@ -11,6 +11,7 @@ class UserProfile {
   final FitnessLevel fitnessLevel;
   final WorkoutPreference workoutPreference;
   final List<DayOfWeek> workoutAvailability;
+  final DateTime? updatedAt;
 
   const UserProfile({
     required this.userId,
@@ -23,26 +24,32 @@ class UserProfile {
     required this.fitnessLevel,
     required this.workoutPreference,
     required this.workoutAvailability,
+    this.updatedAt,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       userId: json['user_id'].toString(),
-      name: json['name'] as String,
+      name: (json['name'] as String?) ?? '',
       age: json['age'] as int,
       heightCm: (json['height_cm'] as num).toDouble(),
       weightKg: (json['weight_kg'] as num).toDouble(),
       gender: _genderFromJson(json['gender'] as String),
-      fitnessGoal: _fitnessGoalFromJson(json['fitness_goal'] as String),
+      fitnessGoal: _fitnessGoalFromJson(
+          (json['goal'] ?? json['fitness_goal']) as String),
       fitnessLevel: _fitnessLevelFromJson(json['fitness_level'] as String),
       workoutPreference:
           _workoutPreferenceFromJson(json['workout_preference'] as String),
       workoutAvailability: (json['availability_days'] as List<dynamic>)
           .map((e) => _dayOfWeekFromJson(e as String))
           .toList(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
     );
   }
 
+  /// Serializes for local SQLite caching (includes all fields).
   Map<String, dynamic> toJson() => {
         'user_id': userId,
         'name': name,
@@ -50,7 +57,22 @@ class UserProfile {
         'height_cm': heightCm,
         'weight_kg': weightKg,
         'gender': gender.name,
-        'fitness_goal': _fitnessGoalToJson(fitnessGoal),
+        'goal': _fitnessGoalToJson(fitnessGoal),
+        'fitness_level': fitnessLevel.name,
+        'workout_preference': workoutPreference.name,
+        'availability_days': workoutAvailability.map((d) => d.name).toList(),
+        'updated_at': updatedAt?.toIso8601String(),
+      };
+
+  /// Serializes only the fields the backend API expects.
+  /// Excludes user_id (set from auth token), name (on user model),
+  /// and updated_at (managed by Laravel timestamps).
+  Map<String, dynamic> toApiJson() => {
+        'age': age,
+        'height_cm': heightCm,
+        'weight_kg': weightKg,
+        'gender': gender.name,
+        'goal': _fitnessGoalToJson(fitnessGoal),
         'fitness_level': fitnessLevel.name,
         'workout_preference': workoutPreference.name,
         'availability_days': workoutAvailability.map((d) => d.name).toList(),

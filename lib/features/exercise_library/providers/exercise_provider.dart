@@ -1,17 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_client.dart';
-import '../../../data/remote/remote_exercise_repository.dart';
+import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/exercise_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [ExerciseRepository] implementation.
 ///
-/// Uses [RemoteExerciseRepository] backed by the Laravel API. The provider
-/// can be overridden with a mock in tests via ProviderScope overrides.
+/// Uses [CachingExerciseRepository] which wraps the remote repository with
+/// local SQLite caching and offline support. The provider can be overridden
+/// with a mock in tests via ProviderScope overrides.
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return RemoteExerciseRepository(apiClient);
+  return ref.watch(cachingExerciseRepositoryProvider);
 });
 
 /// Provides the current exercise library state managed by [ExerciseNotifier].

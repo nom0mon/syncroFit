@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Health check endpoint for connectivity monitoring
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 // Public routes (no authentication required)
 Route::post('/register', [\App\Http\Controllers\Auth\RegisterController::class, 'register']);
 Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);

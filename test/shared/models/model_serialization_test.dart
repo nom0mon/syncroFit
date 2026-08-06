@@ -96,7 +96,7 @@ void main() {
 
       expect(json['user_id'], '1');
       expect(json['gender'], 'female');
-      expect(json['fitness_goal'], 'build_muscle');
+      expect(json['goal'], 'build_muscle');
       expect(json['fitness_level'], 'advanced');
       expect(json['workout_preference'], 'outdoor');
       expect(json['availability_days'], ['tuesday', 'saturday']);
@@ -115,15 +115,66 @@ void main() {
         'availability_days': ['monday'],
       };
 
+      // Uses 'goal' key (backend format)
       expect(
-        UserProfile.fromJson({...base, 'fitness_goal': 'stay_fit'}).fitnessGoal,
+        UserProfile.fromJson({...base, 'goal': 'stay_fit'}).fitnessGoal,
         FitnessGoal.maintainFitness,
       );
       expect(
-        UserProfile.fromJson({...base, 'fitness_goal': 'increase_stamina'})
-            .fitnessGoal,
+        UserProfile.fromJson({...base, 'goal': 'increase_stamina'}).fitnessGoal,
         FitnessGoal.improveEndurance,
       );
+      // Falls back to 'fitness_goal' key (legacy/local cache format)
+      expect(
+        UserProfile.fromJson({...base, 'fitness_goal': 'lose_weight'})
+            .fitnessGoal,
+        FitnessGoal.loseWeight,
+      );
+    });
+
+    test('fromJson handles missing name gracefully', () {
+      final json = {
+        'user_id': 1,
+        'age': 25,
+        'height_cm': 170,
+        'weight_kg': 70,
+        'gender': 'male',
+        'goal': 'stay_fit',
+        'fitness_level': 'beginner',
+        'workout_preference': 'home',
+        'availability_days': ['monday'],
+      };
+
+      final profile = UserProfile.fromJson(json);
+      expect(profile.name, '');
+    });
+
+    test('toApiJson excludes user_id, name, and updated_at', () {
+      final profile = UserProfile(
+        userId: '1',
+        name: 'Jane',
+        age: 28,
+        heightCm: 165.5,
+        weightKg: 60.0,
+        gender: Gender.female,
+        fitnessGoal: FitnessGoal.buildMuscle,
+        fitnessLevel: FitnessLevel.advanced,
+        workoutPreference: WorkoutPreference.outdoor,
+        workoutAvailability: [DayOfWeek.tuesday, DayOfWeek.saturday],
+        updatedAt: DateTime.parse('2024-01-15T10:30:00.000Z'),
+      );
+
+      final json = profile.toApiJson();
+
+      expect(json.containsKey('user_id'), false);
+      expect(json.containsKey('name'), false);
+      expect(json.containsKey('updated_at'), false);
+      expect(json['age'], 28);
+      expect(json['goal'], 'build_muscle');
+      expect(json['gender'], 'female');
+      expect(json['fitness_level'], 'advanced');
+      expect(json['workout_preference'], 'outdoor');
+      expect(json['availability_days'], ['tuesday', 'saturday']);
     });
   });
 
