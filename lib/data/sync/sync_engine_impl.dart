@@ -21,7 +21,10 @@ class SyncEngineImpl implements SyncEngine {
   /// Callback invoked after the queue is fully processed to refresh local
   /// caches from the backend. Injected by the caller so the engine does not
   /// depend directly on caching repositories.
-  final Future<void> Function()? onRefreshCaches;
+  ///
+  /// The callback receives a [forceRefresh] parameter; when `true` the caller
+  /// should invalidate cache metadata before fetching fresh data.
+  final Future<void> Function({bool forceRefresh})? onRefreshCaches;
 
   final StreamController<SyncEvent> _syncEventController =
       StreamController<SyncEvent>.broadcast();
@@ -128,9 +131,9 @@ class SyncEngineImpl implements SyncEngine {
   }
 
   @override
-  Future<void> refreshCaches() async {
+  Future<void> refreshCaches({bool forceRefresh = false}) async {
     if (onRefreshCaches != null) {
-      await onRefreshCaches!();
+      await onRefreshCaches!(forceRefresh: forceRefresh);
     }
   }
 

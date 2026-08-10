@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
-import '../../../data/local/database_provider.dart';
+import '../../../data/sync/sync_providers.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/exercise.dart';
 import '../../../shared/widgets/edge_fade_gradient.dart';
@@ -31,17 +31,14 @@ class _ExerciseLibraryTabState extends ConsumerState<ExerciseLibraryTab>
   @override
   bool get wantKeepAlive => true;
 
-  /// Forces a refresh by invalidating cache metadata and reloading exercises.
+  /// Forces a refresh by calling refreshCaches with forceRefresh: true,
+  /// which invalidates cache metadata and forces a backend fetch regardless
+  /// of cache age, then reloads the exercise list.
+  ///
+  /// Validates: Requirements 11.3, 11.4
   Future<void> _onRefresh() async {
-    try {
-      final db = ref.read(localDatabaseProvider);
-      await db.cacheMetadataDao.updateLastSynced(
-        'exercises',
-        DateTime(2000, 1, 1),
-      );
-    } catch (_) {
-      // Database not available on this platform
-    }
+    final syncEngine = ref.read(syncEngineProvider);
+    await syncEngine.refreshCaches(forceRefresh: true);
     await ref.read(exerciseProvider.notifier).loadExercises();
   }
 

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
-import '../../../data/local/database_provider.dart';
 import '../../../data/remote/providers.dart';
+import '../../../data/sync/sync_providers.dart';
 import '../../../shared/models/models.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../workout/providers/workout_scheduler_provider.dart';
@@ -35,17 +35,14 @@ class _RecommendationsTabState extends ConsumerState<RecommendationsTab>
   @override
   bool get wantKeepAlive => true;
 
-  /// Forces a refresh by invalidating cache metadata and reloading the schedule.
+  /// Forces a refresh by calling refreshCaches with forceRefresh: true,
+  /// which invalidates cache metadata and forces a backend fetch regardless
+  /// of cache age, then reloads the workout schedule.
+  ///
+  /// Validates: Requirements 11.3, 11.4
   Future<void> _onRefresh() async {
-    try {
-      final db = ref.read(localDatabaseProvider);
-      await db.cacheMetadataDao.updateLastSynced(
-        'workouts',
-        DateTime(2000, 1, 1),
-      );
-    } catch (_) {
-      // Database not available on this platform
-    }
+    final syncEngine = ref.read(syncEngineProvider);
+    await syncEngine.refreshCaches(forceRefresh: true);
     await ref.read(workoutSchedulerProvider.notifier).refresh();
   }
 

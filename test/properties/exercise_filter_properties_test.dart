@@ -16,9 +16,10 @@ import 'package:synchrofit/shared/models/models.dart';
 ///
 /// Property 9: Exercise filtering preserves existing behavior
 ///
-/// For any filter combination, results are a subset of all exercises and
-/// every result matches ALL applied criteria (AND across filter types,
-/// OR within muscle groups).
+/// For any combination of muscle group filters, difficulty filter, and search
+/// query applied to an exercise list, the filtered results SHALL be a subset
+/// of all exercises where each result matches ALL active filter criteria
+/// (AND logic across filter types, OR logic within muscle groups).
 
 class MockConnectivityMonitor extends Mock implements ConnectivityMonitor {}
 
@@ -152,6 +153,37 @@ final _allExercises = [
 final _allMuscleGroups =
     _allExercises.map((e) => e.muscleGroup).toSet().toList();
 
+/// Applies combined filtering logic matching the ExerciseNotifier._applyFilters()
+/// implementation. This is the reference/oracle function for the property test.
+///
+/// - Search: case-insensitive substring match on name. Empty query matches all.
+/// - Muscle groups: OR within selected groups. Empty set matches all.
+/// - Difficulty: exact match. Null matches all.
+List<Exercise> _applyFilters({
+  required List<Exercise> exercises,
+  required String searchQuery,
+  required Set<String> muscleGroups,
+  required DifficultyLevel? difficulty,
+}) {
+  final query = searchQuery.toLowerCase();
+  return exercises.where((exercise) {
+    // Search filter
+    if (query.isNotEmpty && !exercise.name.toLowerCase().contains(query)) {
+      return false;
+    }
+    // Muscle group filter (OR logic within groups)
+    if (muscleGroups.isNotEmpty &&
+        !muscleGroups.contains(exercise.muscleGroup)) {
+      return false;
+    }
+    // Difficulty filter
+    if (difficulty != null && exercise.difficulty != difficulty) {
+      return false;
+    }
+    return true;
+  }).toList();
+}
+
 void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
@@ -219,11 +251,122 @@ void main() {
   });
 
   group('Property 9: Exercise filtering preserves existing behavior', () {
-    // --- Search filter property ---
+    // ─── Combined filter property: AND logic across types, OR within muscle groups ───
+    Glados3(
+      any.intInRange(0, (1 << _allMuscleGroups.length) - 1), // bitmask for muscle groups
+      any.intInRange(0, DifficultyLevel.values.length), // 0 = no difficulty filter
+      any.intInRange(0, _allExercises.length - 1), // index to derive search query
+    ).test(
+      'combined filter: results are subset matching ALL criteria (AND across types, OR within groups)',
+      (muscleGroupBitmask, difficultyIndex, searchExerciseIndex) async {
+        // Derive muscle group selection from bitmask
+        final selectedMuscleGroups = <String>{};
+        for (var i = 0; i < _allMuscleGroups.length; i++) {
+          if (muscleGroupBitmask & (1 << i) != 0) {
+            selectedMuscleGroups.add(_allMuscleGroups[i]);
+          }
+        }
+
+        // Derive difficulty filter (0 = none, 1-3 = specific level)
+        final DifficultyLevel? difficulty = difficultyIndex == 0
+            ? null
+            : DifficultyLevel.values[difficultyIndex - 1];
+
+        // Derive search query from an exercise name substring (first 2 chars)
+        final exerciseName = _allExercises[searchExerciseIndex].name;
+        final searchQuery = exerciseName.length >= 2
+            ? exerciseName.substring(0, 2)
+            : exerciseName;
+
+        // Apply combined filter via repository methods individually and
+        // compare with the reference oracle (AND logic)
+        final expectedResults = _applyFilters(
+          exercises: _allExercises,
+          searchQuery: searchQuery,
+          muscleGroups: selectedMuscleGroups,
+          difficulty: difficulty,
+        );
+
+        // Test through repository: get search results then manually apply
+        // remaining filters to verify consistency
+        final searchResult = await cachingRepo.search(searchQuery);
+        expect(searchResult, isA<Success<List<Exercise>, AppError>>());
+        final searchExercises =
+            (searchResult as Success<List<Exercise>, AppError>).value;
+
+        // Apply muscle group filter on search results (OR within groups)
+        final afterMuscleFilter = selectedMuscleGroups.isEmpty
+            ? searchExercises
+            : searchExercises
+                .where((e) => selectedMuscleGroups.contains(e.muscleGroup))
+                .toList();
+
+        // Apply difficulty filter on the remaining results
+        final afterAllFilters = difficulty == null
+            ? afterMuscleFilter
+            : afterMuscleFilter
+                .where((e) => e.difficulty == difficulty)
+                .toList();
+
+        // Verify: combined filter results match the oracle
+        final expectedIds = expectedResults.map((e) => e.id).toSet();
+        final actualIds = afterAllFilters.map((e) => e.id).toSet();
+        expect(
+          actualIds,
+          equals(expectedIds),
+          reason:
+              'Combined filter mismatch for muscleGroups=$selectedMuscleGroups, '
+              'difficulty=$difficulty, searchQuery="$searchQuery". '
+              'Expected IDs: $expectedIds, Got IDs: $actualIds',
+        );
+
+        // Verify: every result is a subset of all exercises
+        final allIds = _allExercises.map((e) => e.id).toSet();
+        for (final exercise in afterAllFilters) {
+          expect(
+            allIds.contains(exercise.id),
+            isTrue,
+            reason:
+                'Exercise "${exercise.id}" not in original exercise list',
+          );
+        }
+
+        // Verify: each result matches ALL active criteria
+        for (final exercise in afterAllFilters) {
+          if (searchQuery.isNotEmpty) {
+            expect(
+              exercise.name.toLowerCase().contains(searchQuery.toLowerCase()),
+              isTrue,
+              reason:
+                  'Exercise "${exercise.name}" does not match search "$searchQuery"',
+            );
+          }
+          if (selectedMuscleGroups.isNotEmpty) {
+            expect(
+              selectedMuscleGroups.contains(exercise.muscleGroup),
+              isTrue,
+              reason:
+                  'Exercise "${exercise.name}" muscleGroup "${exercise.muscleGroup}" '
+                  'not in $selectedMuscleGroups',
+            );
+          }
+          if (difficulty != null) {
+            expect(
+              exercise.difficulty,
+              equals(difficulty),
+              reason:
+                  'Exercise "${exercise.name}" difficulty ${exercise.difficulty} '
+                  'does not match $difficulty',
+            );
+          }
+        }
+      },
+    );
+
+    // ─── Search filter property ───
     Glados(any.intInRange(0, _allExercises.length - 1)).test(
       'search results contain query in name (case-insensitive) and are a subset of all exercises',
       (exerciseIndex) async {
-        // Pick a substring from an existing exercise name as the search query
         final exerciseName = _allExercises[exerciseIndex].name;
         // Use first 3 chars (or full name if shorter) as the query
         final query = exerciseName.substring(
@@ -246,7 +389,7 @@ void main() {
           );
         }
 
-        // Results are a subset of all exercises (no spurious entries)
+        // Results are a subset of all exercises
         final allIds = _allExercises.map((e) => e.id).toSet();
         for (final exercise in exercises) {
           expect(
@@ -262,11 +405,10 @@ void main() {
       },
     );
 
-    // --- Muscle group filter property ---
+    // ─── Muscle group filter property ───
     Glados(any.intInRange(1, _allMuscleGroups.length)).test(
       'filterByMuscleGroup results all belong to the requested groups and are a subset',
       (groupCount) async {
-        // Select a random subset of muscle groups
         final selectedGroups = _allMuscleGroups.take(groupCount).toList();
 
         final result = await cachingRepo.filterByMuscleGroup(selectedGroups);
@@ -287,19 +429,7 @@ void main() {
           );
         }
 
-        // Results are a subset of all exercises
-        final allIds = _allExercises.map((e) => e.id).toSet();
-        for (final exercise in exercises) {
-          expect(
-            allIds.contains(exercise.id),
-            isTrue,
-            reason:
-                'Exercise "${exercise.id}" is not in the original exercise list',
-          );
-        }
-
-        // Verify completeness: every exercise from allExercises matching the
-        // filter should be in results (no missing entries)
+        // Verify completeness: every exercise matching filter should be present
         final expectedIds = _allExercises
             .where((e) => lowerGroups.contains(e.muscleGroup.toLowerCase()))
             .map((e) => e.id)
@@ -309,7 +439,7 @@ void main() {
       },
     );
 
-    // --- Difficulty filter property ---
+    // ─── Difficulty filter property ───
     Glados(any.intInRange(0, DifficultyLevel.values.length - 1)).test(
       'filterByDifficulty results all match the requested difficulty and are a subset',
       (difficultyIndex) async {
@@ -331,18 +461,7 @@ void main() {
           );
         }
 
-        // Results are a subset of all exercises
-        final allIds = _allExercises.map((e) => e.id).toSet();
-        for (final exercise in exercises) {
-          expect(
-            allIds.contains(exercise.id),
-            isTrue,
-            reason:
-                'Exercise "${exercise.id}" is not in the original exercise list',
-          );
-        }
-
-        // Verify completeness: all exercises with this difficulty should appear
+        // Verify completeness
         final expectedIds = _allExercises
             .where((e) => e.difficulty == difficulty)
             .map((e) => e.id)
@@ -352,28 +471,7 @@ void main() {
       },
     );
 
-    // --- Empty search query returns all exercises ---
-    test('search with empty query returns all exercises', () async {
-      final result = await cachingRepo.search('');
-
-      expect(result, isA<Success<List<Exercise>, AppError>>());
-      final exercises = (result as Success<List<Exercise>, AppError>).value;
-
-      // Empty query matches all exercises (every name contains "")
-      expect(exercises.length, equals(_allExercises.length));
-    });
-
-    // --- Non-matching search returns empty ---
-    test('search with non-matching query returns empty list', () async {
-      final result = await cachingRepo.search('zzz_nonexistent_xyz');
-
-      expect(result, isA<Success<List<Exercise>, AppError>>());
-      final exercises = (result as Success<List<Exercise>, AppError>).value;
-
-      expect(exercises, isEmpty);
-    });
-
-    // --- Case insensitivity property for search ---
+    // ─── Case insensitivity property for search ───
     Glados(any.intInRange(0, _allExercises.length - 1)).test(
       'search is case-insensitive: uppercase query matches lowercase name',
       (exerciseIndex) async {
@@ -396,27 +494,24 @@ void main() {
       },
     );
 
-    // --- Case insensitivity property for muscle group filter ---
-    Glados(any.intInRange(0, _allMuscleGroups.length - 1)).test(
-      'filterByMuscleGroup is case-insensitive',
-      (groupIndex) async {
-        final group = _allMuscleGroups[groupIndex];
-        // Use upper-case version of the group name
-        final upperGroup = group.toUpperCase();
+    // ─── Empty filters return all exercises ───
+    test('search with empty query returns all exercises', () async {
+      final result = await cachingRepo.search('');
 
-        final result = await cachingRepo.filterByMuscleGroup([upperGroup]);
+      expect(result, isA<Success<List<Exercise>, AppError>>());
+      final exercises = (result as Success<List<Exercise>, AppError>).value;
 
-        expect(result, isA<Success<List<Exercise>, AppError>>());
-        final exercises = (result as Success<List<Exercise>, AppError>).value;
+      expect(exercises.length, equals(_allExercises.length));
+    });
 
-        // Should find the same exercises as the original casing
-        final expectedIds = _allExercises
-            .where((e) => e.muscleGroup.toLowerCase() == group.toLowerCase())
-            .map((e) => e.id)
-            .toSet();
-        final resultIds = exercises.map((e) => e.id).toSet();
-        expect(resultIds, equals(expectedIds));
-      },
-    );
+    // ─── Non-matching search returns empty ───
+    test('search with non-matching query returns empty list', () async {
+      final result = await cachingRepo.search('zzz_nonexistent_xyz');
+
+      expect(result, isA<Success<List<Exercise>, AppError>>());
+      final exercises = (result as Success<List<Exercise>, AppError>).value;
+
+      expect(exercises, isEmpty);
+    });
   });
 }

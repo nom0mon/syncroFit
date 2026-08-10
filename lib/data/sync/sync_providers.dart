@@ -39,7 +39,7 @@ class _NoOpSyncEngine implements SyncEngine {
   Future<SyncResult> processQueue() async => const SyncResult(
       successful: 0, failed: 0, conflicts: 0, failedMutationIds: []);
   @override
-  Future<void> refreshCaches() async {}
+  Future<void> refreshCaches({bool forceRefresh = false}) async {}
   @override
   Stream<SyncEvent> get syncEvents => const Stream.empty();
   @override
@@ -89,6 +89,24 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
       conflictResolver: conflictResolver,
       connectivityMonitor: connectivityMonitor,
       dio: dio,
+      onRefreshCaches: ({bool forceRefresh = false}) async {
+        try {
+          final db = ref.read(localDatabaseProvider);
+          if (forceRefresh) {
+            // Invalidate all cache metadata so subsequent fetches
+            // always hit the backend regardless of cache age.
+            final cacheKeys = ['exercises', 'workouts', 'profile', 'progress'];
+            for (final key in cacheKeys) {
+              await db.cacheMetadataDao.updateLastSynced(
+                key,
+                DateTime(2000, 1, 1),
+              );
+            }
+          }
+        } catch (_) {
+          // Database not available on this platform
+        }
+      },
     );
 
     engine.initialize();

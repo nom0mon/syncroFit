@@ -229,25 +229,25 @@ This plan implements offline support (SQLite caching, connectivity monitoring, s
     - File: `test/properties/profile_validation_properties_test.dart`
     - For any subset of modified fields, PATCH payload contains exactly those fields
 
-  - [~] 11.8 Write property test: Cache freshness triggers refresh
+  - [x] 11.8 Write property test: Cache freshness triggers refresh
     - **Property 8: Cache freshness — stale data triggers refresh**
     - **Validates: Requirements 11.1, 11.2**
     - File: `test/properties/cache_freshness_properties_test.dart`
     - If `lastSyncedAt` > 15 min ago and online → remote is called; if < 15 min → cache served
 
-  - [~] 11.9 Write property test: Exercise filtering preserves existing behavior
+  - [x] 11.9 Write property test: Exercise filtering preserves existing behavior
     - **Property 9: Exercise filtering preserves existing behavior**
     - **Validates: Requirements 8.5**
     - File: `test/properties/exercise_filter_properties_test.dart`
     - For any filter combo, results are subset matching ALL criteria (AND across types, OR within muscle groups)
 
-  - [~] 11.10 Write property test: Workout scheduler maps recommendations to availability days
+  - [x] 11.10 Write property test: Workout scheduler maps recommendations to availability days
     - **Property 10: Workout scheduler maps recommendations to availability days**
     - **Validates: Requirements 9.1, 9.2**
     - File: `test/properties/workout_scheduler_properties_test.dart`
     - For any availability_days + recommendation, produces exactly one `ScheduledWorkout` per day
 
-- [ ] 12. Integration — Wire caching repositories into providers, pull-to-refresh, end-to-end
+- [x] 12. Integration — Wire caching repositories into providers, pull-to-refresh, end-to-end
   - [x] 12.1 Replace remote repository providers with caching providers
     - Update `lib/data/remote/providers.dart` to expose caching repositories instead of remote-only ones
     - Create `lib/data/caching/caching_providers.dart` binding `CachingExerciseRepository`, `CachingWorkoutRepository`, `CachingProfileRepository`, `CachingProgressRepository`
@@ -255,18 +255,18 @@ This plan implements offline support (SQLite caching, connectivity monitoring, s
     - Initialize `LocalDatabase` and `SyncEngine` in app startup (`main.dart`)
     - _Requirements: 2.5, 11.1, 11.2_
 
-  - [~] 12.2 Add pull-to-refresh support
+  - [x] 12.2 Add pull-to-refresh support
     - Add `RefreshIndicator` to exercise library tab, recommendations tab, and progress screens
     - On refresh: force backend fetch regardless of cache age via `refreshCaches()` with `forceRefresh: true`
     - _Requirements: 11.3, 11.4_
 
-  - [~] 12.3 Write integration tests for offline→online sync cycle
+  - [x] 12.3 Write integration tests for offline→online sync cycle
     - Test full offline mutation → reconnection → sync → cache refresh flow
     - Test profile edit while offline then sync with conflict
     - Test tab navigation with cached data, scroll/filter preservation
     - _Requirements: 4.1, 4.2, 4.5, 5.2, 5.3, 8.4_
 
-- [~] 13. Final Checkpoint — Ensure all tests pass
+- [x] 13. Final Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

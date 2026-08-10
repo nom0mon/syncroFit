@@ -34,7 +34,10 @@ abstract class SyncEngine {
   Future<SyncResult> processQueue();
 
   /// Refresh all local caches from the backend after sync completes.
-  Future<void> refreshCaches();
+  ///
+  /// If [forceRefresh] is `true`, caches are invalidated first so that the
+  /// backend is always queried regardless of cache age.
+  Future<void> refreshCaches({bool forceRefresh = false});
 
   /// Stream of sync events for UI indicators.
   Stream<SyncEvent> get syncEvents;

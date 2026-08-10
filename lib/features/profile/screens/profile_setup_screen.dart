@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../features/auth/providers/auth_provider.dart';
 import '../../../shared/models/models.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_form.dart';
@@ -24,8 +25,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _handleSubmit(ProfileFormData data) async {
     setState(() => _isSaving = true);
 
+    // Use the authenticated user's ID from the auth state
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id ?? '';
+
     final profile = UserProfile(
-      userId: 'user-001',
+      userId: userId,
       name: data.name,
       age: data.age,
       heightCm: data.heightCm,

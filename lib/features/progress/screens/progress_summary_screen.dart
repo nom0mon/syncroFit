@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../data/local/database_provider.dart';
+import '../../../data/sync/sync_providers.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
@@ -18,16 +18,14 @@ import '../providers/progress_provider.dart';
 class ProgressSummaryScreen extends ConsumerWidget {
   const ProgressSummaryScreen({super.key});
 
+  /// Forces a refresh by calling refreshCaches with forceRefresh: true,
+  /// which invalidates cache metadata and forces a backend fetch regardless
+  /// of cache age, then reloads the progress data.
+  ///
+  /// Validates: Requirements 11.3, 11.4
   Future<void> _onRefresh(WidgetRef ref) async {
-    try {
-      final db = ref.read(localDatabaseProvider);
-      await db.cacheMetadataDao.updateLastSynced(
-        'progress',
-        DateTime(2000, 1, 1),
-      );
-    } catch (_) {
-      // Database not available on this platform
-    }
+    final syncEngine = ref.read(syncEngineProvider);
+    await syncEngine.refreshCaches(forceRefresh: true);
     ref.invalidate(progressProvider);
   }
 

@@ -44,8 +44,8 @@ List<Workout> _generateWorkouts(int count) {
       id: 'workout-$i',
       name: 'Workout $i',
       estimatedDurationMinutes: 15 + (i * 5),
-      exercises: const [
-        WorkoutExercise(
+      exercises: [
+        const WorkoutExercise(
           exerciseId: 'ex-1',
           exerciseName: 'Push-ups',
           sets: 3,

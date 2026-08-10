@@ -210,7 +210,7 @@ void main() {
         conflictResolver: conflictResolver,
         connectivityMonitor: connectivity,
         dio: mockDio,
-        onRefreshCaches: () async {
+        onRefreshCaches: ({bool forceRefresh = false}) async {
           refreshCachesCalled = true;
         },
       );
@@ -399,7 +399,7 @@ void main() {
         conflictResolver: conflictResolver,
         connectivityMonitor: connectivity,
         dio: mockDio,
-        onRefreshCaches: () async {},
+        onRefreshCaches: ({bool forceRefresh = false}) async {},
       );
 
       registerFallbackValue(Uri());
@@ -799,6 +799,636 @@ void main() {
       verifyNever(() => mockRemoteExercise.filterByMuscleGroup(any()));
       verifyNever(() => mockRemoteExercise.filterByDifficulty(any()));
       verifyNever(() => mockRemoteExercise.search(any()));
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Additional integration tests for Requirements 4.1, 4.5, 5.2, 5.3, 8.4
+  // ─────────────────────────────────────────────────────────────────────────
+
+  group(
+      'Integration: SyncEngine.initialize() auto-syncs on connectivity change',
+      () {
+    late Database database;
+    late SyncQueueDao syncQueueDao;
+    late ProfileDao profileDao;
+    late CacheMetadataDao cacheMetadataDao;
+    late FakeConnectivityMonitor connectivity;
+    late MockDio mockDio;
+    late MockProfileRepository mockRemoteProfile;
+    late CachingProfileRepository cachingProfileRepo;
+    late SyncQueue syncQueue;
+    late ConflictResolver conflictResolver;
+    late SyncEngineImpl syncEngine;
+    late bool refreshCachesCalled;
+
+    setUp(() async {
+      database = await _createInMemoryDatabase();
+      syncQueueDao = SyncQueueDao(database);
+      profileDao = ProfileDao(database);
+      cacheMetadataDao = CacheMetadataDao(database);
+
+      connectivity = FakeConnectivityMonitor(
+        initialStatus: ConnectivityStatus.offline,
+      );
+      mockDio = MockDio();
+      mockRemoteProfile = MockProfileRepository();
+
+      cachingProfileRepo = CachingProfileRepository(
+        remote: mockRemoteProfile,
+        dao: profileDao,
+        cacheMetadataDao: cacheMetadataDao,
+        syncQueueDao: syncQueueDao,
+        connectivity: connectivity,
+      );
+
+      syncQueue = SyncQueueImpl(syncQueueDao);
+      conflictResolver = ConflictResolver();
+      refreshCachesCalled = false;
+
+      syncEngine = SyncEngineImpl(
+        syncQueue: syncQueue,
+        conflictResolver: conflictResolver,
+        connectivityMonitor: connectivity,
+        dio: mockDio,
+        onRefreshCaches: ({bool forceRefresh = false}) async {
+          refreshCachesCalled = true;
+        },
+      );
+
+      registerFallbackValue(Uri());
+    });
+
+    tearDown(() async {
+      syncEngine.dispose();
+      connectivity.dispose();
+      await database.close();
+    });
+
+    test(
+        'initialize() subscribes to connectivity stream and auto-processes queue '
+        'when transitioning offline→online (Req 4.1)', () async {
+      // Step 1: Enqueue a mutation while offline
+      final profile = _testProfile(name: 'Auto Sync User');
+      await cachingProfileRepo.saveProfile(profile);
+
+      final pending = await syncQueue.getPending();
+      expect(pending.length, equals(1));
+
+      // Step 2: Mock Dio to return success
+      when(() => mockDio.post(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 201,
+            data: {'data': profile.toJson()},
+          ));
+
+      // Step 3: Initialize the sync engine (starts listening)
+      syncEngine.initialize();
+
+      // Step 4: Transition to online — should auto-trigger processQueue
+      connectivity.setStatus(ConnectivityStatus.online);
+
+      // Allow microtask queue to process the async processQueue call
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      // Step 5: Verify the queue was processed automatically
+      final remainingPending = await syncQueue.getPending();
+      expect(remainingPending, isEmpty);
+      expect(refreshCachesCalled, isTrue);
+    });
+
+    test(
+        'initialize() does NOT auto-sync when status remains offline', () async {
+      // Enqueue a mutation while offline
+      final profile = _testProfile(name: 'Still Offline');
+      await cachingProfileRepo.saveProfile(profile);
+
+      // Mock (shouldn't be called)
+      when(() => mockDio.post(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 201,
+            data: {'data': {}},
+          ));
+
+      // Initialize
+      syncEngine.initialize();
+
+      // Emit offline again (no transition to online)
+      connectivity.setStatus(ConnectivityStatus.offline);
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      // Queue should still have the pending mutation
+      final pending = await syncQueue.getPending();
+      expect(pending.length, equals(1));
+      expect(refreshCachesCalled, isFalse);
+    });
+  });
+
+  group('Integration: Cache refresh contains latest backend data (Req 4.5)',
+      () {
+    late Database database;
+    late SyncQueueDao syncQueueDao;
+    late ProfileDao profileDao;
+    late CacheMetadataDao cacheMetadataDao;
+    late ExerciseDao exerciseDao;
+    late FakeConnectivityMonitor connectivity;
+    late MockDio mockDio;
+    late MockProfileRepository mockRemoteProfile;
+    late MockExerciseRepository mockRemoteExercise;
+    late CachingProfileRepository cachingProfileRepo;
+    late CachingExerciseRepository cachingExerciseRepo;
+    late SyncQueue syncQueue;
+    late ConflictResolver conflictResolver;
+    late SyncEngineImpl syncEngine;
+
+    setUp(() async {
+      database = await _createInMemoryDatabase();
+      syncQueueDao = SyncQueueDao(database);
+      profileDao = ProfileDao(database);
+      exerciseDao = ExerciseDao(database);
+      cacheMetadataDao = CacheMetadataDao(database);
+
+      connectivity = FakeConnectivityMonitor(
+        initialStatus: ConnectivityStatus.offline,
+      );
+      mockDio = MockDio();
+      mockRemoteProfile = MockProfileRepository();
+      mockRemoteExercise = MockExerciseRepository();
+
+      cachingProfileRepo = CachingProfileRepository(
+        remote: mockRemoteProfile,
+        dao: profileDao,
+        cacheMetadataDao: cacheMetadataDao,
+        syncQueueDao: syncQueueDao,
+        connectivity: connectivity,
+      );
+
+      cachingExerciseRepo = CachingExerciseRepository(
+        remote: mockRemoteExercise,
+        dao: exerciseDao,
+        cacheMetadataDao: cacheMetadataDao,
+        connectivity: connectivity,
+      );
+
+      syncQueue = SyncQueueImpl(syncQueueDao);
+      conflictResolver = ConflictResolver();
+
+      // The onRefreshCaches callback simulates refreshing exercise cache
+      // from backend (like the real app wiring would do)
+      syncEngine = SyncEngineImpl(
+        syncQueue: syncQueue,
+        conflictResolver: conflictResolver,
+        connectivityMonitor: connectivity,
+        dio: mockDio,
+        onRefreshCaches: ({bool forceRefresh = false}) async {
+          // Simulate what the real refreshCaches does: fetch fresh data
+          // from remote and persist to local cache
+          connectivity.setStatus(ConnectivityStatus.online);
+          await cachingExerciseRepo.getAll();
+        },
+      );
+
+      registerFallbackValue(Uri());
+    });
+
+    tearDown(() async {
+      syncEngine.dispose();
+      connectivity.dispose();
+      await database.close();
+    });
+
+    test(
+        'after sync completes, refreshCaches fetches latest data from backend '
+        'and local cache reflects the updated data (Req 4.5)', () async {
+      // Step 1: Seed stale exercise data in cache
+      const staleExercise = Exercise(
+        id: 'ex-1',
+        name: 'Old Push-ups',
+        muscleGroup: 'chest',
+        difficulty: DifficultyLevel.beginner,
+        instructions: ['Old instructions'],
+        defaultDurationSeconds: 60,
+        defaultSets: 3,
+        defaultReps: 10,
+        imagePlaceholder: '',
+      );
+      await exerciseDao.upsertAll([staleExercise]);
+      // Mark cache as stale so remote will be called during refresh
+      await cacheMetadataDao.updateLastSynced(
+        'exercises',
+        DateTime.now().subtract(const Duration(minutes: 20)),
+      );
+
+      // Step 2: Enqueue a mutation while offline
+      final profile = _testProfile(name: 'Refresh Test');
+      await cachingProfileRepo.saveProfile(profile);
+
+      // Step 3: Mock Dio for sync processing
+      when(() => mockDio.post(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 201,
+            data: {'data': {}},
+          ));
+
+      // Step 4: Mock remote exercise repo to return fresh data
+      const freshExercise = Exercise(
+        id: 'ex-1',
+        name: 'Updated Push-ups',
+        muscleGroup: 'chest',
+        difficulty: DifficultyLevel.intermediate,
+        instructions: ['New improved instructions'],
+        defaultDurationSeconds: 45,
+        defaultSets: 4,
+        defaultReps: 15,
+        imagePlaceholder: '',
+      );
+      when(() => mockRemoteExercise.getAll())
+          .thenAnswer((_) async => const Success([freshExercise]));
+
+      // Step 5: Switch to online and process queue
+      connectivity.setStatus(ConnectivityStatus.online);
+      await syncEngine.processQueue();
+
+      // Step 6: Verify local cache now contains the fresh data from backend
+      final cachedExercises = await exerciseDao.getAll();
+      expect(cachedExercises.length, equals(1));
+      expect(cachedExercises.first.name, equals('Updated Push-ups'));
+      expect(cachedExercises.first.difficulty, equals(DifficultyLevel.intermediate));
+      expect(cachedExercises.first.defaultReps, equals(15));
+    });
+  });
+
+  group(
+      'Integration: Profile PATCH payload correctness and conflict notification',
+      () {
+    late Database database;
+    late SyncQueueDao syncQueueDao;
+    late ProfileDao profileDao;
+    late CacheMetadataDao cacheMetadataDao;
+    late FakeConnectivityMonitor connectivity;
+    late MockDio mockDio;
+    late MockProfileRepository mockRemoteProfile;
+    late CachingProfileRepository cachingProfileRepo;
+    late SyncQueue syncQueue;
+    late ConflictResolver conflictResolver;
+    late SyncEngineImpl syncEngine;
+
+    setUp(() async {
+      database = await _createInMemoryDatabase();
+      syncQueueDao = SyncQueueDao(database);
+      profileDao = ProfileDao(database);
+      cacheMetadataDao = CacheMetadataDao(database);
+
+      connectivity = FakeConnectivityMonitor(
+        initialStatus: ConnectivityStatus.offline,
+      );
+      mockDio = MockDio();
+      mockRemoteProfile = MockProfileRepository();
+
+      cachingProfileRepo = CachingProfileRepository(
+        remote: mockRemoteProfile,
+        dao: profileDao,
+        cacheMetadataDao: cacheMetadataDao,
+        syncQueueDao: syncQueueDao,
+        connectivity: connectivity,
+      );
+
+      syncQueue = SyncQueueImpl(syncQueueDao);
+      conflictResolver = ConflictResolver();
+
+      syncEngine = SyncEngineImpl(
+        syncQueue: syncQueue,
+        conflictResolver: conflictResolver,
+        connectivityMonitor: connectivity,
+        dio: mockDio,
+        onRefreshCaches: ({bool forceRefresh = false}) async {},
+      );
+
+      registerFallbackValue(Uri());
+    });
+
+    tearDown(() async {
+      syncEngine.dispose();
+      connectivity.dispose();
+      await database.close();
+    });
+
+    test(
+        'offline profile update queues PATCH mutation with only dirty fields '
+        '(Req 5.2)', () async {
+      // Step 1: Seed an initial profile in the cache
+      final initialProfile = _testProfile(
+        name: 'Original Name',
+        age: 25,
+        heightCm: 180.0,
+        weightKg: 75.0,
+        updatedAt: DateTime(2024, 6, 1),
+      );
+      await profileDao.upsert(initialProfile);
+
+      // Step 2: Edit only name and age while offline
+      final editedProfile = _testProfile(
+        name: 'New Name',
+        age: 30,
+        heightCm: 180.0, // unchanged
+        weightKg: 75.0, // unchanged
+      );
+      await cachingProfileRepo.updateProfile(editedProfile);
+
+      // Step 3: Verify the mutation payload contains only the dirty fields
+      final pending = await syncQueue.getPending();
+      expect(pending.length, equals(1));
+
+      final mutation = pending.first;
+      expect(mutation.operationType, equals('update'));
+      expect(mutation.entityType, equals('profile'));
+
+      // Payload should contain only changed fields + updated_at
+      final payload = mutation.payload;
+      expect(payload.containsKey('name'), isTrue);
+      expect(payload['name'], equals('New Name'));
+      expect(payload.containsKey('age'), isTrue);
+      expect(payload['age'], equals(30));
+      expect(payload.containsKey('updated_at'), isTrue);
+
+      // Unchanged fields should NOT be in the payload
+      expect(payload.containsKey('height_cm'), isFalse);
+      expect(payload.containsKey('weight_kg'), isFalse);
+      expect(payload.containsKey('user_id'), isFalse);
+    });
+
+    test(
+        'conflict where server wins emits conflictDetected event for user '
+        'notification (Req 5.3)', () async {
+      // Step 1: Seed profile and edit offline
+      final initialProfile = _testProfile(
+        name: 'Original',
+        updatedAt: DateTime(2024, 6, 1),
+      );
+      await profileDao.upsert(initialProfile);
+
+      final editedProfile = _testProfile(name: 'Offline Edit');
+      await cachingProfileRepo.updateProfile(editedProfile);
+
+      // Step 2: Server has a newer timestamp (server wins)
+      final newerServerTime = DateTime.now().add(const Duration(hours: 2));
+      when(() => mockDio.patch(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 409,
+            data: {
+              'data': {
+                'updated_at': newerServerTime.toIso8601String(),
+              },
+            },
+          ));
+
+      // Step 3: Collect sync events
+      final events = <SyncEvent>[];
+      syncEngine.syncEvents.listen(events.add);
+
+      // Step 4: Process queue
+      connectivity.setStatus(ConnectivityStatus.online);
+      await syncEngine.processQueue();
+      await Future<void>.delayed(Duration.zero);
+
+      // Step 5: Verify conflictDetected event was emitted (user notification)
+      expect(events, contains(SyncEvent.conflictDetected));
+
+      // Step 6: Verify the mutation is removed (discarded because server wins)
+      final remaining = await syncQueue.getPending();
+      expect(remaining, isEmpty);
+    });
+
+    test(
+        'sync result reports conflicts correctly so UI can notify user '
+        'about overridden changes (Req 5.3)', () async {
+      // Seed profile and enqueue two mutations (one will conflict)
+      final initialProfile = _testProfile(
+        name: 'Base',
+        updatedAt: DateTime(2024, 1, 1),
+      );
+      await profileDao.upsert(initialProfile);
+
+      // First mutation: will succeed
+      final profile1 = _testProfile(name: 'First Edit');
+      await cachingProfileRepo.saveProfile(profile1);
+
+      // Second mutation: will conflict
+      final profile2 = _testProfile(name: 'Second Edit', age: 35);
+      await cachingProfileRepo.updateProfile(profile2);
+
+      final pending = await syncQueue.getPending();
+      expect(pending.length, equals(2));
+
+      // Mock: first call succeeds, second call returns 409
+      when(() => mockDio.post(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async {
+        return Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 201,
+          data: {'data': {}},
+        );
+      });
+
+      final newerServerTime = DateTime.now().add(const Duration(days: 1));
+      when(() => mockDio.patch(
+            any(),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 409,
+            data: {
+              'data': {
+                'updated_at': newerServerTime.toIso8601String(),
+              },
+            },
+          ));
+
+      // Process
+      connectivity.setStatus(ConnectivityStatus.online);
+      final syncResult = await syncEngine.processQueue();
+
+      // Verify mixed results: 1 success, 1 conflict
+      expect(syncResult.successful, equals(1));
+      expect(syncResult.conflicts, equals(1));
+      expect(syncResult.failed, equals(0));
+
+      // All mutations cleared from queue
+      final remainingPending = await syncQueue.getPending();
+      expect(remainingPending, isEmpty);
+    });
+  });
+
+  group('Integration: Tab navigation preserves state with cached data (Req 8.4)',
+      () {
+    late Database database;
+    late ExerciseDao exerciseDao;
+    late CacheMetadataDao cacheMetadataDao;
+    late FakeConnectivityMonitor connectivity;
+    late MockExerciseRepository mockRemoteExercise;
+    late CachingExerciseRepository cachingExerciseRepo;
+
+    setUp(() async {
+      database = await _createInMemoryDatabase();
+      exerciseDao = ExerciseDao(database);
+      cacheMetadataDao = CacheMetadataDao(database);
+
+      connectivity = FakeConnectivityMonitor(
+        initialStatus: ConnectivityStatus.online,
+      );
+      mockRemoteExercise = MockExerciseRepository();
+
+      cachingExerciseRepo = CachingExerciseRepository(
+        remote: mockRemoteExercise,
+        dao: exerciseDao,
+        cacheMetadataDao: cacheMetadataDao,
+        connectivity: connectivity,
+      );
+    });
+
+    tearDown(() async {
+      connectivity.dispose();
+      await database.close();
+    });
+
+    test(
+        'cached data remains available across multiple reads without remote calls '
+        '— simulating tab re-entry with fresh cache (Req 8.4)', () async {
+      // Seed exercises in cache
+      final exercises = [
+        const Exercise(
+          id: 'ex-1',
+          name: 'Push-ups',
+          muscleGroup: 'chest',
+          difficulty: DifficultyLevel.beginner,
+          instructions: ['Push up'],
+          defaultDurationSeconds: 60,
+          defaultSets: 3,
+          defaultReps: 12,
+          imagePlaceholder: '',
+        ),
+        const Exercise(
+          id: 'ex-2',
+          name: 'Pull-ups',
+          muscleGroup: 'back',
+          difficulty: DifficultyLevel.intermediate,
+          instructions: ['Pull up'],
+          defaultDurationSeconds: 60,
+          defaultSets: 3,
+          defaultReps: 8,
+          imagePlaceholder: '',
+        ),
+      ];
+      await exerciseDao.upsertAll(exercises);
+      await cacheMetadataDao.updateLastSynced('exercises', DateTime.now());
+
+      // Simulate "navigating to tab" — first read
+      final firstRead = await cachingExerciseRepo.getAll();
+      expect(firstRead, isA<Success<List<Exercise>, AppError>>());
+      expect(
+          (firstRead as Success<List<Exercise>, AppError>).value.length, equals(2));
+
+      // Apply a filter (simulating user selecting muscle group filter)
+      final filteredRead =
+          await cachingExerciseRepo.filterByMuscleGroup(['chest']);
+      expect(filteredRead, isA<Success<List<Exercise>, AppError>>());
+      expect(
+          (filteredRead as Success<List<Exercise>, AppError>).value.length, equals(1));
+      expect(
+          (filteredRead).value.first.name, equals('Push-ups'));
+
+      // Simulate "navigating away and back" — second read
+      final secondRead = await cachingExerciseRepo.getAll();
+      expect(secondRead, isA<Success<List<Exercise>, AppError>>());
+      expect(
+          (secondRead as Success<List<Exercise>, AppError>).value.length, equals(2));
+
+      // Re-apply same filter — data is still available (preserved in cache)
+      final reFilteredRead =
+          await cachingExerciseRepo.filterByMuscleGroup(['chest']);
+      expect(reFilteredRead, isA<Success<List<Exercise>, AppError>>());
+      expect(
+          (reFilteredRead as Success<List<Exercise>, AppError>).value.length,
+          equals(1));
+
+      // Remote should NEVER be called since cache is fresh
+      verifyNever(() => mockRemoteExercise.getAll());
+    });
+
+    test(
+        'search results remain consistent across multiple tab entries '
+        'without cache expiration (Req 8.4)', () async {
+      // Seed exercises
+      final exercises = [
+        const Exercise(
+          id: 'ex-1',
+          name: 'Bench Press',
+          muscleGroup: 'chest',
+          difficulty: DifficultyLevel.intermediate,
+          instructions: ['Press'],
+          defaultDurationSeconds: 60,
+          defaultSets: 4,
+          defaultReps: 8,
+          imagePlaceholder: '',
+        ),
+        const Exercise(
+          id: 'ex-2',
+          name: 'Overhead Press',
+          muscleGroup: 'shoulders',
+          difficulty: DifficultyLevel.intermediate,
+          instructions: ['Press overhead'],
+          defaultDurationSeconds: 45,
+          defaultSets: 3,
+          defaultReps: 10,
+          imagePlaceholder: '',
+        ),
+        const Exercise(
+          id: 'ex-3',
+          name: 'Squat',
+          muscleGroup: 'legs',
+          difficulty: DifficultyLevel.advanced,
+          instructions: ['Squat down'],
+          defaultDurationSeconds: 60,
+          defaultSets: 5,
+          defaultReps: 5,
+          imagePlaceholder: '',
+        ),
+      ];
+      await exerciseDao.upsertAll(exercises);
+      await cacheMetadataDao.updateLastSynced('exercises', DateTime.now());
+
+      // First tab entry: search for "Press"
+      final searchResult1 = await cachingExerciseRepo.search('Press');
+      expect(searchResult1, isA<Success<List<Exercise>, AppError>>());
+      final found1 =
+          (searchResult1 as Success<List<Exercise>, AppError>).value;
+      expect(found1.length, equals(2));
+
+      // "Navigate away" and come back — same search yields same results
+      final searchResult2 = await cachingExerciseRepo.search('Press');
+      expect(searchResult2, isA<Success<List<Exercise>, AppError>>());
+      final found2 =
+          (searchResult2 as Success<List<Exercise>, AppError>).value;
+      expect(found2.length, equals(2));
+      expect(found2.map((e) => e.id).toSet(), equals(found1.map((e) => e.id).toSet()));
+
+      // Verify no remote calls made
+      verifyNever(() => mockRemoteExercise.getAll());
     });
   });
 }

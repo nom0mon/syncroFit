@@ -3,7 +3,6 @@ import 'package:glados/glados.dart'
     hide expect, group, setUpAll, setUp, tearDown, test;
 import 'package:mocktail/mocktail.dart' hide any;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:synchrofit/core/network/connectivity_monitor.dart';
 import 'package:synchrofit/data/caching/caching_profile_repository.dart';
 import 'package:synchrofit/data/local/daos/cache_metadata_dao.dart';
@@ -262,14 +261,13 @@ void main() {
 
   // Feature: offline-support-and-ui-enhancements, Property 1: Sync queue preserves chronological order
   group('Property 1: Sync queue preserves chronological order', () {
-    late Database syncDb;
-    late SyncQueueDao syncDao;
-
-    setUp(() async {
-      syncDb = await databaseFactoryFfi.openDatabase(
+    /// Helper to create a fresh in-memory database for each Glados iteration
+    Future<(Database, SyncQueueDao)> createSyncDb() async {
+      final db = await databaseFactoryFfi.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
           version: 1,
+          singleInstance: false,
           onCreate: (db, version) async {
             await db.execute('''
               CREATE TABLE sync_queue (
@@ -286,12 +284,8 @@ void main() {
           },
         ),
       );
-      syncDao = SyncQueueDao(syncDb);
-    });
-
-    tearDown(() async {
-      await syncDb.close();
-    });
+      return (db, SyncQueueDao(db));
+    }
 
     /// **Validates: Requirements 3.3**
     ///
@@ -300,48 +294,55 @@ void main() {
     Glados(any.intInRange(2, 20)).test(
       'getPending returns mutations sorted by createdAt ascending regardless of insertion order',
       (count) async {
-        final baseTime = DateTime(2024, 1, 1, 12, 0, 0);
+        final (syncDb, syncDao) = await createSyncDb();
+        try {
+          final baseTime = DateTime(2024, 1, 1, 12, 0, 0);
 
-        // Generate mutations with distinct sequential timestamps
-        final mutations = List.generate(count, (i) {
-          return SyncMutation(
-            id: 'mutation-$i',
-            entityType: 'workout',
-            entityId: 'entity-$i',
-            operationType: 'update',
-            payload: {'field': 'value-$i'},
-            createdAt: baseTime.add(Duration(seconds: i)),
-          );
-        });
+          // Generate mutations with distinct sequential timestamps
+          final mutations = List.generate(count, (i) {
+            return SyncMutation(
+              id: 'mutation-$i',
+              entityType: 'workout',
+              entityId: 'entity-$i',
+              operationType: 'update',
+              payload: {'field': 'value-$i'},
+              createdAt: baseTime.add(Duration(seconds: i)),
+            );
+          });
 
-        // Shuffle to simulate non-chronological insertion order
-        final shuffled = List<SyncMutation>.from(mutations)..shuffle();
+          // Shuffle to simulate non-chronological insertion order
+          final shuffled = List<SyncMutation>.from(mutations)..shuffle();
 
-        // Enqueue in shuffled order
-        for (final mutation in shuffled) {
-          await syncDao.enqueue(mutation);
-        }
+          // Enqueue in shuffled order
+          for (final mutation in shuffled) {
+            await syncDao.enqueue(mutation);
+          }
 
-        // Retrieve pending mutations
-        final pending = await syncDao.getPending();
+          // Retrieve pending mutations
+          final pending = await syncDao.getPending();
 
-        // Verify all mutations were enqueued
-        expect(pending.length, equals(count));
+          // Verify all mutations were enqueued
+          expect(pending.length, equals(count));
 
-        // Verify chronological order (sorted by createdAt ascending)
-        for (int i = 1; i < pending.length; i++) {
-          expect(
-            pending[i].createdAt.isAfter(pending[i - 1].createdAt) ||
-                pending[i].createdAt.isAtSameMomentAs(pending[i - 1].createdAt),
-            isTrue,
-            reason:
-                'Mutation at index $i (${pending[i].createdAt}) should be >= mutation at index ${i - 1} (${pending[i - 1].createdAt})',
-          );
-        }
+          // Verify chronological order (sorted by createdAt ascending)
+          for (int i = 1; i < pending.length; i++) {
+            expect(
+              pending[i].createdAt.isAfter(pending[i - 1].createdAt) ||
+                  pending[i]
+                      .createdAt
+                      .isAtSameMomentAs(pending[i - 1].createdAt),
+              isTrue,
+              reason:
+                  'Mutation at index $i (${pending[i].createdAt}) should be >= mutation at index ${i - 1} (${pending[i - 1].createdAt})',
+            );
+          }
 
-        // Verify the order matches the original chronological order
-        for (int i = 0; i < pending.length; i++) {
-          expect(pending[i].id, equals('mutation-$i'));
+          // Verify the order matches the original chronological order
+          for (int i = 0; i < pending.length; i++) {
+            expect(pending[i].id, equals('mutation-$i'));
+          }
+        } finally {
+          await syncDb.close();
         }
       },
     );
@@ -349,41 +350,46 @@ void main() {
     Glados(any.intInRange(2, 15)).test(
       'getPending preserves chronological order across different entity types',
       (count) async {
-        final baseTime = DateTime(2024, 6, 15, 8, 0, 0);
-        final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
-        final operationTypes = ['create', 'update', 'delete'];
+        final (syncDb, syncDao) = await createSyncDb();
+        try {
+          final baseTime = DateTime(2024, 6, 15, 8, 0, 0);
+          final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
+          final operationTypes = ['create', 'update', 'delete'];
 
-        // Generate mutations with distinct timestamps and varying entity types
-        final mutations = List.generate(count, (i) {
-          return SyncMutation(
-            id: 'mixed-mutation-$i',
-            entityType: entityTypes[i % entityTypes.length],
-            entityId: 'entity-$i',
-            operationType: operationTypes[i % operationTypes.length],
-            payload: {'data': 'value-$i'},
-            createdAt: baseTime.add(Duration(minutes: i)),
-          );
-        });
+          // Generate mutations with distinct timestamps and varying entity types
+          final mutations = List.generate(count, (i) {
+            return SyncMutation(
+              id: 'mixed-mutation-$i',
+              entityType: entityTypes[i % entityTypes.length],
+              entityId: 'entity-$i',
+              operationType: operationTypes[i % operationTypes.length],
+              payload: {'data': 'value-$i'},
+              createdAt: baseTime.add(Duration(minutes: i)),
+            );
+          });
 
-        // Shuffle and enqueue
-        final shuffled = List<SyncMutation>.from(mutations)..shuffle();
-        for (final mutation in shuffled) {
-          await syncDao.enqueue(mutation);
-        }
+          // Shuffle and enqueue
+          final shuffled = List<SyncMutation>.from(mutations)..shuffle();
+          for (final mutation in shuffled) {
+            await syncDao.enqueue(mutation);
+          }
 
-        // Retrieve pending
-        final pending = await syncDao.getPending();
+          // Retrieve pending
+          final pending = await syncDao.getPending();
 
-        expect(pending.length, equals(count));
+          expect(pending.length, equals(count));
 
-        // Verify strictly ascending chronological order
-        for (int i = 1; i < pending.length; i++) {
-          expect(
-            pending[i].createdAt.isAfter(pending[i - 1].createdAt),
-            isTrue,
-            reason:
-                'Mutation at index $i should have a later createdAt than index ${i - 1}',
-          );
+          // Verify strictly ascending chronological order
+          for (int i = 1; i < pending.length; i++) {
+            expect(
+              pending[i].createdAt.isAfter(pending[i - 1].createdAt),
+              isTrue,
+              reason:
+                  'Mutation at index $i should have a later createdAt than index ${i - 1}',
+            );
+          }
+        } finally {
+          await syncDb.close();
         }
       },
     );
@@ -391,14 +397,13 @@ void main() {
 
   // Feature: offline-support-and-ui-enhancements, Property 3: Sync queue round-trip persistence
   group('Property 3: Sync queue round-trip persistence', () {
-    late Database roundTripDb;
-    late SyncQueueDao roundTripDao;
-
-    setUp(() async {
-      roundTripDb = await databaseFactoryFfi.openDatabase(
+    /// Helper to create a fresh in-memory database for each Glados iteration
+    Future<(Database, SyncQueueDao)> createRoundTripDb() async {
+      final db = await databaseFactoryFfi.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
           version: 1,
+          singleInstance: false,
           onCreate: (db, version) async {
             await db.execute('''
               CREATE TABLE sync_queue (
@@ -415,12 +420,8 @@ void main() {
           },
         ),
       );
-      roundTripDao = SyncQueueDao(roundTripDb);
-    });
-
-    tearDown(() async {
-      await roundTripDb.close();
-    });
+      return (db, SyncQueueDao(db));
+    }
 
     /// **Validates: Requirements 3.2**
     ///
@@ -432,106 +433,116 @@ void main() {
     ).test(
       'enqueue then getPending preserves all mutation fields',
       (entityTypeIndex, operationTypeIndex) async {
-        final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
-        final operationTypes = ['create', 'update', 'delete'];
+        final (roundTripDb, roundTripDao) = await createRoundTripDb();
+        try {
+          final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
+          final operationTypes = ['create', 'update', 'delete'];
 
-        final uuid = const Uuid();
-        final mutationId = uuid.v4();
-        final entityId = uuid.v4();
-        final createdAt = DateTime(2024, 3, 15, 10, 30, 0);
-        final entityType = entityTypes[entityTypeIndex];
-        final operationType = operationTypes[operationTypeIndex];
-        final payload = {
-          'field1': 'value-$entityTypeIndex',
-          'field2': operationTypeIndex * 42,
-          'nested': {'key': 'data-$mutationId'},
-        };
+          const uuid = Uuid();
+          final mutationId = uuid.v4();
+          final entityId = uuid.v4();
+          final createdAt = DateTime(2024, 3, 15, 10, 30, 0);
+          final entityType = entityTypes[entityTypeIndex];
+          final operationType = operationTypes[operationTypeIndex];
+          final payload = {
+            'field1': 'value-$entityTypeIndex',
+            'field2': operationTypeIndex * 42,
+            'nested': {'key': 'data-$mutationId'},
+          };
 
-        final original = SyncMutation(
-          id: mutationId,
-          entityType: entityType,
-          entityId: entityId,
-          operationType: operationType,
-          payload: payload,
-          createdAt: createdAt,
-          retryCount: 0,
-          status: SyncStatus.pending,
-        );
+          final original = SyncMutation(
+            id: mutationId,
+            entityType: entityType,
+            entityId: entityId,
+            operationType: operationType,
+            payload: payload,
+            createdAt: createdAt,
+            retryCount: 0,
+            status: SyncStatus.pending,
+          );
 
-        // Enqueue the mutation
-        await roundTripDao.enqueue(original);
+          // Enqueue the mutation
+          await roundTripDao.enqueue(original);
 
-        // Retrieve pending mutations
-        final pending = await roundTripDao.getPending();
+          // Retrieve pending mutations
+          final pending = await roundTripDao.getPending();
 
-        // Verify exactly one mutation was retrieved
-        expect(pending.length, equals(1));
+          // Verify exactly one mutation was retrieved
+          expect(pending.length, equals(1));
 
-        final retrieved = pending.first;
+          final retrieved = pending.first;
 
-        // Verify all fields match the original
-        expect(retrieved.id, equals(original.id));
-        expect(retrieved.entityType, equals(original.entityType));
-        expect(retrieved.entityId, equals(original.entityId));
-        expect(retrieved.operationType, equals(original.operationType));
-        expect(retrieved.payload, equals(original.payload));
-        expect(retrieved.createdAt, equals(original.createdAt));
-        expect(retrieved.retryCount, equals(original.retryCount));
-        expect(retrieved.status, equals(original.status));
+          // Verify all fields match the original
+          expect(retrieved.id, equals(original.id));
+          expect(retrieved.entityType, equals(original.entityType));
+          expect(retrieved.entityId, equals(original.entityId));
+          expect(retrieved.operationType, equals(original.operationType));
+          expect(retrieved.payload, equals(original.payload));
+          expect(retrieved.createdAt, equals(original.createdAt));
+          expect(retrieved.retryCount, equals(original.retryCount));
+          expect(retrieved.status, equals(original.status));
+        } finally {
+          await roundTripDb.close();
+        }
       },
     );
 
     Glados(any.intInRange(1, 10)).test(
       'multiple enqueued mutations all preserve their fields through round-trip',
       (count) async {
-        final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
-        final operationTypes = ['create', 'update', 'delete'];
-        final baseTime = DateTime(2024, 5, 1, 8, 0, 0);
+        final (roundTripDb, roundTripDao) = await createRoundTripDb();
+        try {
+          final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
+          final operationTypes = ['create', 'update', 'delete'];
+          final baseTime = DateTime(2024, 5, 1, 8, 0, 0);
 
-        final originals = List.generate(count, (i) {
-          return SyncMutation(
-            id: 'rt-mutation-$i',
-            entityType: entityTypes[i % entityTypes.length],
-            entityId: 'entity-rt-$i',
-            operationType: operationTypes[i % operationTypes.length],
-            payload: {'index': i, 'data': 'payload-$i'},
-            createdAt: baseTime.add(Duration(seconds: i)),
-            retryCount: 0,
-            status: SyncStatus.pending,
-          );
-        });
+          final originals = List.generate(count, (i) {
+            return SyncMutation(
+              id: 'rt-mutation-$i',
+              entityType: entityTypes[i % entityTypes.length],
+              entityId: 'entity-rt-$i',
+              operationType: operationTypes[i % operationTypes.length],
+              payload: {'index': i, 'data': 'payload-$i'},
+              createdAt: baseTime.add(Duration(seconds: i)),
+              retryCount: 0,
+              status: SyncStatus.pending,
+            );
+          });
 
-        // Enqueue all mutations
-        for (final mutation in originals) {
-          await roundTripDao.enqueue(mutation);
-        }
+          // Enqueue all mutations
+          for (final mutation in originals) {
+            await roundTripDao.enqueue(mutation);
+          }
 
-        // Retrieve all pending mutations
-        final pending = await roundTripDao.getPending();
+          // Retrieve all pending mutations
+          final pending = await roundTripDao.getPending();
 
-        expect(pending.length, equals(count));
+          expect(pending.length, equals(count));
 
-        // Verify each retrieved mutation matches the original
-        for (int i = 0; i < count; i++) {
-          final original = originals[i];
-          final retrieved = pending[i];
+          // Verify each retrieved mutation matches the original
+          for (int i = 0; i < count; i++) {
+            final original = originals[i];
+            final retrieved = pending[i];
 
-          expect(retrieved.id, equals(original.id),
-              reason: 'id mismatch at index $i');
-          expect(retrieved.entityType, equals(original.entityType),
-              reason: 'entityType mismatch at index $i');
-          expect(retrieved.entityId, equals(original.entityId),
-              reason: 'entityId mismatch at index $i');
-          expect(retrieved.operationType, equals(original.operationType),
-              reason: 'operationType mismatch at index $i');
-          expect(retrieved.payload, equals(original.payload),
-              reason: 'payload mismatch at index $i');
-          expect(retrieved.createdAt, equals(original.createdAt),
-              reason: 'createdAt mismatch at index $i');
-          expect(retrieved.retryCount, equals(original.retryCount),
-              reason: 'retryCount mismatch at index $i');
-          expect(retrieved.status, equals(original.status),
-              reason: 'status mismatch at index $i');
+            expect(retrieved.id, equals(original.id),
+                reason: 'id mismatch at index $i');
+            expect(retrieved.entityType, equals(original.entityType),
+                reason: 'entityType mismatch at index $i');
+            expect(retrieved.entityId, equals(original.entityId),
+                reason: 'entityId mismatch at index $i');
+            expect(retrieved.operationType, equals(original.operationType),
+                reason: 'operationType mismatch at index $i');
+            expect(retrieved.payload, equals(original.payload),
+                reason: 'payload mismatch at index $i');
+            expect(retrieved.createdAt, equals(original.createdAt),
+                reason: 'createdAt mismatch at index $i');
+            expect(retrieved.retryCount, equals(original.retryCount),
+                reason: 'retryCount mismatch at index $i');
+            expect(retrieved.status, equals(original.status),
+                reason: 'status mismatch at index $i');
+          }
+        } finally {
+          await roundTripDb.close();
         }
       },
     );
@@ -539,14 +550,13 @@ void main() {
 
   // Feature: offline-support-and-ui-enhancements, Property 5: Successful sync removes mutation from queue
   group('Property 5: Successful sync removes mutation from queue', () {
-    late Database syncRemoveDb;
-    late SyncQueueDao syncRemoveDao;
-
-    setUp(() async {
-      syncRemoveDb = await databaseFactoryFfi.openDatabase(
+    /// Helper to create a fresh in-memory database for each Glados iteration
+    Future<(Database, SyncQueueDao)> createSyncRemoveDb() async {
+      final db = await databaseFactoryFfi.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
           version: 1,
+          singleInstance: false,
           onCreate: (db, version) async {
             await db.execute('''
               CREATE TABLE sync_queue (
@@ -563,12 +573,8 @@ void main() {
           },
         ),
       );
-      syncRemoveDao = SyncQueueDao(syncRemoveDb);
-    });
-
-    tearDown(() async {
-      await syncRemoveDb.close();
-    });
+      return (db, SyncQueueDao(db));
+    }
 
     /// **Validates: Requirements 4.2**
     ///
@@ -580,88 +586,98 @@ void main() {
     ).test(
       'markCompleted removes mutation from getPending and pendingCount returns 0',
       (entityTypeIndex, operationTypeIndex) async {
-        final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
-        final operationTypes = ['create', 'update', 'delete'];
+        final (syncRemoveDb, syncRemoveDao) = await createSyncRemoveDb();
+        try {
+          final entityTypes = ['exercise', 'workout', 'profile', 'progress'];
+          final operationTypes = ['create', 'update', 'delete'];
 
-        final mutationId = const Uuid().v4();
-        final mutation = SyncMutation(
-          id: mutationId,
-          entityType: entityTypes[entityTypeIndex],
-          entityId: 'entity-${const Uuid().v4()}',
-          operationType: operationTypes[operationTypeIndex],
-          payload: {'key': 'value', 'index': entityTypeIndex},
-          createdAt: DateTime(2024, 4, 10, 14, 30, 0),
-          retryCount: 0,
-          status: SyncStatus.pending,
-        );
+          final mutationId = const Uuid().v4();
+          final mutation = SyncMutation(
+            id: mutationId,
+            entityType: entityTypes[entityTypeIndex],
+            entityId: 'entity-${const Uuid().v4()}',
+            operationType: operationTypes[operationTypeIndex],
+            payload: {'key': 'value', 'index': entityTypeIndex},
+            createdAt: DateTime(2024, 4, 10, 14, 30, 0),
+            retryCount: 0,
+            status: SyncStatus.pending,
+          );
 
-        // Enqueue the mutation
-        await syncRemoveDao.enqueue(mutation);
+          // Enqueue the mutation
+          await syncRemoveDao.enqueue(mutation);
 
-        // Verify it exists in pending
-        final beforePending = await syncRemoveDao.getPending();
-        expect(beforePending.length, equals(1));
-        expect(beforePending.first.id, equals(mutationId));
+          // Verify it exists in pending
+          final beforePending = await syncRemoveDao.getPending();
+          expect(beforePending.length, equals(1));
+          expect(beforePending.first.id, equals(mutationId));
 
-        // Mark as completed (simulating successful sync)
-        await syncRemoveDao.markCompleted(mutationId);
+          // Mark as completed (simulating successful sync)
+          await syncRemoveDao.markCompleted(mutationId);
 
-        // Verify getPending no longer contains the mutation
-        final afterPending = await syncRemoveDao.getPending();
-        expect(afterPending, isEmpty,
-            reason:
-                'getPending() should return empty after markCompleted is called');
+          // Verify getPending no longer contains the mutation
+          final afterPending = await syncRemoveDao.getPending();
+          expect(afterPending, isEmpty,
+              reason:
+                  'getPending() should return empty after markCompleted is called');
 
-        // Verify pendingCount returns 0
-        final count = await syncRemoveDao.pendingCount();
-        expect(count, equals(0),
-            reason: 'pendingCount() should return 0 after markCompleted');
+          // Verify pendingCount returns 0
+          final count = await syncRemoveDao.pendingCount();
+          expect(count, equals(0),
+              reason: 'pendingCount() should return 0 after markCompleted');
+        } finally {
+          await syncRemoveDb.close();
+        }
       },
     );
 
     Glados(any.intInRange(2, 10)).test(
       'markCompleted removes only the specified mutation, leaving others pending',
       (totalCount) async {
-        final baseTime = DateTime(2024, 7, 1, 9, 0, 0);
+        final (syncRemoveDb, syncRemoveDao) = await createSyncRemoveDb();
+        try {
+          final baseTime = DateTime(2024, 7, 1, 9, 0, 0);
 
-        // Enqueue multiple mutations
-        final mutations = List.generate(totalCount, (i) {
-          return SyncMutation(
-            id: 'remove-test-$i',
-            entityType: 'workout',
-            entityId: 'entity-$i',
-            operationType: 'update',
-            payload: {'data': 'value-$i'},
-            createdAt: baseTime.add(Duration(seconds: i)),
-            retryCount: 0,
-            status: SyncStatus.pending,
-          );
-        });
+          // Enqueue multiple mutations
+          final mutations = List.generate(totalCount, (i) {
+            return SyncMutation(
+              id: 'remove-test-$i',
+              entityType: 'workout',
+              entityId: 'entity-$i',
+              operationType: 'update',
+              payload: {'data': 'value-$i'},
+              createdAt: baseTime.add(Duration(seconds: i)),
+              retryCount: 0,
+              status: SyncStatus.pending,
+            );
+          });
 
-        for (final mutation in mutations) {
-          await syncRemoveDao.enqueue(mutation);
-        }
+          for (final mutation in mutations) {
+            await syncRemoveDao.enqueue(mutation);
+          }
 
-        // Mark the first mutation as completed
-        await syncRemoveDao.markCompleted(mutations.first.id);
+          // Mark the first mutation as completed
+          await syncRemoveDao.markCompleted(mutations.first.id);
 
-        // Verify remaining mutations are still pending
-        final pending = await syncRemoveDao.getPending();
-        expect(pending.length, equals(totalCount - 1));
+          // Verify remaining mutations are still pending
+          final pending = await syncRemoveDao.getPending();
+          expect(pending.length, equals(totalCount - 1));
 
-        // Verify the completed mutation is not in the list
-        final pendingIds = pending.map((m) => m.id).toList();
-        expect(pendingIds, isNot(contains(mutations.first.id)),
-            reason:
-                'Completed mutation should not appear in getPending results');
+          // Verify the completed mutation is not in the list
+          final pendingIds = pending.map((m) => m.id).toList();
+          expect(pendingIds, isNot(contains(mutations.first.id)),
+              reason:
+                  'Completed mutation should not appear in getPending results');
 
-        // Verify pendingCount matches
-        final count = await syncRemoveDao.pendingCount();
-        expect(count, equals(totalCount - 1));
+          // Verify pendingCount matches
+          final count = await syncRemoveDao.pendingCount();
+          expect(count, equals(totalCount - 1));
 
-        // Verify remaining mutations are the correct ones
-        for (int i = 1; i < totalCount; i++) {
-          expect(pendingIds, contains(mutations[i].id));
+          // Verify remaining mutations are the correct ones
+          for (int i = 1; i < totalCount; i++) {
+            expect(pendingIds, contains(mutations[i].id));
+          }
+        } finally {
+          await syncRemoveDb.close();
         }
       },
     );
