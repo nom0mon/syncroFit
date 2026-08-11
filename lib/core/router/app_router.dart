@@ -16,6 +16,7 @@ import '../../features/consultation/screens/trainer_profile_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/profile/screens/profile_edit_screen.dart';
 import '../../features/profile/screens/profile_setup_screen.dart';
+import '../../features/profile/screens/profile_view_screen.dart';
 
 import '../../features/settings/screens/change_password_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
@@ -115,6 +116,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/settings/edit-profile',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      GoRoute(
+        path: '/settings/profile',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfileViewScreen(),
       ),
       GoRoute(
         path: '/settings/trainers',

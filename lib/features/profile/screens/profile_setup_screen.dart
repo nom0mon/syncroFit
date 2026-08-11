@@ -10,7 +10,8 @@ import '../widgets/profile_form.dart';
 
 /// Screen for initial profile setup during onboarding.
 ///
-/// Collects all required profile fields and saves via [ProfileNotifier].
+/// If the user already has a profile, redirects to the dashboard.
+/// Otherwise, collects all required profile fields and saves via [ProfileNotifier].
 /// On successful save, navigates to the first assessment step.
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -67,8 +68,51 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider);
+
+    return profileAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/dashboard'),
+            tooltip: 'Back',
+          ),
+          title: const Text('Profile Setup'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => _buildSetupForm(),
+      data: (profile) {
+        if (profile != null) {
+          // Profile already exists — redirect to profile view
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.go('/settings/profile');
+          });
+          return Scaffold(
+            appBar: AppBar(title: const Text('Profile Setup')),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        return _buildSetupForm();
+      },
+    );
+  }
+
+  Widget _buildSetupForm() {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
+          tooltip: 'Back',
+        ),
         title: const Text('Profile Setup'),
       ),
       body: SafeArea(

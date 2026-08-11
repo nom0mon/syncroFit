@@ -28,9 +28,9 @@ class SettingsMainScreen extends ConsumerWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.person_outline),
-            title: const Text('Edit Profile'),
+            title: const Text('My Profile'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/edit-profile'),
+            onTap: () => context.push('/settings/profile'),
           ),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
