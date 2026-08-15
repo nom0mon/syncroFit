@@ -117,7 +117,8 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   Future<bool> saveAssessment() async {
     final profile = UserProfile(
       userId: 'user-1',
-      name: 'User',
+      firstName: '',
+      lastName: 'User',
       age: state.age ?? 25,
       heightCm: state.heightCm ?? 170,
       weightKg: state.weightKg ?? 70,

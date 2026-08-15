@@ -11,7 +11,7 @@ import '../providers/auth_provider.dart';
 
 /// Register screen matching Figma "Sign Up 1" design:
 /// Back arrow + logo in top row, centered "Sign Up" title,
-/// subtitle, Username/Password/Confirm Password/Email fields,
+/// subtitle, First Name/Last Name/Password/Confirm Password/Email fields,
 /// "Next" button, copyright footer.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -22,14 +22,16 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -40,7 +42,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     await ref.read(authStateProvider.notifier).register(
-          _nameController.text.trim(),
+          _firstNameController.text.trim(),
+          _lastNameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
         );
@@ -136,11 +139,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         const SizedBox(height: AppSpacing.xl),
 
-                        // Username field
+                        // First Name field
                         TextFormField(
-                          controller: _nameController,
+                          controller: _firstNameController,
                           decoration: const InputDecoration(
-                            hintText: 'Username',
+                            hintText: 'First Name',
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          cursorColor: Colors.black,
+                          textInputAction: TextInputAction.next,
+                          maxLength: 50,
+                          validator: validateName,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+
+                        // Last Name field
+                        TextFormField(
+                          controller: _lastNameController,
+                          decoration: const InputDecoration(
+                            hintText: 'Last Name',
                           ),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,

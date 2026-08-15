@@ -31,7 +31,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     final profile = UserProfile(
       userId: userId,
-      name: data.name,
+      firstName: data.firstName,
+      lastName: data.lastName,
       age: data.age,
       heightCm: data.heightCm,
       weightKg: data.weightKg,

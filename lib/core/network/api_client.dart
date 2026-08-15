@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/models/models.dart';
@@ -128,10 +129,12 @@ class ApiClient {
       return _parseResponse(response, fromJson: fromJson);
     } on DioException catch (e) {
       return Failure(_mapDioError(e));
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('ApiClient unexpected error: $e');
+      debugPrint('Stack: $stack');
       return Failure(
         ServerError(
-            statusCode: 0, serverMessage: 'An unexpected error occurred'),
+            statusCode: 0, serverMessage: 'An unexpected error occurred: $e'),
       );
     }
   }

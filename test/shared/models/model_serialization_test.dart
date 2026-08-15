@@ -15,7 +15,8 @@ void main() {
     test('fromJson parses correctly', () {
       final json = {
         'id': 1,
-        'name': 'John Doe',
+        'first_name': 'John',
+        'last_name': 'Doe',
         'email': 'john@example.com',
         'created_at': '2024-01-15T10:30:00.000Z',
       };
@@ -23,7 +24,7 @@ void main() {
       final user = User.fromJson(json);
 
       expect(user.id, '1');
-      expect(user.name, 'John Doe');
+      expect(user.fullName, 'John Doe');
       expect(user.email, 'john@example.com');
       expect(user.createdAt, DateTime.parse('2024-01-15T10:30:00.000Z'));
     });
@@ -31,7 +32,8 @@ void main() {
     test('toJson produces correct output', () {
       final user = User(
         id: '1',
-        name: 'John Doe',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'john@example.com',
         createdAt: DateTime.parse('2024-01-15T10:30:00.000Z'),
       );
@@ -39,7 +41,8 @@ void main() {
       final json = user.toJson();
 
       expect(json['id'], '1');
-      expect(json['name'], 'John Doe');
+      expect(json['first_name'], 'John');
+      expect(json['last_name'], 'Doe');
       expect(json['email'], 'john@example.com');
       expect(json['created_at'], '2024-01-15T10:30:00.000Z');
     });
@@ -49,7 +52,8 @@ void main() {
     test('fromJson parses correctly with enum mappings', () {
       final json = {
         'user_id': 42,
-        'name': 'Jane',
+        'first_name': 'Jane',
+        'last_name': '',
         'age': 28,
         'height_cm': 165.5,
         'weight_kg': 60.0,
@@ -81,7 +85,8 @@ void main() {
     test('toJson maps enums to backend values', () {
       final profile = UserProfile(
         userId: '1',
-        name: 'Jane',
+        firstName: 'Jane',
+        lastName: '',
         age: 28,
         heightCm: 165.5,
         weightKg: 60.0,
@@ -105,7 +110,8 @@ void main() {
     test('fromJson handles all fitness goals', () {
       final base = {
         'user_id': 1,
-        'name': 'Test',
+        'first_name': 'Test',
+        'last_name': '',
         'age': 25,
         'height_cm': 170,
         'weight_kg': 70,
@@ -152,7 +158,8 @@ void main() {
     test('toApiJson excludes user_id, name, and updated_at', () {
       final profile = UserProfile(
         userId: '1',
-        name: 'Jane',
+        firstName: 'Jane',
+        lastName: '',
         age: 28,
         heightCm: 165.5,
         weightKg: 60.0,

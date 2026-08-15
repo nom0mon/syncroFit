@@ -2,7 +2,8 @@ import 'enums.dart';
 
 class UserProfile {
   final String userId;
-  final String name;
+  final String firstName;
+  final String lastName;
   final int age;
   final double heightCm;
   final double weightKg;
@@ -15,7 +16,8 @@ class UserProfile {
 
   const UserProfile({
     required this.userId,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.age,
     required this.heightCm,
     required this.weightKg,
@@ -27,10 +29,23 @@ class UserProfile {
     this.updatedAt,
   });
 
+  /// Backward-compatible computed full name.
+  String get name => '$firstName $lastName'.trim();
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // Read first_name/last_name with fallback from 'name'
+    String firstName = (json['first_name'] as String?) ?? '';
+    String lastName = (json['last_name'] as String?) ?? '';
+    if (firstName.isEmpty && lastName.isEmpty && json['name'] != null) {
+      final parts = (json['name'] as String).split(' ');
+      firstName = parts.first;
+      lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    }
+
     return UserProfile(
       userId: json['user_id'].toString(),
-      name: (json['name'] as String?) ?? '',
+      firstName: firstName,
+      lastName: lastName,
       age: json['age'] as int,
       heightCm: (json['height_cm'] as num).toDouble(),
       weightKg: (json['weight_kg'] as num).toDouble(),
@@ -52,7 +67,8 @@ class UserProfile {
   /// Serializes for local SQLite caching (includes all fields).
   Map<String, dynamic> toJson() => {
         'user_id': userId,
-        'name': name,
+        'first_name': firstName,
+        'last_name': lastName,
         'age': age,
         'height_cm': heightCm,
         'weight_kg': weightKg,
@@ -64,8 +80,8 @@ class UserProfile {
         'updated_at': updatedAt?.toIso8601String(),
       };
 
-  /// Serializes only the fields the backend API expects.
-  /// Excludes user_id (set from auth token), name (on user model),
+  /// Serializes only the fields the backend API expects for the profile.
+  /// Excludes user_id (set from auth token), name fields (on user model),
   /// and updated_at (managed by Laravel timestamps).
   Map<String, dynamic> toApiJson() => {
         'age': age,

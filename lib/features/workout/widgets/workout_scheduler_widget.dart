@@ -153,7 +153,7 @@ class _DayCard extends StatelessWidget {
               Text(
                 '${workout!.estimatedDurationMinutes}m',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: foregroundColor.withOpacity(0.8),
+                  color: foregroundColor.withValues(alpha: 0.8),
                 ),
               ),
             ],

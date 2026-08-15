@@ -97,8 +97,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              progressProvider
-                  .overrideWith(() => _FakeProgressNotifier()),
+              progressProvider.overrideWith(() => _FakeProgressNotifier()),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -127,8 +126,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              communityProvider
-                  .overrideWith(() => _FakeCommunityNotifier()),
+              communityProvider.overrideWith(() => _FakeCommunityNotifier()),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -142,8 +140,7 @@ void main() {
         expect(
           gradients,
           findsAtLeastNWidgets(2),
-          reason:
-              'FeedScreen should have at least 2 EdgeFadeGradient overlays '
+          reason: 'FeedScreen should have at least 2 EdgeFadeGradient overlays '
               '(top and bottom) for consistent UX with other module screens',
         );
       },
@@ -384,7 +381,8 @@ class _FakeProfileNotifier extends ProfileNotifier {
   @override
   Future<UserProfile?> build() async => const UserProfile(
         userId: 'user-001',
-        name: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
         age: 30,
         heightCm: 175.0,
         weightKg: 75.0,
@@ -392,6 +390,10 @@ class _FakeProfileNotifier extends ProfileNotifier {
         fitnessGoal: FitnessGoal.buildMuscle,
         fitnessLevel: FitnessLevel.intermediate,
         workoutPreference: WorkoutPreference.gym,
-        workoutAvailability: [DayOfWeek.monday, DayOfWeek.wednesday, DayOfWeek.friday],
+        workoutAvailability: [
+          DayOfWeek.monday,
+          DayOfWeek.wednesday,
+          DayOfWeek.friday
+        ],
       );
 }

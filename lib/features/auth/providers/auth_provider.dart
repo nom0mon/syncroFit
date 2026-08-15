@@ -62,14 +62,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Registers a new user with the given [name], [email], and [password].
+  /// Registers a new user with the given [firstName], [lastName], [email], and [password].
   ///
   /// On success, sets [AuthState.isAuthenticated] to true and populates the
   /// user. On failure, sets [AuthState.errorMessage].
-  Future<void> register(String name, String email, String password) async {
+  Future<void> register(
+      String firstName, String lastName, String email, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await _repository.register(name, email, password);
+    final result =
+        await _repository.register(firstName, lastName, email, password);
 
     switch (result) {
       case Success(value: final user):

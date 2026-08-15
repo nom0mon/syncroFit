@@ -35,8 +35,7 @@ void main() {
             },
             'token': 'test_token_123',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       await repository.login('test@test.com', 'password123');
 
@@ -61,8 +60,7 @@ void main() {
             },
             'token': 'auth_token_abc',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       await repository.login('test@test.com', 'password123');
 
@@ -83,17 +81,17 @@ void main() {
             },
             'token': 'some_token',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       final result = await repository.login('jane@example.com', 'secure_pass');
 
       expect(result, isA<Success<User, AppError>>());
       final user = (result as Success<User, AppError>).value;
       expect(user.id, equals('42'));
-      expect(user.name, equals('Jane Doe'));
+      expect(user.fullName, equals('Jane Doe'));
       expect(user.email, equals('jane@example.com'));
-      expect(user.createdAt, equals(DateTime.parse('2024-06-15T10:30:00.000Z')));
+      expect(
+          user.createdAt, equals(DateTime.parse('2024-06-15T10:30:00.000Z')));
     });
 
     test('returns error on failure', () async {
@@ -130,15 +128,15 @@ void main() {
             },
             'token': 'new_token',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
-      await repository.register('New User', 'new@test.com', 'password123');
+      await repository.register('New', 'User', 'new@test.com', 'password123');
 
       verify(() => mockApiClient.post<Map<String, dynamic>>(
             '/api/register',
             body: {
-              'name': 'New User',
+              'first_name': 'New',
+              'last_name': 'User',
               'email': 'new@test.com',
               'password': 'password123',
             },
@@ -160,10 +158,10 @@ void main() {
             },
             'token': 'register_token_xyz',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
-      await repository.register('Registered User', 'reg@test.com', 'pass1234');
+      await repository.register(
+          'Registered', 'User', 'reg@test.com', 'pass1234');
 
       verify(() => mockTokenStorage.saveToken('register_token_xyz')).called(1);
     });
@@ -182,18 +180,18 @@ void main() {
             },
             'token': 'alice_token',
           }));
-      when(() => mockTokenStorage.saveToken(any()))
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
-      final result =
-          await repository.register('Alice Smith', 'alice@example.com', 'pw123456');
+      final result = await repository.register(
+          'Alice', 'Smith', 'alice@example.com', 'pw123456');
 
       expect(result, isA<Success<User, AppError>>());
       final user = (result as Success<User, AppError>).value;
       expect(user.id, equals('99'));
-      expect(user.name, equals('Alice Smith'));
+      expect(user.fullName, equals('Alice Smith'));
       expect(user.email, equals('alice@example.com'));
-      expect(user.createdAt, equals(DateTime.parse('2024-08-20T15:00:00.000Z')));
+      expect(
+          user.createdAt, equals(DateTime.parse('2024-08-20T15:00:00.000Z')));
     });
 
     test('returns error on failure', () async {
@@ -202,11 +200,12 @@ void main() {
             body: any(named: 'body'),
             fromJson: any(named: 'fromJson'),
           )).thenAnswer((_) async => Failure<Map<String, dynamic>, AppError>(
-            ValidationError(fieldErrors: {'email': 'The email has already been taken.'}),
+            ValidationError(
+                fieldErrors: {'email': 'The email has already been taken.'}),
           ));
 
-      final result =
-          await repository.register('Test', 'taken@test.com', 'password');
+      final result = await repository.register(
+          'Test', 'User', 'taken@test.com', 'password');
 
       expect(result, isA<Failure<User, AppError>>());
       final error = (result as Failure<User, AppError>).error;
@@ -239,8 +238,7 @@ void main() {
     test('calls backend and clears token', () async {
       when(() => mockApiClient.post<void>('/api/logout'))
           .thenAnswer((_) async => const Success<void, AppError>(null));
-      when(() => mockTokenStorage.clearToken())
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.clearToken()).thenAnswer((_) async => {});
 
       final result = await repository.logout();
 
@@ -254,8 +252,7 @@ void main() {
           .thenAnswer((_) async => Failure<void, AppError>(
                 NetworkError(),
               ));
-      when(() => mockTokenStorage.clearToken())
-          .thenAnswer((_) async => {});
+      when(() => mockTokenStorage.clearToken()).thenAnswer((_) async => {});
 
       final result = await repository.logout();
 

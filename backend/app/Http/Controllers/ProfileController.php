@@ -19,7 +19,7 @@ class ProfileController extends Controller
             return $this->errorResponse('No profile exists', 404);
         }
 
-        return $this->successResponse($profile);
+        return $this->successResponse($this->profileWithName($profile));
     }
 
     /**
@@ -39,7 +39,7 @@ class ProfileController extends Controller
 
         $profile = $user->profile()->create($data);
 
-        return $this->createdResponse($profile);
+        return $this->createdResponse($this->profileWithName($profile));
     }
 
     /**
@@ -66,7 +66,20 @@ class ProfileController extends Controller
         $profile->update($data);
         $profile->refresh();
 
-        return $this->successResponse($profile);
+        return $this->successResponse($this->profileWithName($profile));
+    }
+
+    /**
+     * Appends the authenticated user's name fields to the profile data.
+     */
+    private function profileWithName($profile): array
+    {
+        $data = $profile->toArray();
+        $user = auth()->user();
+        $data['first_name'] = $user->first_name;
+        $data['last_name'] = $user->last_name;
+        $data['name'] = $user->full_name; // backward compat
+        return $data;
     }
 
     /**

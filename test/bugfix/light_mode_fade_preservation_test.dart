@@ -61,8 +61,7 @@ void main() {
         expect(
           gradient.colors[0],
           equals(AppColors.scaffoldBlack),
-          reason:
-              'EdgeFadeGradient top in dark mode should use black color '
+          reason: 'EdgeFadeGradient top in dark mode should use black color '
               'matching the dark scaffold background',
         );
       },
@@ -92,8 +91,7 @@ void main() {
         expect(
           gradient.colors[1],
           equals(AppColors.scaffoldBlack),
-          reason:
-              'EdgeFadeGradient bottom in dark mode should use black color '
+          reason: 'EdgeFadeGradient bottom in dark mode should use black color '
               'matching the dark scaffold background',
         );
       },
@@ -453,7 +451,8 @@ class _TrackingProfileNotifier extends ProfileNotifier {
   @override
   Future<UserProfile?> build() async => const UserProfile(
         userId: 'user-001',
-        name: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
         age: 30,
         heightCm: 175.0,
         weightKg: 75.0,
@@ -487,7 +486,8 @@ class _ProfileUpdateTestWidget extends ConsumerWidget {
       onPressed: () async {
         const updatedProfile = UserProfile(
           userId: 'user-001',
-          name: 'Updated User',
+          firstName: 'Updated',
+          lastName: 'User',
           age: 31,
           heightCm: 175.0,
           weightKg: 76.0,

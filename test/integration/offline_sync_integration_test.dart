@@ -133,7 +133,8 @@ Future<Database> _createInMemoryDatabase() async {
 
 UserProfile _testProfile({
   String userId = 'user-1',
-  String name = 'John Doe',
+  String firstName = 'John',
+  String lastName = 'Doe',
   int age = 25,
   double heightCm = 180.0,
   double weightKg = 75.0,
@@ -141,7 +142,8 @@ UserProfile _testProfile({
 }) {
   return UserProfile(
     userId: userId,
-    name: name,
+    firstName: firstName,
+    lastName: lastName,
     age: age,
     heightCm: heightCm,
     weightKg: weightKg,
@@ -229,7 +231,7 @@ void main() {
         'saves profile while offline → mutation enqueued → '
         'reconnect → sync processes queue → mutation removed', () async {
       // Step 1: Save profile while offline
-      final profile = _testProfile(name: 'Offline User');
+      final profile = _testProfile(firstName: 'Offline User');
       final result = await cachingProfileRepo.saveProfile(profile);
 
       // Verify save succeeded locally
@@ -274,13 +276,13 @@ void main() {
     test('multiple offline mutations are synced in chronological order',
         () async {
       // Create three mutations at different times
-      final profile1 = _testProfile(name: 'First Edit');
+      final profile1 = _testProfile(firstName: 'First Edit');
       await cachingProfileRepo.saveProfile(profile1);
 
       // Small delay to ensure distinct timestamps
       await Future.delayed(const Duration(milliseconds: 10));
 
-      final profile2 = _testProfile(name: 'Second Edit');
+      final profile2 = _testProfile(firstName: 'Second Edit');
       await cachingProfileRepo.updateProfile(profile2);
 
       // Verify two mutations are enqueued
@@ -326,7 +328,7 @@ void main() {
 
     test('sync engine emits correct events during processing', () async {
       // Save a mutation while offline
-      final profile = _testProfile(name: 'Event Test');
+      final profile = _testProfile(firstName: 'Event Test');
       await cachingProfileRepo.saveProfile(profile);
 
       // Mock Dio to return success
@@ -417,14 +419,14 @@ void main() {
         () async {
       // Step 1: Seed an initial profile in the local cache
       final initialProfile = _testProfile(
-        name: 'Original Name',
+        firstName: 'Original Name',
         updatedAt: DateTime(2024, 6, 1, 10, 0, 0),
       );
       await profileDao.upsert(initialProfile);
 
       // Step 2: Edit profile while offline
       final editedProfile = _testProfile(
-        name: 'Edited Offline',
+        firstName: 'Edited Offline',
         age: 30,
       );
       final result = await cachingProfileRepo.updateProfile(editedProfile);
@@ -475,13 +477,13 @@ void main() {
       // Step 1: Seed profile
       final oldServerTime = DateTime(2024, 1, 1, 10, 0, 0);
       final initialProfile = _testProfile(
-        name: 'Original',
+        firstName: 'Original',
         updatedAt: oldServerTime,
       );
       await profileDao.upsert(initialProfile);
 
       // Step 2: Edit while offline (mutation timestamp will be "now")
-      final editedProfile = _testProfile(name: 'Local Edit', age: 28);
+      final editedProfile = _testProfile(firstName: 'Local Edit', age: 28);
       await cachingProfileRepo.updateProfile(editedProfile);
 
       final pending = await syncQueue.getPending();
@@ -521,7 +523,8 @@ void main() {
       await profileDao.upsert(_testProfile(
         updatedAt: DateTime(2024, 6, 1),
       ));
-      await cachingProfileRepo.updateProfile(_testProfile(name: 'Conflict'));
+      await cachingProfileRepo
+          .updateProfile(_testProfile(firstName: 'Conflict'));
 
       // Mock 409 response
       when(() => mockDio.patch(
@@ -869,7 +872,7 @@ void main() {
         'initialize() subscribes to connectivity stream and auto-processes queue '
         'when transitioning offline→online (Req 4.1)', () async {
       // Step 1: Enqueue a mutation while offline
-      final profile = _testProfile(name: 'Auto Sync User');
+      final profile = _testProfile(firstName: 'Auto Sync User');
       await cachingProfileRepo.saveProfile(profile);
 
       final pending = await syncQueue.getPending();
@@ -900,10 +903,10 @@ void main() {
       expect(refreshCachesCalled, isTrue);
     });
 
-    test(
-        'initialize() does NOT auto-sync when status remains offline', () async {
+    test('initialize() does NOT auto-sync when status remains offline',
+        () async {
       // Enqueue a mutation while offline
-      final profile = _testProfile(name: 'Still Offline');
+      final profile = _testProfile(firstName: 'Still Offline');
       await cachingProfileRepo.saveProfile(profile);
 
       // Mock (shouldn't be called)
@@ -1027,7 +1030,7 @@ void main() {
       );
 
       // Step 2: Enqueue a mutation while offline
-      final profile = _testProfile(name: 'Refresh Test');
+      final profile = _testProfile(firstName: 'Refresh Test');
       await cachingProfileRepo.saveProfile(profile);
 
       // Step 3: Mock Dio for sync processing
@@ -1063,7 +1066,8 @@ void main() {
       final cachedExercises = await exerciseDao.getAll();
       expect(cachedExercises.length, equals(1));
       expect(cachedExercises.first.name, equals('Updated Push-ups'));
-      expect(cachedExercises.first.difficulty, equals(DifficultyLevel.intermediate));
+      expect(cachedExercises.first.difficulty,
+          equals(DifficultyLevel.intermediate));
       expect(cachedExercises.first.defaultReps, equals(15));
     });
   });
@@ -1128,7 +1132,7 @@ void main() {
         '(Req 5.2)', () async {
       // Step 1: Seed an initial profile in the cache
       final initialProfile = _testProfile(
-        name: 'Original Name',
+        firstName: 'Original Name',
         age: 25,
         heightCm: 180.0,
         weightKg: 75.0,
@@ -1138,7 +1142,7 @@ void main() {
 
       // Step 2: Edit only name and age while offline
       final editedProfile = _testProfile(
-        name: 'New Name',
+        firstName: 'New Name',
         age: 30,
         heightCm: 180.0, // unchanged
         weightKg: 75.0, // unchanged
@@ -1172,12 +1176,12 @@ void main() {
         'notification (Req 5.3)', () async {
       // Step 1: Seed profile and edit offline
       final initialProfile = _testProfile(
-        name: 'Original',
+        firstName: 'Original',
         updatedAt: DateTime(2024, 6, 1),
       );
       await profileDao.upsert(initialProfile);
 
-      final editedProfile = _testProfile(name: 'Offline Edit');
+      final editedProfile = _testProfile(firstName: 'Offline Edit');
       await cachingProfileRepo.updateProfile(editedProfile);
 
       // Step 2: Server has a newer timestamp (server wins)
@@ -1217,17 +1221,17 @@ void main() {
         'about overridden changes (Req 5.3)', () async {
       // Seed profile and enqueue two mutations (one will conflict)
       final initialProfile = _testProfile(
-        name: 'Base',
+        firstName: 'Base',
         updatedAt: DateTime(2024, 1, 1),
       );
       await profileDao.upsert(initialProfile);
 
       // First mutation: will succeed
-      final profile1 = _testProfile(name: 'First Edit');
+      final profile1 = _testProfile(firstName: 'First Edit');
       await cachingProfileRepo.saveProfile(profile1);
 
       // Second mutation: will conflict
-      final profile2 = _testProfile(name: 'Second Edit', age: 35);
+      final profile2 = _testProfile(firstName: 'Second Edit', age: 35);
       await cachingProfileRepo.updateProfile(profile2);
 
       final pending = await syncQueue.getPending();
@@ -1274,7 +1278,8 @@ void main() {
     });
   });
 
-  group('Integration: Tab navigation preserves state with cached data (Req 8.4)',
+  group(
+      'Integration: Tab navigation preserves state with cached data (Req 8.4)',
       () {
     late Database database;
     late ExerciseDao exerciseDao;
@@ -1340,30 +1345,28 @@ void main() {
       // Simulate "navigating to tab" — first read
       final firstRead = await cachingExerciseRepo.getAll();
       expect(firstRead, isA<Success<List<Exercise>, AppError>>());
-      expect(
-          (firstRead as Success<List<Exercise>, AppError>).value.length, equals(2));
+      expect((firstRead as Success<List<Exercise>, AppError>).value.length,
+          equals(2));
 
       // Apply a filter (simulating user selecting muscle group filter)
       final filteredRead =
           await cachingExerciseRepo.filterByMuscleGroup(['chest']);
       expect(filteredRead, isA<Success<List<Exercise>, AppError>>());
-      expect(
-          (filteredRead as Success<List<Exercise>, AppError>).value.length, equals(1));
-      expect(
-          (filteredRead).value.first.name, equals('Push-ups'));
+      expect((filteredRead as Success<List<Exercise>, AppError>).value.length,
+          equals(1));
+      expect((filteredRead).value.first.name, equals('Push-ups'));
 
       // Simulate "navigating away and back" — second read
       final secondRead = await cachingExerciseRepo.getAll();
       expect(secondRead, isA<Success<List<Exercise>, AppError>>());
-      expect(
-          (secondRead as Success<List<Exercise>, AppError>).value.length, equals(2));
+      expect((secondRead as Success<List<Exercise>, AppError>).value.length,
+          equals(2));
 
       // Re-apply same filter — data is still available (preserved in cache)
       final reFilteredRead =
           await cachingExerciseRepo.filterByMuscleGroup(['chest']);
       expect(reFilteredRead, isA<Success<List<Exercise>, AppError>>());
-      expect(
-          (reFilteredRead as Success<List<Exercise>, AppError>).value.length,
+      expect((reFilteredRead as Success<List<Exercise>, AppError>).value.length,
           equals(1));
 
       // Remote should NEVER be called since cache is fresh
@@ -1415,17 +1418,16 @@ void main() {
       // First tab entry: search for "Press"
       final searchResult1 = await cachingExerciseRepo.search('Press');
       expect(searchResult1, isA<Success<List<Exercise>, AppError>>());
-      final found1 =
-          (searchResult1 as Success<List<Exercise>, AppError>).value;
+      final found1 = (searchResult1 as Success<List<Exercise>, AppError>).value;
       expect(found1.length, equals(2));
 
       // "Navigate away" and come back — same search yields same results
       final searchResult2 = await cachingExerciseRepo.search('Press');
       expect(searchResult2, isA<Success<List<Exercise>, AppError>>());
-      final found2 =
-          (searchResult2 as Success<List<Exercise>, AppError>).value;
+      final found2 = (searchResult2 as Success<List<Exercise>, AppError>).value;
       expect(found2.length, equals(2));
-      expect(found2.map((e) => e.id).toSet(), equals(found1.map((e) => e.id).toSet()));
+      expect(found2.map((e) => e.id).toSet(),
+          equals(found1.map((e) => e.id).toSet()));
 
       // Verify no remote calls made
       verifyNever(() => mockRemoteExercise.getAll());

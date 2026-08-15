@@ -30,6 +30,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'store']);
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
 
+    // User name update
+    Route::put('/user/name', function (\Illuminate\Http\Request $request) {
+        $request->validate([
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
+        ]);
+        $user = auth()->user();
+        $user->update($request->only(['first_name', 'last_name']));
+        return response()->json(['success' => true, 'data' => $user]);
+    });
+
     // Exercises
     Route::get('/exercises', [\App\Http\Controllers\ExerciseController::class, 'index']);
     Route::get('/exercises/{exercise}', [\App\Http\Controllers\ExerciseController::class, 'show']);

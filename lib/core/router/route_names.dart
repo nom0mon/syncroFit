@@ -33,12 +33,11 @@ abstract final class RouteNames {
   static const String community = '/community';
   static const String postDetail = '/community/post/:id';
 
-
-
   // Settings
   static const String settings = '/settings';
   static const String notificationSettings = '/settings/notifications';
   static const String changePassword = '/settings/change-password';
+  static const String profileView = '/settings/profile';
   static const String editProfile = '/settings/edit-profile';
   static const String trainers = '/settings/trainers';
   static const String trainerDetail = '/settings/trainers/:id';

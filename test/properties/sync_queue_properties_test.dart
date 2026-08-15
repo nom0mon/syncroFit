@@ -125,7 +125,8 @@ void main() {
       (age, heightCm, weightKg) async {
         final profile = UserProfile(
           userId: 'test-user-1',
-          name: 'TestUser',
+          firstName: 'TestUser',
+          lastName: '',
           age: age,
           heightCm: heightCm,
           weightKg: weightKg,
@@ -176,7 +177,8 @@ void main() {
         // First seed initial profile in cache
         final initial = UserProfile(
           userId: 'test-user-2',
-          name: 'InitialName',
+          firstName: 'Initial',
+          lastName: 'Name',
           age: 25,
           heightCm: 175.0,
           weightKg: 70.0,
@@ -192,7 +194,8 @@ void main() {
         // Now update with new values while offline
         final updated = UserProfile(
           userId: 'test-user-2',
-          name: 'UpdatedName',
+          firstName: 'Updated',
+          lastName: 'Name',
           age: age,
           heightCm: 180.0,
           weightKg: 75.0,
@@ -229,7 +232,8 @@ void main() {
         final profileName = name.isEmpty ? 'DefaultName' : name;
         final profile = UserProfile(
           userId: 'test-user-3',
-          name: profileName,
+          firstName: profileName,
+          lastName: '',
           age: 30,
           heightCm: 170.0,
           weightKg: 65.0,
