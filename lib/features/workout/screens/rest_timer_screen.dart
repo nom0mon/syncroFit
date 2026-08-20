@@ -134,7 +134,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     if (workout == null) return '';
     final nextIndex = sessionState.currentExerciseIndex + 1;
     if (nextIndex >= workout.exercises.length) return '';
-    return workout.exercises[nextIndex].exerciseName;
+    return 'Exercise ${workout.exercises[nextIndex].exerciseId}';
   }
 
   void _onRestComplete() {

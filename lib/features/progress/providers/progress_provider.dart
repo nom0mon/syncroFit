@@ -1,44 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/caching/caching_providers.dart';
-import '../../../data/repositories/progress_repository.dart';
-import '../../../data/repositories/workout_repository.dart';
+import '../../../data/repositories/workout_history_repository.dart';
 import '../../../shared/models/models.dart';
 
-/// Provides the [ProgressRepository] instance used by the progress module.
+/// Provides the [WorkoutHistoryRepository] instance used by the progress module.
 ///
-/// Uses [CachingProgressRepository] which wraps the remote repository with
-/// local SQLite caching and offline support. The provider can be overridden
-/// with a mock in tests via ProviderScope overrides.
-final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
-  return ref.watch(cachingProgressRepositoryProvider);
+/// Uses the caching workout history repository which wraps the remote repository
+/// with local SQLite caching and offline support.
+final progressWorkoutHistoryRepositoryProvider =
+    Provider<WorkoutHistoryRepository>((ref) {
+  return ref.watch(cachingWorkoutHistoryRepositoryProvider);
 });
-
-/// Provides the [WorkoutRepository] instance used by the progress module
-/// (for fetching completed session history).
-///
-/// Uses [CachingWorkoutRepository] which wraps the remote repository with
-/// local SQLite caching and offline support. The provider can be overridden
-/// with a mock in tests via ProviderScope overrides.
-final progressWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  return ref.watch(cachingWorkoutRepositoryProvider);
-});
-
-/// A single weight data point for charting.
-class WeightDataPoint {
-  final DateTime date;
-  final double weightKg;
-
-  const WeightDataPoint({required this.date, required this.weightKg});
-}
-
-/// A single BMI data point for charting.
-class BmiDataPoint {
-  final DateTime date;
-  final double bmi;
-
-  const BmiDataPoint({required this.date, required this.bmi});
-}
 
 /// Weekly statistic entry showing workouts completed in a given week.
 class WeeklyStat {
@@ -53,126 +26,96 @@ class ProgressState {
   /// Total number of completed workouts.
   final int totalWorkouts;
 
-  /// Current consecutive workout day streak.
-  final int currentStreak;
+  /// Total duration in seconds across all completed workouts.
+  final int totalDurationSeconds;
 
-  /// Longest consecutive workout day streak.
-  final int longestStreak;
-
-  /// Current weight in kg.
-  final double currentWeightKg;
-
-  /// Weight history data points for charting (at least 5 points).
-  final List<WeightDataPoint> weightHistory;
-
-  /// BMI history data points for charting (at least 5 points).
-  final List<BmiDataPoint> bmiHistory;
-
-  /// Weekly statistics for the last 4 weeks.
+  /// Weekly statistics for recent weeks.
   final List<WeeklyStat> weeklyStats;
 
-  /// Recently completed workout sessions.
-  final List<WorkoutSession> recentSessions;
+  /// Recently completed workout history records.
+  final List<WorkoutHistory> recentHistory;
 
   const ProgressState({
     this.totalWorkouts = 0,
-    this.currentStreak = 0,
-    this.longestStreak = 0,
-    this.currentWeightKg = 0.0,
-    this.weightHistory = const [],
-    this.bmiHistory = const [],
+    this.totalDurationSeconds = 0,
     this.weeklyStats = const [],
-    this.recentSessions = const [],
+    this.recentHistory = const [],
   });
 }
 
 /// Provides the progress data as an async value, managed by [ProgressNotifier].
 ///
-/// Fetches summary stats, weight history, BMI history, weekly stats, and
-/// completed sessions from the mock repositories.
+/// Fetches workout history and derives summary statistics (total workouts,
+/// total duration, weekly stats) from the WorkoutHistory records.
 final progressProvider =
     AsyncNotifierProvider<ProgressNotifier, ProgressState>(() {
   return ProgressNotifier();
 });
 
 /// An [AsyncNotifier] that loads all progress tracking data from the
-/// progress and workout repositories.
+/// workout history repository and computes derived statistics.
 class ProgressNotifier extends AsyncNotifier<ProgressState> {
-  ProgressRepository get _progressRepo => ref.read(progressRepositoryProvider);
-  WorkoutRepository get _workoutRepo =>
-      ref.read(progressWorkoutRepositoryProvider);
+  WorkoutHistoryRepository get _historyRepo =>
+      ref.read(progressWorkoutHistoryRepositoryProvider);
 
   @override
   Future<ProgressState> build() async {
-    // Fetch data concurrently for efficiency
-    final results = await Future.wait([
-      _progressRepo.getSummary(),
-      _progressRepo.getRecords(),
-      _progressRepo.getWeeklyStats(),
-      _workoutRepo.getSessionHistory(),
-    ]);
+    // Use a dummy userId — in production this comes from the auth state.
+    const userId = '';
+    final historyResult = await _historyRepo.getAll(userId);
 
-    final summaryResult = results[0] as Result<ProgressSummary, AppError>;
-    final recordsResult = results[1] as Result<List<ProgressRecord>, AppError>;
-    final weeklyStatsResult = results[2] as Result<Map<String, int>, AppError>;
-    final sessionsResult = results[3] as Result<List<WorkoutSession>, AppError>;
-
-    // Extract summary stats
-    final summary = switch (summaryResult) {
-      Success(value: final s) => s,
-      Failure() => const ProgressSummary(
-          totalWorkouts: 0,
-          currentStreak: 0,
-          longestStreak: 0,
-          currentWeightKg: 0.0,
-        ),
+    final history = switch (historyResult) {
+      Success(value: final records) => records,
+      Failure() => <WorkoutHistory>[],
     };
 
-    // Extract progress records for weight and BMI history
-    final records = switch (recordsResult) {
-      Success(value: final r) => r,
-      Failure() => <ProgressRecord>[],
-    };
+    // Compute total workouts
+    final totalWorkouts = history.length;
 
-    // Extract weekly stats
-    final weeklyStatsMap = switch (weeklyStatsResult) {
-      Success(value: final s) => s,
-      Failure() => <String, int>{},
-    };
+    // Compute total duration
+    final totalDurationSeconds =
+        history.fold<int>(0, (sum, record) => sum + record.totalDurationSeconds);
 
-    // Extract completed sessions
-    final sessions = switch (sessionsResult) {
-      Success(value: final s) => s,
-      Failure() => <WorkoutSession>[],
-    };
+    // Compute weekly stats from history
+    final weeklyStats = _computeWeeklyStats(history);
 
-    // Build weight history from progress records (sorted by date ascending for charting)
-    final sortedRecords = List<ProgressRecord>.from(records)
-      ..sort((a, b) => a.date.compareTo(b.date));
-
-    final weightHistory = sortedRecords
-        .map((r) => WeightDataPoint(date: r.date, weightKg: r.weightKg))
-        .toList();
-
-    // Build BMI history from progress records (sorted by date ascending for charting)
-    final bmiHistory = sortedRecords
-        .map((r) => BmiDataPoint(date: r.date, bmi: r.bmi))
-        .toList();
-
-    // Build weekly stats list from the map
-    final weeklyStats = weeklyStatsMap.entries
-        .map((e) => WeeklyStat(weekLabel: e.key, workoutsCompleted: e.value))
-        .toList();
+    // Sort by completedAt descending for recent history
+    final sortedHistory = List<WorkoutHistory>.from(history)
+      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
 
     return ProgressState(
-      totalWorkouts: summary.totalWorkouts,
-      currentStreak: summary.currentStreak,
-      longestStreak: summary.longestStreak,
-      currentWeightKg: summary.currentWeightKg,
-      weightHistory: weightHistory,
-      bmiHistory: bmiHistory,
+      totalWorkouts: totalWorkouts,
+      totalDurationSeconds: totalDurationSeconds,
       weeklyStats: weeklyStats,
-      recentSessions: sessions,
+      recentHistory: sortedHistory.take(10).toList(),
     );
+  }
+
+  /// Groups workout history records by ISO week and counts workouts per week.
+  List<WeeklyStat> _computeWeeklyStats(List<WorkoutHistory> history) {
+    final weekCounts = <String, int>{};
+
+    for (final record in history) {
+      final weekLabel = _getIsoWeekLabel(record.completedAt);
+      weekCounts[weekLabel] = (weekCounts[weekLabel] ?? 0) + 1;
+    }
+
+    // Sort by week label descending and take last 4 weeks
+    final entries = weekCounts.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+
+    return entries
+        .take(4)
+        .map((e) => WeeklyStat(weekLabel: e.key, workoutsCompleted: e.value))
+        .toList();
+  }
+
+  /// Returns an ISO week label like "2024-W23" for the given date.
+  String _getIsoWeekLabel(DateTime date) {
+    // Calculate ISO week number
+    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+    final weekday = date.weekday; // 1=Mon, 7=Sun
+    final weekNumber = ((dayOfYear - weekday + 10) / 7).floor();
+    return '${date.year}-W${weekNumber.toString().padLeft(2, '0')}';
   }
 }

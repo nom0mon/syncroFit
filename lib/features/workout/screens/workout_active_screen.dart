@@ -106,7 +106,7 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
 
             // Exercise name
             Text(
-              currentExercise.exerciseName,
+              'Exercise ${currentExercise.exerciseId}',
               style: theme.textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),

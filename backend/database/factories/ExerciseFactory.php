@@ -40,8 +40,8 @@ class ExerciseFactory extends Factory
             'difficulty' => fake()->randomElement(self::DIFFICULTIES),
             'default_sets' => fake()->numberBetween(2, 5),
             'default_reps' => fake()->numberBetween(5, 20),
-            'default_duration_seconds' => fake()->randomElement([null, 30, 45, 60]),
-            'image_url' => null,
+            'default_duration_seconds' => fake()->randomElement([30, 45, 60]),
+            'video_path' => null,
         ];
     }
 }

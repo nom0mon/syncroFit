@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/models/workout_session.dart';
+import '../../../core/models/workout_history.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../utils/session_display_utils.dart';
 
@@ -19,7 +19,7 @@ class CompletedSessionsWidget extends StatelessWidget {
   });
 
   /// The workout sessions completed on [selectedDate].
-  final List<WorkoutSession> sessions;
+  final List<WorkoutHistory> sessions;
 
   /// The currently selected date to display sessions for.
   final DateTime selectedDate;
@@ -70,7 +70,7 @@ class CompletedSessionsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSessionRow(WorkoutSession session, ThemeData theme) {
+  Widget _buildSessionRow(WorkoutHistory session, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(

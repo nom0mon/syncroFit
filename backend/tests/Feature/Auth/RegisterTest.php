@@ -13,7 +13,8 @@ class RegisterTest extends TestCase
     public function test_user_can_register_with_valid_data(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
             'email' => 'john@example.com',
             'password' => 'password123',
         ]);
@@ -22,7 +23,7 @@ class RegisterTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'user' => ['id', 'name', 'email'],
+                    'user' => ['id', 'first_name', 'last_name', 'email'],
                     'token',
                 ],
                 'message',
@@ -31,7 +32,8 @@ class RegisterTest extends TestCase
                 'success' => true,
                 'data' => [
                     'user' => [
-                        'name' => 'John Doe',
+                        'first_name' => 'John',
+                        'last_name' => 'Doe',
                         'email' => 'john@example.com',
                     ],
                 ],
@@ -39,7 +41,8 @@ class RegisterTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
         ]);
     }
 
@@ -48,7 +51,8 @@ class RegisterTest extends TestCase
         User::factory()->create(['email' => 'existing@example.com']);
 
         $response = $this->postJson('/api/register', [
-            'name' => 'Another User',
+            'first_name' => 'Another',
+            'last_name' => 'User',
             'email' => 'existing@example.com',
             'password' => 'password123',
         ]);
@@ -58,23 +62,25 @@ class RegisterTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
-    public function test_register_returns_422_for_invalid_name(): void
+    public function test_register_returns_422_for_missing_first_name(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => '',
+            'first_name' => '',
+            'last_name' => 'Doe',
             'email' => 'valid@example.com',
             'password' => 'password123',
         ]);
 
         $response->assertStatus(422)
             ->assertJson(['success' => false])
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['first_name']);
     }
 
     public function test_register_returns_422_for_invalid_email(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
             'email' => 'not-an-email',
             'password' => 'password123',
         ]);
@@ -87,7 +93,8 @@ class RegisterTest extends TestCase
     public function test_register_returns_422_for_short_password(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
             'email' => 'john@example.com',
             'password' => 'short',
         ]);
@@ -100,7 +107,8 @@ class RegisterTest extends TestCase
     public function test_register_returns_422_for_long_password(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
             'email' => 'john@example.com',
             'password' => str_repeat('a', 129),
         ]);

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/caching/caching_providers.dart';
-import '../../../data/repositories/progress_repository.dart';
+import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
@@ -14,13 +14,13 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return ref.watch(cachingWorkoutRepositoryProvider);
 });
 
-/// Provides the [ProgressRepository] instance used by the dashboard.
+/// Provides the [WorkoutHistoryRepository] instance used by the dashboard.
 ///
-/// Uses [CachingProgressRepository] which wraps the remote repository with
-/// local SQLite caching and offline support. The provider can be overridden
-/// with a mock in tests via ProviderScope overrides.
-final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
-  return ref.watch(cachingProgressRepositoryProvider);
+/// Uses [CachingWorkoutHistoryRepository] which wraps the remote repository
+/// with local SQLite caching and offline support.
+final dashboardHistoryRepositoryProvider =
+    Provider<WorkoutHistoryRepository>((ref) {
+  return ref.watch(cachingWorkoutHistoryRepositoryProvider);
 });
 
 /// The state exposed by the dashboard provider, containing all data needed
@@ -41,8 +41,8 @@ class DashboardState {
   /// Consecutive workout day streak.
   final int streak;
 
-  /// All completed workout sessions (used by calendar and chart widgets).
-  final List<WorkoutSession> sessions;
+  /// All completed workout history records (used by calendar and chart widgets).
+  final List<WorkoutHistory> history;
 
   const DashboardState({
     this.todaysWorkout,
@@ -50,51 +50,51 @@ class DashboardState {
     this.plannedDays = 0,
     this.goalPercentage = 0,
     this.streak = 0,
-    this.sessions = const [],
+    this.history = const [],
   });
 
   /// Derives a set of dates (year/month/day only) with completed workouts.
-  Set<DateTime> get completedDates => sessions
-      .map((s) =>
-          DateTime(s.completedAt.year, s.completedAt.month, s.completedAt.day))
+  Set<DateTime> get completedDates => history
+      .map((h) =>
+          DateTime(h.completedAt.year, h.completedAt.month, h.completedAt.day))
       .toSet();
 
-  /// Returns sessions completed on the given [date].
-  List<WorkoutSession> sessionsForDate(DateTime date) => sessions
-      .where((s) =>
-          s.completedAt.year == date.year &&
-          s.completedAt.month == date.month &&
-          s.completedAt.day == date.day)
+  /// Returns history records completed on the given [date].
+  List<WorkoutHistory> historyForDate(DateTime date) => history
+      .where((h) =>
+          h.completedAt.year == date.year &&
+          h.completedAt.month == date.month &&
+          h.completedAt.day == date.day)
       .toList();
 }
 
 /// Provides the dashboard data as an async value, managed by [DashboardNotifier].
 ///
-/// Fetches today's workout, weekly progress, goal percentage, and workout streak
-/// from the mock repositories.
+/// Fetches today's workout, workout history, and computes weekly progress
+/// and goal percentage from the repositories.
 final dashboardProvider =
     AsyncNotifierProvider<DashboardNotifier, DashboardState>(() {
   return DashboardNotifier();
 });
 
 /// An [AsyncNotifier] that loads all dashboard data from the workout and
-/// progress repositories.
+/// workout history repositories.
 class DashboardNotifier extends AsyncNotifier<DashboardState> {
   WorkoutRepository get _workoutRepo => ref.read(workoutRepositoryProvider);
-  ProgressRepository get _progressRepo => ref.read(progressRepositoryProvider);
+  WorkoutHistoryRepository get _historyRepo =>
+      ref.read(dashboardHistoryRepositoryProvider);
 
   @override
   Future<DashboardState> build() async {
     // Fetch data concurrently for efficiency
     final results = await Future.wait([
       _workoutRepo.getTodaysWorkout(),
-      _progressRepo.getSummary(),
-      _workoutRepo.getSessionHistory(),
+      _historyRepo.getAll(''),
     ]);
 
     final workoutResult = results[0] as Result<Workout?, AppError>;
-    final summaryResult = results[1] as Result<ProgressSummary, AppError>;
-    final sessionsResult = results[2] as Result<List<WorkoutSession>, AppError>;
+    final historyResult =
+        results[1] as Result<List<WorkoutHistory>, AppError>;
 
     // Extract today's workout
     final todaysWorkout = switch (workoutResult) {
@@ -102,51 +102,42 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
       Failure() => null,
     };
 
-    // Extract progress summary for streak and total workouts
-    final summary = switch (summaryResult) {
-      Success(value: final s) => s,
-      Failure() => const ProgressSummary(
-          totalWorkouts: 0,
-          currentStreak: 0,
-          longestStreak: 0,
-          currentWeightKg: 0,
-        ),
+    // Extract workout history
+    final history = switch (historyResult) {
+      Success(value: final h) => h,
+      Failure() => <WorkoutHistory>[],
     };
 
-    // Calculate weekly progress from session history
-    final sessions = switch (sessionsResult) {
-      Success(value: final s) => s,
-      Failure() => <WorkoutSession>[],
-    };
+    final weeklyProgress = _calculateWeeklyProgress(history);
 
-    final weeklyProgress = _calculateWeeklyProgress(sessions);
+    // Calculate goal percentage based on workouts completed.
+    final goalPercentage = _calculateGoalPercentage(history.length);
 
-    // Calculate goal percentage based on workouts completed vs a target.
-    // Using planned days per week as the target; scale across progress records.
-    final goalPercentage = _calculateGoalPercentage(summary);
+    // Calculate streak from history
+    final streak = _calculateStreak(history);
 
     return DashboardState(
       todaysWorkout: todaysWorkout,
       completedDays: weeklyProgress.completed,
       plannedDays: weeklyProgress.planned,
       goalPercentage: goalPercentage,
-      streak: summary.currentStreak,
-      sessions: sessions,
+      streak: streak,
+      history: history,
     );
   }
 
   /// Calculates how many days were completed this week and how many were planned.
-  _WeeklyProgress _calculateWeeklyProgress(List<WorkoutSession> sessions) {
+  _WeeklyProgress _calculateWeeklyProgress(List<WorkoutHistory> history) {
     final now = DateTime.now();
     // Find the start of the current week (Monday)
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekStartDate =
         DateTime(weekStart.year, weekStart.month, weekStart.day);
 
-    // Count sessions completed this week
-    final completedThisWeek = sessions.where((session) {
-      return session.completedAt.isAfter(weekStartDate) ||
-          _isSameDay(session.completedAt, weekStartDate);
+    // Count records completed this week
+    final completedThisWeek = history.where((record) {
+      return record.completedAt.isAfter(weekStartDate) ||
+          _isSameDay(record.completedAt, weekStartDate);
     }).length;
 
     // Planned days based on user profile workout availability (default 3 days/week)
@@ -160,11 +151,37 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
 
   /// Calculates goal progress as a percentage (0–100).
   /// Uses total workouts toward a monthly goal target.
-  int _calculateGoalPercentage(ProgressSummary summary) {
+  int _calculateGoalPercentage(int totalWorkouts) {
     // Target: 20 workouts per month as a reasonable fitness goal
     const monthlyTarget = 20;
-    final percentage = ((summary.totalWorkouts / monthlyTarget) * 100).round();
+    final percentage = ((totalWorkouts / monthlyTarget) * 100).round();
     return percentage.clamp(0, 100);
+  }
+
+  /// Calculates the current consecutive workout day streak from history.
+  int _calculateStreak(List<WorkoutHistory> history) {
+    if (history.isEmpty) return 0;
+
+    // Get unique dates sorted descending
+    final dates = history
+        .map((h) =>
+            DateTime(h.completedAt.year, h.completedAt.month, h.completedAt.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    if (dates.isEmpty) return 0;
+
+    int streak = 1;
+    for (int i = 1; i < dates.length; i++) {
+      final diff = dates[i - 1].difference(dates[i]).inDays;
+      if (diff == 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
   }
 
   bool _isSameDay(DateTime a, DateTime b) {

@@ -6,7 +6,7 @@ enum SyncStatus { pending, inProgress, failed }
 /// Represents a mutation queued for sync with the backend.
 class SyncMutation {
   final String id;
-  final String entityType; // 'exercise', 'workout', 'profile', 'progress'
+  final String entityType; // 'exercise', 'workout', 'profile', 'workout_history'
   final String entityId;
   final String operationType; // 'create', 'update', 'delete'
   final Map<String, dynamic> payload;

@@ -37,7 +37,7 @@ final _allExercises = [
     defaultDurationSeconds: 60,
     defaultSets: 3,
     defaultReps: 10,
-    imagePlaceholder: 'bench_press.png',
+    videoPath: 'bench_press.png',
   ),
   const Exercise(
     id: '2',
@@ -49,7 +49,7 @@ final _allExercises = [
     defaultDurationSeconds: 45,
     defaultSets: 3,
     defaultReps: 15,
-    imagePlaceholder: 'push_up.png',
+    videoPath: 'push_up.png',
   ),
   const Exercise(
     id: '3',
@@ -61,7 +61,7 @@ final _allExercises = [
     defaultDurationSeconds: 90,
     defaultSets: 4,
     defaultReps: 5,
-    imagePlaceholder: 'deadlift.png',
+    videoPath: 'deadlift.png',
   ),
   const Exercise(
     id: '4',
@@ -73,7 +73,7 @@ final _allExercises = [
     defaultDurationSeconds: 60,
     defaultSets: 3,
     defaultReps: 8,
-    imagePlaceholder: 'pull_up.png',
+    videoPath: 'pull_up.png',
   ),
   const Exercise(
     id: '5',
@@ -85,7 +85,7 @@ final _allExercises = [
     defaultDurationSeconds: 90,
     defaultSets: 4,
     defaultReps: 8,
-    imagePlaceholder: 'squat.png',
+    videoPath: 'squat.png',
   ),
   const Exercise(
     id: '6',
@@ -97,7 +97,7 @@ final _allExercises = [
     defaultDurationSeconds: 60,
     defaultSets: 3,
     defaultReps: 12,
-    imagePlaceholder: 'lunges.png',
+    videoPath: 'lunges.png',
   ),
   const Exercise(
     id: '7',
@@ -109,7 +109,7 @@ final _allExercises = [
     defaultDurationSeconds: 60,
     defaultSets: 3,
     defaultReps: 10,
-    imagePlaceholder: 'overhead_press.png',
+    videoPath: 'overhead_press.png',
   ),
   const Exercise(
     id: '8',
@@ -121,7 +121,7 @@ final _allExercises = [
     defaultDurationSeconds: 45,
     defaultSets: 3,
     defaultReps: 12,
-    imagePlaceholder: 'lateral_raise.png',
+    videoPath: 'lateral_raise.png',
   ),
   const Exercise(
     id: '9',
@@ -133,7 +133,7 @@ final _allExercises = [
     defaultDurationSeconds: 45,
     defaultSets: 3,
     defaultReps: 12,
-    imagePlaceholder: 'bicep_curl.png',
+    videoPath: 'bicep_curl.png',
   ),
   const Exercise(
     id: '10',
@@ -145,7 +145,7 @@ final _allExercises = [
     defaultDurationSeconds: 60,
     defaultSets: 3,
     defaultReps: 1,
-    imagePlaceholder: 'plank.png',
+    videoPath: 'plank.png',
   ),
 ];
 
@@ -212,7 +212,7 @@ void main() {
               default_duration_seconds INTEGER NOT NULL,
               default_sets INTEGER NOT NULL,
               default_reps INTEGER NOT NULL,
-              image_url TEXT NOT NULL
+              video_path TEXT
             )
           ''');
           await db.execute('''

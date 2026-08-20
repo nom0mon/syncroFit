@@ -29,8 +29,8 @@ class ApiResponseEnvelopeTest extends TestCase
     /**
      * Property 20: Consistent API Response Envelope
      *
-     * Hit multiple endpoints (register, login, profile, exercises, progress,
-     * device-tokens) with both valid and invalid data. Verify every response has:
+     * Hit multiple endpoints (register, login, profile, exercises) with both
+     * valid and invalid data. Verify every response has:
      * - Content-Type: application/json header
      * - Success responses: {"success": true, "data": ..., "message": ...}
      * - Error responses: {"success": false, "message": ..., "errors": ...}
@@ -39,7 +39,7 @@ class ApiResponseEnvelopeTest extends TestCase
      */
     public function test_all_endpoints_conform_to_response_envelope_property(): void
     {
-        // Create test data (override nullable-incompatible factory defaults)
+        // Create test data
         Exercise::factory()->count(5)->create(['default_duration_seconds' => 60]);
         $user = User::factory()->create([
             'password' => Hash::make('TestPassword123'),
@@ -47,7 +47,7 @@ class ApiResponseEnvelopeTest extends TestCase
 
         for ($i = 0; $i < 50; $i++) {
             // Randomly pick an endpoint scenario
-            $scenario = mt_rand(0, 12);
+            $scenario = mt_rand(0, 8);
 
             $response = match ($scenario) {
                 0 => $this->hitRegisterValid(),
@@ -59,10 +59,6 @@ class ApiResponseEnvelopeTest extends TestCase
                 6 => $this->hitProfileUnauthed(),
                 7 => $this->hitExercisesAuthed($user),
                 8 => $this->hitExerciseNotFound($user),
-                9 => $this->hitProgressSummaryAuthed($user),
-                10 => $this->hitProgressSummaryUnauthed(),
-                11 => $this->hitDeviceTokensValid($user),
-                12 => $this->hitDeviceTokensInvalid($user),
             };
 
             // Assert Content-Type header is application/json
@@ -145,7 +141,8 @@ class ApiResponseEnvelopeTest extends TestCase
     private function hitRegisterValid()
     {
         $payload = [
-            'name' => 'User' . Str::random(8),
+            'first_name' => 'User' . Str::random(5),
+            'last_name' => 'Test' . Str::random(5),
             'email' => Str::random(10) . '@example.com',
             'password' => 'ValidPass' . Str::random(8),
         ];
@@ -159,8 +156,8 @@ class ApiResponseEnvelopeTest extends TestCase
         $strategy = mt_rand(0, 2);
 
         $payload = match ($strategy) {
-            0 => ['name' => '', 'email' => 'bad', 'password' => 'short'],  // all invalid
-            1 => ['name' => Str::random(60), 'email' => 'valid@test.com', 'password' => 'ValidPass1'], // name too long
+            0 => ['first_name' => '', 'last_name' => '', 'email' => 'bad', 'password' => 'short'],  // all invalid
+            1 => ['first_name' => Str::random(60), 'last_name' => 'Doe', 'email' => 'valid@test.com', 'password' => 'ValidPass1'], // first_name too long
             2 => ['email' => 'a@b.com'],  // missing fields
         };
 
@@ -227,37 +224,5 @@ class ApiResponseEnvelopeTest extends TestCase
     {
         Sanctum::actingAs($user);
         return $this->getJson('/api/exercises/99999');
-    }
-
-    private function hitProgressSummaryAuthed(User $user)
-    {
-        Sanctum::actingAs($user);
-        return $this->getJson('/api/progress/summary');
-    }
-
-    private function hitProgressSummaryUnauthed()
-    {
-        return $this->getJson('/api/progress/summary');
-    }
-
-    private function hitDeviceTokensValid(User $user)
-    {
-        Sanctum::actingAs($user);
-        return $this->postJson('/api/device-tokens', [
-            'token' => 'fcm_' . Str::random(30),
-            'device_id' => 'device_' . Str::random(10),
-        ]);
-    }
-
-    private function hitDeviceTokensInvalid(User $user)
-    {
-        Sanctum::actingAs($user);
-        // Missing required fields
-        $strategy = mt_rand(0, 1);
-
-        return match ($strategy) {
-            0 => $this->postJson('/api/device-tokens', []),  // empty body
-            1 => $this->postJson('/api/device-tokens', ['token' => '']),  // empty token, missing device_id
-        };
     }
 }

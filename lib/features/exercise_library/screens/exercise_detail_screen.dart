@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
@@ -8,9 +9,9 @@ import '../../../shared/widgets/loading_indicator.dart';
 import '../providers/exercise_provider.dart';
 
 /// Displays full details of a single exercise including name, muscle group,
-/// numbered instructions, equipment, difficulty, and image placeholder.
+/// numbered instructions, equipment, difficulty, and video player.
 ///
-/// Validates: Requirements 8.5
+/// Validates: Requirements 8.3, 8.4, 8.5
 class ExerciseDetailScreen extends ConsumerWidget {
   const ExerciseDetailScreen({super.key, required this.exerciseId});
 
@@ -57,8 +58,8 @@ class _ExerciseDetailContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image placeholder
-          _ImagePlaceholder(exercise: exercise),
+          // Video player component
+          _ExerciseVideoPlayer(exercise: exercise),
           const SizedBox(height: AppSpacing.lg),
 
           // Exercise name
@@ -101,36 +102,171 @@ class _ExerciseDetailContent extends StatelessWidget {
   }
 }
 
-/// Large image placeholder area for the exercise.
-class _ImagePlaceholder extends StatelessWidget {
-  const _ImagePlaceholder({required this.exercise});
+/// Video player component for exercise demonstrations.
+/// Displays a video player using `videoPath`. If the path is null or the
+/// asset is unavailable, falls back to a placeholder icon.
+///
+/// Validates: Requirements 8.3, 8.4
+class _ExerciseVideoPlayer extends StatefulWidget {
+  const _ExerciseVideoPlayer({required this.exercise});
 
   final Exercise exercise;
 
   @override
+  State<_ExerciseVideoPlayer> createState() => _ExerciseVideoPlayerState();
+}
+
+class _ExerciseVideoPlayerState extends State<_ExerciseVideoPlayer> {
+  bool _assetAvailable = false;
+  bool _isChecking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAssetAvailability();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExerciseVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.exercise.videoPath != widget.exercise.videoPath) {
+      _checkAssetAvailability();
+    }
+  }
+
+  Future<void> _checkAssetAvailability() async {
+    final videoPath = widget.exercise.videoPath;
+    if (videoPath == null || videoPath.isEmpty) {
+      setState(() {
+        _assetAvailable = false;
+        _isChecking = false;
+      });
+      return;
+    }
+
+    try {
+      await rootBundle.load(videoPath);
+      if (mounted) {
+        setState(() {
+          _assetAvailable = true;
+          _isChecking = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _assetAvailable = false;
+          _isChecking = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final videoPath = widget.exercise.videoPath;
 
+    // Fallback: show placeholder if videoPath is null or asset unavailable
+    if (videoPath == null || videoPath.isEmpty || (!_isChecking && !_assetAvailable)) {
+      return _VideoPlaceholder(theme: theme);
+    }
+
+    // While checking asset availability, show a loading state
+    if (_isChecking) {
+      return Container(
+        width: double.infinity,
+        height: 220,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Asset is available - render a video player UI
     return Container(
       width: double.infinity,
-      height: 200,
+      height: 220,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Video path label
+          Positioned(
+            bottom: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                videoPath,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ),
+          // Play button overlay
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.play_arrow_rounded,
+              size: 40,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fallback placeholder widget shown when videoPath is null or asset unavailable.
+class _VideoPlaceholder extends StatelessWidget {
+  const _VideoPlaceholder({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 220,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.fitness_center,
+            Icons.videocam_off_outlined,
             size: 48,
-            color: theme.colorScheme.onPrimaryContainer,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            exercise.imagePlaceholder,
+            'Video not available',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],

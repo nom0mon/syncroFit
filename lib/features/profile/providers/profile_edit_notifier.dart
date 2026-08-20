@@ -175,10 +175,23 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
   /// Returns an error message or null if valid.
   String? _validateField(String fieldName, dynamic value) {
     switch (fieldName) {
-      case 'name':
+      case 'first_name':
         final name = value as String?;
         if (name == null || name.trim().isEmpty) {
-          return 'Name is required';
+          return 'First name is required';
+        }
+        if (name.trim().length > 50) {
+          return 'First name must be 50 characters or fewer';
+        }
+        return null;
+
+      case 'last_name':
+        final name = value as String?;
+        if (name == null || name.trim().isEmpty) {
+          return 'Last name is required';
+        }
+        if (name.trim().length > 50) {
+          return 'Last name must be 50 characters or fewer';
         }
         return null;
 
@@ -214,8 +227,10 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
   /// Gets the original value for a given field name from the original profile.
   dynamic _getOriginalFieldValue(String fieldName) {
     switch (fieldName) {
-      case 'name':
-        return _originalProfile.name;
+      case 'first_name':
+        return _originalProfile.firstName;
+      case 'last_name':
+        return _originalProfile.lastName;
       case 'age':
         return _originalProfile.age;
       case 'height_cm':
@@ -243,9 +258,12 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
 
     return UserProfile(
       userId: _originalProfile.userId,
-      name: dirty.containsKey('name')
-          ? dirty['name'] as String
-          : _originalProfile.name,
+      firstName: dirty.containsKey('first_name')
+          ? dirty['first_name'] as String
+          : _originalProfile.firstName,
+      lastName: dirty.containsKey('last_name')
+          ? dirty['last_name'] as String
+          : _originalProfile.lastName,
       age: dirty.containsKey('age')
           ? (dirty['age'] is int
               ? dirty['age'] as int

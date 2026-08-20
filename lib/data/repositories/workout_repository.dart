@@ -10,10 +10,4 @@ abstract class WorkoutRepository {
 
   /// Retrieves today's scheduled workout.
   Future<Result<Workout?, AppError>> getTodaysWorkout();
-
-  /// Retrieves the history of completed workout sessions.
-  Future<Result<List<WorkoutSession>, AppError>> getSessionHistory();
-
-  /// Saves a completed workout session.
-  Future<Result<WorkoutSession, AppError>> saveSession(WorkoutSession session);
 }

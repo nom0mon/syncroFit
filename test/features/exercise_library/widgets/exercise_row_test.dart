@@ -23,7 +23,7 @@ void main() {
     defaultDurationSeconds: 300,
     defaultSets: 4,
     defaultReps: 10,
-    imagePlaceholder: 'assets/images/bench_press.png',
+    videoPath: 'assets/images/bench_press.png',
   );
 
   const testExerciseNoEquipment = Exercise(
@@ -36,7 +36,7 @@ void main() {
     defaultDurationSeconds: 180,
     defaultSets: 3,
     defaultReps: 15,
-    imagePlaceholder: 'assets/images/push_up.png',
+    videoPath: 'assets/images/push_up.png',
   );
 
   Widget buildSubject({
@@ -92,7 +92,7 @@ void main() {
         defaultDurationSeconds: 60,
         defaultSets: 3,
         defaultReps: 1,
-        imagePlaceholder: 'assets/images/plank.png',
+        videoPath: 'assets/images/plank.png',
       );
 
       await tester.pumpWidget(

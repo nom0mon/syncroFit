@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/calendar_grid_widget.dart';
@@ -92,7 +93,7 @@ class _DashboardContentState extends State<_DashboardContent> {
   @override
   Widget build(BuildContext context) {
     final completedDates = widget.state.completedDates;
-    final sessionsForDate = widget.state.sessionsForDate(_selectedDate);
+    final sessionsForDate = widget.state.historyForDate(_selectedDate);
 
     return Stack(
       children: [
@@ -114,7 +115,7 @@ class _DashboardContentState extends State<_DashboardContent> {
               ),
               const SizedBox(height: AppSpacing.md),
               WeeklyLoadChartWidget(
-                sessions: widget.state.sessions,
+                sessions: widget.state.history,
               ),
               const SizedBox(height: AppSpacing.md),
               CompletedSessionsWidget(
@@ -192,10 +193,10 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
             // Menu items
             ListTile(
               leading: const Icon(Icons.person_outline),
-              title: const Text('Edit Profile'),
+              title: const Text('My Profile'),
               onTap: () {
                 Navigator.of(context).pop();
-                context.push('/settings/edit-profile');
+                context.push('/settings/profile');
               },
             ),
             ListTile(
@@ -220,6 +221,44 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
               title: const Text('Dark Mode'),
               value: isDarkMode,
               onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Sign Out',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Sign Out'),
+                    content:
+                        const Text('Are you sure you want to sign out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && context.mounted) {
+                  Navigator.of(context).pop(); // close overlay
+                  await ref.read(authStateProvider.notifier).logout();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                }
+              },
             ),
           ],
         ),

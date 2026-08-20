@@ -3,14 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_client.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/exercise_repository.dart';
-import '../repositories/notification_repository.dart';
 import '../repositories/profile_repository.dart';
-import '../repositories/progress_repository.dart';
+import '../repositories/workout_history_repository.dart';
 import 'remote_auth_repository.dart';
 import 'remote_exercise_repository.dart';
-import 'remote_notification_repository.dart';
 import 'remote_profile_repository.dart';
-import 'remote_progress_repository.dart';
+import 'remote_workout_history_repository.dart';
 import 'remote_workout_repository.dart';
 
 /// Provider for [AuthRepository] using the remote implementation.
@@ -51,21 +49,12 @@ final remoteWorkoutRepositoryProvider =
   return RemoteWorkoutRepository(apiClient);
 });
 
-/// Provider for [ProgressRepository] using the remote implementation.
+/// Provider for [WorkoutHistoryRepository] using the remote implementation.
 ///
-/// Delegates progress summary, history, and weekly stats to the Laravel
-/// backend via [ApiClient].
-final remoteProgressRepositoryProvider = Provider<ProgressRepository>((ref) {
+/// Delegates workout history CRUD operations to the Laravel backend via
+/// [ApiClient], posting to /api/workout-history.
+final remoteWorkoutHistoryRepositoryProvider =
+    Provider<WorkoutHistoryRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return RemoteProgressRepository(apiClient);
-});
-
-/// Provider for [NotificationRepository] using the remote implementation.
-///
-/// Handles FCM device token registration with retry logic and delegates
-/// notification operations to the Laravel backend via [ApiClient].
-final remoteNotificationRepositoryProvider =
-    Provider<RemoteNotificationRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return RemoteNotificationRepository(apiClient);
+  return RemoteWorkoutHistoryRepository(apiClient);
 });

@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
@@ -14,15 +13,14 @@ import '../providers/progress_provider.dart';
 
 /// Displays progress summary with stats, charts, and recent workout history.
 ///
-/// Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+/// Derives all statistics from WorkoutHistory records instead of a separate
+/// progress table.
 class ProgressSummaryScreen extends ConsumerWidget {
   const ProgressSummaryScreen({super.key});
 
   /// Forces a refresh by calling refreshCaches with forceRefresh: true,
   /// which invalidates cache metadata and forces a backend fetch regardless
   /// of cache age, then reloads the progress data.
-  ///
-  /// Validates: Requirements 11.3, 11.4
   Future<void> _onRefresh(WidgetRef ref) async {
     final syncEngine = ref.read(syncEngineProvider);
     await syncEngine.refreshCaches(forceRefresh: true);
@@ -77,13 +75,9 @@ class _ProgressContent extends StatelessWidget {
             children: [
               _SummaryStats(state: state),
               const SizedBox(height: AppSpacing.lg),
-              _WeightHistoryChart(data: state.weightHistory),
-              const SizedBox(height: AppSpacing.lg),
-              _BmiHistoryChart(data: state.bmiHistory),
-              const SizedBox(height: AppSpacing.lg),
               _WeeklyStatsChart(data: state.weeklyStats),
               const SizedBox(height: AppSpacing.lg),
-              _RecentWorkouts(sessions: state.recentSessions),
+              _RecentWorkouts(history: state.recentHistory),
             ],
           ),
         ),
@@ -106,7 +100,7 @@ class _ProgressContent extends StatelessWidget {
   }
 }
 
-/// Displays summary stat cards: total workouts, current streak, longest streak, current weight.
+/// Displays summary stat cards: total workouts and total duration.
 class _SummaryStats extends StatelessWidget {
   const _SummaryStats({required this.state});
 
@@ -135,19 +129,9 @@ class _SummaryStats extends StatelessWidget {
               icon: Icons.fitness_center,
             ),
             _StatCard(
-              label: 'Current Streak',
-              value: '${state.currentStreak} days',
-              icon: Icons.local_fire_department,
-            ),
-            _StatCard(
-              label: 'Longest Streak',
-              value: '${state.longestStreak} days',
-              icon: Icons.emoji_events,
-            ),
-            _StatCard(
-              label: 'Current Weight',
-              value: '${state.currentWeightKg.toStringAsFixed(1)} kg',
-              icon: Icons.monitor_weight,
+              label: 'Total Duration',
+              value: formatDuration(state.totalDurationSeconds),
+              icon: Icons.timer,
             ),
           ],
         ),
@@ -194,231 +178,6 @@ class _StatCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Line chart for weight history over time.
-class _WeightHistoryChart extends StatelessWidget {
-  const _WeightHistoryChart({required this.data});
-
-  final List<WeightDataPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (data.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final spots = data.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.weightKg);
-    }).toList();
-
-    final minY =
-        data.map((d) => d.weightKg).reduce((a, b) => a < b ? a : b) - 2;
-    final maxY =
-        data.map((d) => d.weightKg).reduce((a, b) => a > b ? a : b) + 2;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Weight History', style: theme.textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: 200,
-          child: LineChart(
-            LineChartData(
-              minY: minY,
-              maxY: maxY,
-              gridData: const FlGridData(show: true),
-              titlesData: FlTitlesData(
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  axisNameWidget: Text(
-                    'Date',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index < 0 || index >= data.length) {
-                        return const SizedBox.shrink();
-                      }
-                      // Show labels at reasonable intervals
-                      if (data.length > 5 && index % 2 != 0) {
-                        return const SizedBox.shrink();
-                      }
-                      final date = data[index].date;
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '${date.day}/${date.month}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  axisNameWidget: Text(
-                    'kg',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toStringAsFixed(0),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 10,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              borderData: FlBorderData(show: true),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  color: theme.colorScheme.primary,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Line chart for BMI history over time.
-class _BmiHistoryChart extends StatelessWidget {
-  const _BmiHistoryChart({required this.data});
-
-  final List<BmiDataPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (data.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final spots = data.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.bmi);
-    }).toList();
-
-    final minY = data.map((d) => d.bmi).reduce((a, b) => a < b ? a : b) - 1;
-    final maxY = data.map((d) => d.bmi).reduce((a, b) => a > b ? a : b) + 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('BMI History', style: theme.textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: 200,
-          child: LineChart(
-            LineChartData(
-              minY: minY,
-              maxY: maxY,
-              gridData: const FlGridData(show: true),
-              titlesData: FlTitlesData(
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  axisNameWidget: Text(
-                    'Date',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index < 0 || index >= data.length) {
-                        return const SizedBox.shrink();
-                      }
-                      if (data.length > 5 && index % 2 != 0) {
-                        return const SizedBox.shrink();
-                      }
-                      final date = data[index].date;
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '${date.day}/${date.month}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  axisNameWidget: Text(
-                    'BMI',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toStringAsFixed(1),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 10,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              borderData: FlBorderData(show: true),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  color: theme.colorScheme.secondary,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -530,11 +289,11 @@ class _WeeklyStatsChart extends StatelessWidget {
   }
 }
 
-/// Displays a list of recently completed workouts.
+/// Displays a list of recently completed workouts from WorkoutHistory.
 class _RecentWorkouts extends StatelessWidget {
-  const _RecentWorkouts({required this.sessions});
+  const _RecentWorkouts({required this.history});
 
-  final List<WorkoutSession> sessions;
+  final List<WorkoutHistory> history;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +304,7 @@ class _RecentWorkouts extends StatelessWidget {
       children: [
         Text('Recent Workouts', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
-        if (sessions.isEmpty)
+        if (history.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: Center(child: Text('No completed workouts yet.')),
@@ -554,11 +313,11 @@ class _RecentWorkouts extends StatelessWidget {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: sessions.length,
+            itemCount: history.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final session = sessions[index];
-              return _WorkoutSessionTile(session: session);
+              final record = history[index];
+              return _WorkoutHistoryTile(record: record);
             },
           ),
       ],
@@ -566,10 +325,10 @@ class _RecentWorkouts extends StatelessWidget {
   }
 }
 
-class _WorkoutSessionTile extends StatelessWidget {
-  const _WorkoutSessionTile({required this.session});
+class _WorkoutHistoryTile extends StatelessWidget {
+  const _WorkoutHistoryTile({required this.record});
 
-  final WorkoutSession session;
+  final WorkoutHistory record;
 
   @override
   Widget build(BuildContext context) {
@@ -581,19 +340,16 @@ class _WorkoutSessionTile extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       title: Text(
-        session.workoutName,
+        record.workoutName,
         style: theme.textTheme.titleSmall,
       ),
       subtitle: Text(
-        '${formatDate(session.completedAt)} • '
-        '${formatDuration(session.totalDurationSeconds)} • '
-        '${session.exercisesCompleted} exercises',
+        '${formatDate(record.completedAt)} • '
+        '${formatDuration(record.totalDurationSeconds)} • '
+        '${record.exercisesCompleted.length} exercises',
         style: theme.textTheme.bodySmall,
       ),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        context.go('/progress/session/${session.id}');
-      },
     );
   }
 }

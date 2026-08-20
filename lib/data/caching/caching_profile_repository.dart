@@ -74,8 +74,7 @@ class CachingProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<Result<UserProfile, AppError>> saveProfile(
-      UserProfile profile) async {
+  Future<Result<UserProfile, AppError>> saveProfile(UserProfile profile) async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       final result = await _remote.saveProfile(profile);
       if (result is Success<UserProfile, AppError>) {
@@ -89,7 +88,8 @@ class CachingProfileRepository implements ProfileRepository {
     final now = DateTime.now();
     final profileWithTimestamp = UserProfile(
       userId: profile.userId,
-      name: profile.name,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
       age: profile.age,
       heightCm: profile.heightCm,
       weightKg: profile.weightKg,
@@ -135,7 +135,8 @@ class CachingProfileRepository implements ProfileRepository {
     final now = DateTime.now();
     final profileWithTimestamp = UserProfile(
       userId: profile.userId,
-      name: profile.name,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
       age: profile.age,
       heightCm: profile.heightCm,
       weightKg: profile.weightKg,

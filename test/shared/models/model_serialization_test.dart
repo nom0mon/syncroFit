@@ -4,9 +4,8 @@ import 'package:synchrofit/shared/models/user_profile.dart';
 import 'package:synchrofit/shared/models/exercise.dart';
 import 'package:synchrofit/shared/models/workout.dart';
 import 'package:synchrofit/shared/models/workout_exercise.dart';
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
-import 'package:synchrofit/shared/models/progress_record.dart';
 import 'package:synchrofit/shared/models/notification_item.dart';
 import 'package:synchrofit/shared/models/enums.dart';
 
@@ -15,7 +14,8 @@ void main() {
     test('fromJson parses correctly', () {
       final json = {
         'id': 1,
-        'name': 'John Doe',
+        'first_name': 'John',
+        'last_name': 'Doe',
         'email': 'john@example.com',
         'created_at': '2024-01-15T10:30:00.000Z',
       };
@@ -23,7 +23,7 @@ void main() {
       final user = User.fromJson(json);
 
       expect(user.id, '1');
-      expect(user.name, 'John Doe');
+      expect(user.fullName, 'John Doe');
       expect(user.email, 'john@example.com');
       expect(user.createdAt, DateTime.parse('2024-01-15T10:30:00.000Z'));
     });
@@ -31,7 +31,8 @@ void main() {
     test('toJson produces correct output', () {
       final user = User(
         id: '1',
-        name: 'John Doe',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'john@example.com',
         createdAt: DateTime.parse('2024-01-15T10:30:00.000Z'),
       );
@@ -39,7 +40,8 @@ void main() {
       final json = user.toJson();
 
       expect(json['id'], '1');
-      expect(json['name'], 'John Doe');
+      expect(json['first_name'], 'John');
+      expect(json['last_name'], 'Doe');
       expect(json['email'], 'john@example.com');
       expect(json['created_at'], '2024-01-15T10:30:00.000Z');
     });
@@ -49,7 +51,8 @@ void main() {
     test('fromJson parses correctly with enum mappings', () {
       final json = {
         'user_id': 42,
-        'name': 'Jane',
+        'first_name': 'Jane',
+        'last_name': '',
         'age': 28,
         'height_cm': 165.5,
         'weight_kg': 60.0,
@@ -81,7 +84,8 @@ void main() {
     test('toJson maps enums to backend values', () {
       final profile = UserProfile(
         userId: '1',
-        name: 'Jane',
+        firstName: 'Jane',
+        lastName: '',
         age: 28,
         heightCm: 165.5,
         weightKg: 60.0,
@@ -105,7 +109,8 @@ void main() {
     test('fromJson handles all fitness goals', () {
       final base = {
         'user_id': 1,
-        'name': 'Test',
+        'first_name': 'Test',
+        'last_name': '',
         'age': 25,
         'height_cm': 170,
         'weight_kg': 70,
@@ -152,7 +157,8 @@ void main() {
     test('toApiJson excludes user_id, name, and updated_at', () {
       final profile = UserProfile(
         userId: '1',
-        name: 'Jane',
+        firstName: 'Jane',
+        lastName: '',
         age: 28,
         heightCm: 165.5,
         weightKg: 60.0,
@@ -190,7 +196,7 @@ void main() {
         'default_duration_seconds': 60,
         'default_sets': 3,
         'default_reps': 12,
-        'image_url': 'https://example.com/pushup.png',
+        'video_path': 'https://example.com/pushup.png',
       };
 
       final exercise = Exercise.fromJson(json);
@@ -204,10 +210,10 @@ void main() {
       expect(exercise.defaultDurationSeconds, 60);
       expect(exercise.defaultSets, 3);
       expect(exercise.defaultReps, 12);
-      expect(exercise.imagePlaceholder, 'https://example.com/pushup.png');
+      expect(exercise.videoPath, 'https://example.com/pushup.png');
     });
 
-    test('fromJson handles null equipment and image_url', () {
+    test('fromJson handles null equipment and video_path', () {
       final json = {
         'id': 1,
         'name': 'Squats',
@@ -218,13 +224,13 @@ void main() {
         'default_duration_seconds': 45,
         'default_sets': 4,
         'default_reps': 10,
-        'image_url': null,
+        'video_path': null,
       };
 
       final exercise = Exercise.fromJson(json);
 
       expect(exercise.equipment, null);
-      expect(exercise.imagePlaceholder, '');
+      expect(exercise.videoPath, null);
     });
   });
 
@@ -232,26 +238,27 @@ void main() {
     test('fromJson parses nested exercises', () {
       final json = {
         'id': 10,
+        'user_id': 5,
         'name': 'Morning Workout',
+        'day_of_week': 'monday',
         'estimated_duration_minutes': 45,
+        'is_generated': false,
+        'created_at': '2024-03-20T10:00:00.000Z',
+        'updated_at': '2024-03-20T10:00:00.000Z',
         'exercises': [
           {
             'exercise_id': 1,
-            'exercise_name': 'Push-ups',
             'sets': 3,
             'reps': 12,
             'duration_seconds': 60,
-            'rest_seconds': 30,
-            'image_url': 'img.png',
+            'order': 1,
           },
           {
             'exercise_id': 2,
-            'exercise_name': 'Squats',
             'sets': 4,
             'reps': 10,
             'duration_seconds': 45,
-            'rest_seconds': 45,
-            'image_url': 'img2.png',
+            'order': 2,
           },
         ],
       };
@@ -259,52 +266,147 @@ void main() {
       final workout = Workout.fromJson(json);
 
       expect(workout.id, '10');
+      expect(workout.userId, '5');
       expect(workout.name, 'Morning Workout');
+      expect(workout.dayOfWeek, 'monday');
       expect(workout.estimatedDurationMinutes, 45);
+      expect(workout.isGenerated, false);
+      expect(workout.createdAt, DateTime.parse('2024-03-20T10:00:00.000Z'));
       expect(workout.exercises.length, 2);
-      expect(workout.exercises[0].exerciseName, 'Push-ups');
+      expect(workout.exercises[0].exerciseId, 1);
+      expect(workout.exercises[0].order, 1);
       expect(workout.exercises[1].sets, 4);
+      expect(workout.exercises[1].order, 2);
+    });
+
+    test('fromJson handles is_generated as true', () {
+      final json = {
+        'id': 11,
+        'name': 'Generated Workout',
+        'estimated_duration_minutes': 30,
+        'is_generated': true,
+        'exercises': [
+          {
+            'exercise_id': 1,
+            'sets': 3,
+            'reps': 10,
+            'duration_seconds': 45,
+            'order': 1,
+          },
+        ],
+      };
+
+      final workout = Workout.fromJson(json);
+
+      expect(workout.isGenerated, true);
+    });
+
+    test('fromJson handles is_generated as integer 1 (SQLite)', () {
+      final json = {
+        'id': 12,
+        'name': 'SQLite Workout',
+        'estimated_duration_minutes': 30,
+        'is_generated': 1,
+        'exercises': [
+          {
+            'exercise_id': 1,
+            'sets': 3,
+            'reps': 10,
+            'duration_seconds': 45,
+            'order': 1,
+          },
+        ],
+      };
+
+      final workout = Workout.fromJson(json);
+
+      expect(workout.isGenerated, true);
     });
 
     test('toJson serializes nested exercises', () {
-      final workout = Workout(
+      const workout = Workout(
         id: '1',
+        userId: '42',
         name: 'Test',
+        dayOfWeek: 'wednesday',
         estimatedDurationMinutes: 30,
+        isGenerated: true,
         exercises: [
           WorkoutExercise(
-            exerciseId: '1',
-            exerciseName: 'Ex1',
+            exerciseId: 1,
             sets: 3,
             reps: 10,
             durationSeconds: 60,
-            restSeconds: 30,
-            thumbnailPlaceholder: 'img.png',
+            order: 1,
           ),
         ],
       );
 
       final json = workout.toJson();
 
+      expect(json['id'], '1');
+      expect(json['user_id'], '42');
+      expect(json['name'], 'Test');
+      expect(json['day_of_week'], 'wednesday');
       expect(json['estimated_duration_minutes'], 30);
+      expect(json['is_generated'], true);
       expect((json['exercises'] as List).length, 1);
-      expect(
-        (json['exercises'] as List)[0]['exercise_name'],
-        'Ex1',
+      expect((json['exercises'] as List)[0]['exercise_id'], 1);
+      expect((json['exercises'] as List)[0]['order'], 1);
+    });
+
+    test('toJson/fromJson round-trip preserves data', () {
+      const original = Workout(
+        id: '99',
+        userId: '7',
+        name: 'Full Body',
+        dayOfWeek: 'friday',
+        estimatedDurationMinutes: 60,
+        isGenerated: false,
+        exercises: [
+          WorkoutExercise(
+            exerciseId: 5,
+            sets: 4,
+            reps: 12,
+            durationSeconds: 90,
+            order: 1,
+          ),
+          WorkoutExercise(
+            exerciseId: 8,
+            sets: 3,
+            reps: 15,
+            durationSeconds: 60,
+            order: 2,
+          ),
+        ],
       );
+
+      final json = original.toJson();
+      final restored = Workout.fromJson(json);
+
+      expect(restored.id, original.id);
+      expect(restored.userId, original.userId);
+      expect(restored.name, original.name);
+      expect(restored.dayOfWeek, original.dayOfWeek);
+      expect(restored.estimatedDurationMinutes,
+          original.estimatedDurationMinutes);
+      expect(restored.isGenerated, original.isGenerated);
+      expect(restored.exercises.length, original.exercises.length);
+      expect(restored.exercises[0].exerciseId,
+          original.exercises[0].exerciseId);
+      expect(restored.exercises[1].order, original.exercises[1].order);
     });
   });
 
-  group('WorkoutSession serialization', () {
-    test('fromJson parses nested completed exercises', () {
+  group('WorkoutHistory serialization', () {
+    test('fromJson parses exercises completed', () {
       final json = {
         'id': 100,
-        'workout_id': 10,
+        'user_id': 10,
         'workout_name': 'Leg Day',
         'completed_at': '2024-03-20T14:30:00.000Z',
         'total_duration_seconds': 2700,
-        'exercises_completed': 5,
-        'exercises': [
+        'exercises_completed': [
           {
             'exercise_id': 1,
             'exercise_name': 'Squats',
@@ -314,50 +416,14 @@ void main() {
         ],
       };
 
-      final session = WorkoutSession.fromJson(json);
+      final history = WorkoutHistory.fromJson(json);
 
-      expect(session.id, '100');
-      expect(session.workoutId, '10');
-      expect(session.workoutName, 'Leg Day');
-      expect(session.totalDurationSeconds, 2700);
-      expect(session.exercisesCompleted, 5);
-      expect(session.exercises.length, 1);
-      expect(session.exercises[0].setsCompleted, 3);
-    });
-  });
-
-  group('ProgressRecord serialization', () {
-    test('fromJson parses recorded_at to date', () {
-      final json = {
-        'id': 7,
-        'recorded_at': '2024-02-10T00:00:00.000Z',
-        'weight_kg': 72.5,
-        'bmi': 23.8,
-        'workouts_completed': 12,
-      };
-
-      final record = ProgressRecord.fromJson(json);
-
-      expect(record.id, '7');
-      expect(record.date, DateTime.parse('2024-02-10T00:00:00.000Z'));
-      expect(record.weightKg, 72.5);
-      expect(record.bmi, 23.8);
-      expect(record.workoutsCompleted, 12);
-    });
-
-    test('toJson outputs recorded_at', () {
-      final record = ProgressRecord(
-        id: '1',
-        date: DateTime.parse('2024-02-10T00:00:00.000Z'),
-        weightKg: 72.5,
-        bmi: 23.8,
-        workoutsCompleted: 5,
-      );
-
-      final json = record.toJson();
-
-      expect(json['recorded_at'], '2024-02-10T00:00:00.000Z');
-      expect(json['weight_kg'], 72.5);
+      expect(history.id, '100');
+      expect(history.userId, '10');
+      expect(history.workoutName, 'Leg Day');
+      expect(history.totalDurationSeconds, 2700);
+      expect(history.exercisesCompleted.length, 1);
+      expect(history.exercises[0].setsCompleted, 3);
     });
   });
 
@@ -420,22 +486,37 @@ void main() {
     test('fromJson and toJson round-trip', () {
       final json = {
         'exercise_id': 3,
-        'exercise_name': 'Bench Press',
         'sets': 4,
         'reps': 8,
         'duration_seconds': 90,
-        'rest_seconds': 60,
-        'image_url': 'bench.png',
+        'order': 2,
       };
 
       final workoutExercise = WorkoutExercise.fromJson(json);
       final outputJson = workoutExercise.toJson();
 
-      expect(workoutExercise.exerciseId, '3');
-      expect(workoutExercise.exerciseName, 'Bench Press');
-      expect(workoutExercise.restSeconds, 60);
-      expect(outputJson['rest_seconds'], 60);
-      expect(outputJson['image_url'], 'bench.png');
+      expect(workoutExercise.exerciseId, 3);
+      expect(workoutExercise.sets, 4);
+      expect(workoutExercise.reps, 8);
+      expect(workoutExercise.durationSeconds, 90);
+      expect(workoutExercise.order, 2);
+      expect(outputJson['exercise_id'], 3);
+      expect(outputJson['sets'], 4);
+      expect(outputJson['reps'], 8);
+      expect(outputJson['duration_seconds'], 90);
+      expect(outputJson['order'], 2);
+    });
+
+    test('accepts legacy generated exercises that used rest_seconds', () {
+      final exercise = WorkoutExercise.fromJson({
+        'exercise_id': 3,
+        'sets': 4,
+        'reps': 8,
+        'rest_seconds': 90,
+        'order': 2,
+      });
+
+      expect(exercise.durationSeconds, 90);
     });
   });
 }

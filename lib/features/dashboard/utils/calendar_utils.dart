@@ -6,7 +6,7 @@ library;
 
 /// Status classification for a single calendar day cell.
 enum DayStatus {
-  /// At least one WorkoutSession was completed on this date.
+  /// At least one workout was completed on this date.
   completed,
 
   /// Today's date with no completed workout session.

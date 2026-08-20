@@ -92,6 +92,9 @@ class BmiComputationTest extends TestCase
                 'availability_days' => ['monday', 'wednesday', 'friday'],
             ])->assertStatus(201);
 
+            // Clear cached relationship so the update endpoint sees the profile
+            $user->unsetRelation('profile');
+
             // Generate random new height and weight for update
             $newHeightCm = mt_rand(500, 3000) / 10; // 50.0 to 300.0
             $newWeightKg = mt_rand(200, 5000) / 10; // 20.0 to 500.0

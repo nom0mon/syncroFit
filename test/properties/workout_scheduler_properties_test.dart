@@ -31,6 +31,7 @@ List<ScheduledWorkout> mapWorkoutsToSchedule(
       dayOfWeek: day,
       estimatedDurationMinutes: workout.estimatedDurationMinutes,
       isCompleted: day.index < today.index,
+      isGenerated: workout.isGenerated,
     ));
   }
 
@@ -46,13 +47,11 @@ List<Workout> _generateWorkouts(int count) {
       estimatedDurationMinutes: 15 + (i * 5),
       exercises: [
         const WorkoutExercise(
-          exerciseId: 'ex-1',
-          exerciseName: 'Push-ups',
+          exerciseId: 1,
           sets: 3,
           reps: 10,
           durationSeconds: 30,
-          restSeconds: 15,
-          thumbnailPlaceholder: '',
+          order: 1,
         ),
       ],
     );

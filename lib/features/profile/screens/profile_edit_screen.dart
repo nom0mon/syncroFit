@@ -66,7 +66,8 @@ class _ProfileEditContent extends ConsumerStatefulWidget {
 }
 
 class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
-  late TextEditingController _nameController;
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
   late TextEditingController _ageController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
@@ -75,7 +76,8 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -86,7 +88,8 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
     if (_initialized) return;
     _initialized = true;
 
-    _nameController = TextEditingController(text: profile.name);
+    _firstNameController = TextEditingController(text: profile.firstName);
+    _lastNameController = TextEditingController(text: profile.lastName);
     _ageController = TextEditingController(text: profile.age.toString());
     _heightController =
         TextEditingController(text: profile.heightCm.toString());
@@ -94,10 +97,15 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
         TextEditingController(text: profile.weightKg.toString());
 
     // Listen to text field changes and update dirty fields
-    _nameController.addListener(() {
+    _firstNameController.addListener(() {
       ref
           .read(profileEditNotifierProvider.notifier)
-          .updateField('name', _nameController.text.trim());
+          .updateField('first_name', _firstNameController.text.trim());
+    });
+    _lastNameController.addListener(() {
+      ref
+          .read(profileEditNotifierProvider.notifier)
+          .updateField('last_name', _lastNameController.text.trim());
     });
     _ageController.addListener(() {
       final text = _ageController.text.trim();
@@ -164,13 +172,25 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Name field
+                // First Name field
                 TextField(
-                  controller: _nameController,
+                  controller: _firstNameController,
                   decoration: InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Enter your name',
-                    errorText: state.fieldErrors['name'],
+                    labelText: 'First Name',
+                    hintText: 'Enter your first name',
+                    errorText: state.fieldErrors['first_name'],
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Last Name field
+                TextField(
+                  controller: _lastNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Last Name',
+                    hintText: 'Enter your last name',
+                    errorText: state.fieldErrors['last_name'],
                   ),
                   textInputAction: TextInputAction.next,
                 ),

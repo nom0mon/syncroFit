@@ -146,6 +146,8 @@ class _ScheduleContent extends StatelessWidget {
 
 /// A card representing a scheduled workout for a specific day.
 /// Shows the day name, workout name, and estimated duration.
+/// Displays an "AI Generated" badge when the workout was created by
+/// the recommendation engine.
 class _WorkoutDayCard extends StatelessWidget {
   const _WorkoutDayCard({required this.workout});
 
@@ -175,7 +177,45 @@ class _WorkoutDayCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
         leading: Icon(statusIcon, color: iconColor),
-        title: Text(workout.workoutName),
+        title: Row(
+          children: [
+            Flexible(child: Text(workout.workoutName)),
+            if (workout.isGenerated) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Semantics(
+                label: 'AI Generated workout',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 12,
+                        color: theme.colorScheme.onTertiaryContainer,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        'AI',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onTertiaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         subtitle: Text(
           '${_dayLabel(workout.dayOfWeek)} • ${workout.estimatedDurationMinutes} min',
         ),

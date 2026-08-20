@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
@@ -46,24 +47,26 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Handles errors during initial profile load.
-  /// Returns null for all error cases so the app gracefully shows "no profile"
-  /// rather than crashing. The edit screen will redirect to profile setup.
+  /// Only returns null for cases where no profile exists (404/NotFound).
+  /// For network/server errors, throws so the UI shows an error state
+  /// rather than incorrectly showing "no profile" setup form.
   UserProfile? _handleLoadError(AppError error) {
     if (error is NotFoundError) {
+      // Genuinely no profile exists for this user
+      return null;
+    }
+    if (error is ServerError && error.statusCode == 404) {
+      // Backend returned 404 "No profile exists"
       return null;
     }
     if (error is AuthError) {
+      // Token invalid — return null, router will redirect to login
       return null;
     }
-    if (error is NetworkError) {
-      return null;
-    }
-    if (error is ServerError) {
-      // Any server error during profile load — treat as "no profile available"
-      // This handles 404, 500, CORS issues, etc.
-      return null;
-    }
-    // For any other unrecognized error type, still return null rather than crashing
+    // For network errors or other server errors, return null but log it.
+    // The profile might exist but we can't reach the server.
+    // The caching layer should have served from local cache if available.
+    debugPrint('Profile load failed: ${error.message}');
     return null;
   }
 

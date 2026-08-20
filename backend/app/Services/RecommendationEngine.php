@@ -4,7 +4,8 @@ namespace App\Services;
 
 use App\Models\Exercise;
 use App\Models\User;
-use App\Models\WorkoutSession;
+use App\Models\Workout;
+use App\Models\WorkoutHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -175,6 +176,12 @@ class RecommendationEngine
                     'exercise_id' => $exercise->id,
                     'sets' => $sets,
                     'reps' => $reps,
+                    // This is the public workout JSON contract consumed by the
+                    // mobile client.  Use the exercise's prescribed duration;
+                    // it is zero for rep-based exercises.
+                    'duration_seconds' => $exercise->default_duration_seconds,
+                    // Used only while calculating the workout estimate below.
+                    // Rest is not part of the persisted WorkoutExercise schema.
                     'rest_seconds' => $restSeconds,
                     'order' => $order + 1,
                 ];
@@ -182,6 +189,12 @@ class RecommendationEngine
 
             // Calculate estimated duration
             $estimatedDuration = $this->calculateDuration($exerciseList);
+
+            // Keep the internal rest value out of the API/database payload.
+            $exerciseList = array_map(function (array $exercise): array {
+                unset($exercise['rest_seconds']);
+                return $exercise;
+            }, $exerciseList);
 
             $workouts[] = [
                 'name' => $workoutName,
@@ -237,30 +250,37 @@ class RecommendationEngine
     {
         $twoWeeksAgo = Carbon::now()->subDays(14);
 
-        // Get completed workout sessions from the past 14 days
-        $recentSessions = WorkoutSession::where('user_id', $user->id)
-            ->where('status', 'completed')
+        // Get completed workout history from the past 14 days
+        $recentHistory = WorkoutHistory::where('user_id', $user->id)
             ->where('completed_at', '>=', $twoWeeksAgo)
             ->get();
 
         // If fewer than 2 completed sessions in the past 14 days, use baseline
-        if ($recentSessions->count() < 2) {
+        if ($recentHistory->count() < 2) {
             return 1.0;
         }
 
-        // Get all session exercise records for these sessions
-        $sessionIds = $recentSessions->pluck('id');
-        $sessionExercises = \App\Models\SessionExercise::whereIn('workout_session_id', $sessionIds)->get();
+        // Analyze exercises_completed from workout history records
+        $totalExercises = 0;
+        $completedCount = 0;
+        $skippedCount = 0;
 
-        $totalExercises = $sessionExercises->count();
+        foreach ($recentHistory as $record) {
+            $exercises = $record->exercises_completed ?? [];
+            foreach ($exercises as $exercise) {
+                $totalExercises++;
+                if (isset($exercise['skipped']) && $exercise['skipped'] === true) {
+                    $skippedCount++;
+                } else {
+                    $completedCount++;
+                }
+            }
+        }
 
-        // If there are no session exercises, use baseline
+        // If there are no exercises recorded, use baseline
         if ($totalExercises === 0) {
             return 1.0;
         }
-
-        $completedCount = $sessionExercises->where('status', 'completed')->count();
-        $skippedCount = $sessionExercises->where('status', 'skipped')->count();
 
         $completionRate = $completedCount / $totalExercises;
         $skipRate = $skippedCount / $totalExercises;

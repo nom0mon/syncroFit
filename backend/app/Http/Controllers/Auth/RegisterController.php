@@ -18,7 +18,8 @@ class RegisterController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create([
-            'name' => $request->validated('name'),
+            'first_name' => $request->validated('first_name'),
+            'last_name' => $request->validated('last_name'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
         ]);

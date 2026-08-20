@@ -30,26 +30,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'store']);
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
 
+    // User name update
+    Route::put('/user/name', function (\Illuminate\Http\Request $request) {
+        $request->validate([
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
+        ]);
+        $user = auth()->user();
+        $user->update($request->only(['first_name', 'last_name']));
+        return response()->json(['success' => true, 'data' => $user]);
+    });
+
     // Exercises
     Route::get('/exercises', [\App\Http\Controllers\ExerciseController::class, 'index']);
     Route::get('/exercises/{exercise}', [\App\Http\Controllers\ExerciseController::class, 'show']);
 
-    // Recommendations
-    Route::post('/recommendations/generate', [\App\Http\Controllers\RecommendationController::class, 'generate']);
-    Route::get('/recommendations/current', [\App\Http\Controllers\RecommendationController::class, 'current']);
+    // Workouts
+    Route::get('/workouts', [\App\Http\Controllers\WorkoutController::class, 'index']);
+    Route::post('/workouts', [\App\Http\Controllers\WorkoutController::class, 'store']);
+    Route::post('/workouts/generate', [\App\Http\Controllers\WorkoutController::class, 'generate']);
+    Route::get('/workouts/generated', [\App\Http\Controllers\WorkoutController::class, 'generated']);
 
-    // Workout Sessions
-    Route::post('/sessions', [\App\Http\Controllers\WorkoutSessionController::class, 'store']);
-    Route::patch('/sessions/{session}/pause', [\App\Http\Controllers\WorkoutSessionController::class, 'pause']);
-    Route::patch('/sessions/{session}/resume', [\App\Http\Controllers\WorkoutSessionController::class, 'resume']);
-    Route::patch('/sessions/{session}/skip-exercise', [\App\Http\Controllers\WorkoutSessionController::class, 'skipExercise']);
-    Route::patch('/sessions/{session}/complete', [\App\Http\Controllers\WorkoutSessionController::class, 'complete']);
-
-    // Progress
-    Route::get('/progress/summary', [\App\Http\Controllers\ProgressController::class, 'summary']);
-    Route::get('/progress/history', [\App\Http\Controllers\ProgressController::class, 'history']);
-    Route::get('/progress/weekly-stats', [\App\Http\Controllers\ProgressController::class, 'weeklyStats']);
-
-    // Device Tokens
-    Route::post('/device-tokens', [\App\Http\Controllers\DeviceTokenController::class, 'store']);
+    // Workout History
+    Route::post('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'store']);
+    Route::get('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'index']);
+    Route::get('/workout-history/stats', [\App\Http\Controllers\WorkoutHistoryController::class, 'stats']);
 });

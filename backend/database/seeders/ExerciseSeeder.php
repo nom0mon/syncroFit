@@ -1,10 +1,8 @@
 <?php
-
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Str;
 class ExerciseSeeder extends Seeder
 {
     /**
@@ -25,7 +23,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Dumbbell Bench Press',
@@ -37,7 +34,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Barbell Bench Press',
@@ -49,7 +45,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Cable Chest Fly',
@@ -61,9 +56,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== BACK =====
             [
                 'name' => 'Pull-Up',
@@ -75,7 +68,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Barbell Bent-Over Row',
@@ -87,7 +79,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Dumbbell Single-Arm Row',
@@ -99,7 +90,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Resistance Band Pull-Apart',
@@ -111,9 +101,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 15,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== SHOULDERS =====
             [
                 'name' => 'Dumbbell Overhead Press',
@@ -125,7 +113,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Pike Push-Up',
@@ -137,7 +124,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Kettlebell Press',
@@ -149,9 +135,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== BICEPS =====
             [
                 'name' => 'Dumbbell Bicep Curl',
@@ -163,7 +147,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Barbell Curl',
@@ -175,7 +158,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Chin-Up',
@@ -187,7 +169,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Resistance Band Curl',
@@ -199,9 +180,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 15,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== TRICEPS =====
             [
                 'name' => 'Tricep Dip',
@@ -213,7 +192,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Dumbbell Overhead Tricep Extension',
@@ -225,7 +203,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Cable Tricep Pushdown',
@@ -237,9 +214,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== LEGS =====
             [
                 'name' => 'Bodyweight Squat',
@@ -251,7 +226,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 15,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Barbell Back Squat',
@@ -263,7 +237,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 6,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Kettlebell Goblet Squat',
@@ -275,7 +248,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Leg Press',
@@ -287,7 +259,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Dumbbell Romanian Deadlift',
@@ -299,9 +270,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== CORE =====
             [
                 'name' => 'Plank',
@@ -313,7 +282,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 1,
                 'default_duration_seconds' => 45,
-                'image_url' => null,
             ],
             [
                 'name' => 'Hanging Leg Raise',
@@ -325,7 +293,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Kettlebell Russian Twist',
@@ -337,7 +304,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 20,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Cable Woodchop',
@@ -349,9 +315,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== FULL BODY =====
             [
                 'name' => 'Burpee',
@@ -363,7 +327,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 10,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Kettlebell Swing',
@@ -375,7 +338,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 15,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Barbell Deadlift',
@@ -387,7 +349,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 5,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Resistance Band Thruster',
@@ -399,7 +360,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 12,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Dumbbell Clean and Press',
@@ -411,9 +371,7 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
-
             // ===== ADDITIONAL EXERCISES FOR COVERAGE =====
             [
                 'name' => 'Resistance Band Lateral Raise',
@@ -425,7 +383,6 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 3,
                 'default_reps' => 15,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
             [
                 'name' => 'Close-Grip Barbell Bench Press',
@@ -437,13 +394,14 @@ class ExerciseSeeder extends Seeder
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
-                'image_url' => null,
             ],
         ];
-
         DB::table('exercises')->insert(
             array_map(function ($exercise) {
+                $snakeName = Str::snake(str_replace('-', ' ', $exercise['name']));
+
                 return array_merge($exercise, [
+                    'video_path' => 'assets/videos/' . $snakeName . '.mp4',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

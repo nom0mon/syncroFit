@@ -10,7 +10,7 @@ class Exercise {
   final int defaultDurationSeconds;
   final int defaultSets;
   final int defaultReps;
-  final String imagePlaceholder;
+  final String? videoPath;
 
   const Exercise({
     required this.id,
@@ -22,7 +22,7 @@ class Exercise {
     required this.defaultDurationSeconds,
     required this.defaultSets,
     required this.defaultReps,
-    required this.imagePlaceholder,
+    this.videoPath,
   });
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
@@ -38,7 +38,7 @@ class Exercise {
       defaultDurationSeconds: json['default_duration_seconds'] as int,
       defaultSets: json['default_sets'] as int,
       defaultReps: json['default_reps'] as int,
-      imagePlaceholder: (json['image_url'] as String?) ?? '',
+      videoPath: json['video_path'] as String?,
     );
   }
 
@@ -52,7 +52,7 @@ class Exercise {
         'default_duration_seconds': defaultDurationSeconds,
         'default_sets': defaultSets,
         'default_reps': defaultReps,
-        'image_url': imagePlaceholder,
+        'video_path': videoPath,
       };
 
   static DifficultyLevel _difficultyFromJson(String value) {

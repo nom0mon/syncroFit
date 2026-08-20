@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/models/workout_session.dart';
+import '../../../core/models/workout_history.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../utils/weekly_load_utils.dart';
 
@@ -22,7 +22,7 @@ class WeeklyLoadChartWidget extends StatelessWidget {
   });
 
   /// The workout sessions used to calculate weekly volumes.
-  final List<WorkoutSession> sessions;
+  final List<WorkoutHistory> sessions;
 
   /// Reference date for computing week ranges. Defaults to [DateTime.now()].
   final DateTime? referenceDate;

@@ -83,7 +83,7 @@ class ExerciseDao {
       'default_duration_seconds': row['default_duration_seconds'],
       'default_sets': row['default_sets'],
       'default_reps': row['default_reps'],
-      'image_url': row['image_url'],
+      'video_path': row['video_path'],
     });
   }
 
@@ -99,7 +99,7 @@ class ExerciseDao {
       'default_duration_seconds': exercise.defaultDurationSeconds,
       'default_sets': exercise.defaultSets,
       'default_reps': exercise.defaultReps,
-      'image_url': exercise.imagePlaceholder,
+      'video_path': exercise.videoPath,
     };
   }
 }

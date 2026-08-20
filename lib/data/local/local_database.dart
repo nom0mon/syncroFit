@@ -4,9 +4,9 @@ import 'package:sqflite/sqflite.dart';
 import 'daos/cache_metadata_dao.dart';
 import 'daos/exercise_dao.dart';
 import 'daos/profile_dao.dart';
-import 'daos/progress_dao.dart';
 import 'daos/sync_queue_dao.dart';
 import 'daos/workout_dao.dart';
+import 'daos/workout_history_dao.dart';
 
 /// Abstract interface for the local SQLite database.
 ///
@@ -25,11 +25,11 @@ abstract class LocalDatabase {
   /// DAO for user profile CRUD operations.
   ProfileDao get profileDao;
 
-  /// DAO for progress record CRUD operations.
-  ProgressDao get progressDao;
-
   /// DAO for sync queue operations.
   SyncQueueDao get syncQueueDao;
+
+  /// DAO for workout history CRUD operations.
+  WorkoutHistoryDao get workoutHistoryDao;
 
   /// DAO for cache metadata operations.
   CacheMetadataDao get cacheMetadataDao;
@@ -41,11 +41,11 @@ abstract class LocalDatabase {
 /// SQLite implementation of [LocalDatabase].
 ///
 /// Uses the `sqflite` package to manage a local SQLite database for
-/// offline caching of exercises, workouts, user profile, progress records,
+/// offline caching of exercises, workouts, user profile, workout history,
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   Database? _database;
 
@@ -73,7 +73,23 @@ class LocalDatabaseImpl implements LocalDatabase {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  /// Destructive migration: drops all old tables and recreates with v2 schema.
+  ///
+  /// The local cache is ephemeral and will be repopulated from the API,
+  /// so a destructive migration is acceptable.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await db.execute('DROP TABLE IF EXISTS exercises');
+    await db.execute('DROP TABLE IF EXISTS workouts');
+    await db.execute('DROP TABLE IF EXISTS workout_sessions');
+    await db.execute('DROP TABLE IF EXISTS user_profile');
+    await db.execute('DROP TABLE IF EXISTS progress_records');
+    await db.execute('DROP TABLE IF EXISTS sync_queue');
+    await db.execute('DROP TABLE IF EXISTS cache_metadata');
+    await _onCreate(db, newVersion);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -88,29 +104,34 @@ class LocalDatabaseImpl implements LocalDatabase {
         default_duration_seconds INTEGER NOT NULL,
         default_sets INTEGER NOT NULL,
         default_reps INTEGER NOT NULL,
-        image_url TEXT
+        video_path TEXT
       )
     ''');
 
     await db.execute('''
       CREATE TABLE workouts (
         id TEXT PRIMARY KEY,
+        user_id TEXT,
         name TEXT NOT NULL,
-        estimated_duration_minutes INTEGER NOT NULL,
         day_of_week TEXT,
-        exercises TEXT NOT NULL
+        estimated_duration_minutes INTEGER NOT NULL,
+        exercises TEXT NOT NULL,
+        is_generated INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE workout_sessions (
+      CREATE TABLE workout_history (
         id TEXT PRIMARY KEY,
-        workout_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
         workout_name TEXT NOT NULL,
         completed_at TEXT NOT NULL,
         total_duration_seconds INTEGER NOT NULL,
-        exercises_completed INTEGER NOT NULL,
-        exercises TEXT NOT NULL
+        exercises_completed TEXT NOT NULL,
+        created_at TEXT,
+        updated_at TEXT
       )
     ''');
 
@@ -127,16 +148,6 @@ class LocalDatabaseImpl implements LocalDatabase {
         workout_preference TEXT NOT NULL,
         availability_days TEXT NOT NULL,
         updated_at TEXT NOT NULL
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE progress_records (
-        id TEXT PRIMARY KEY,
-        recorded_at TEXT NOT NULL,
-        weight_kg REAL NOT NULL,
-        bmi REAL NOT NULL,
-        workouts_completed INTEGER NOT NULL
       )
     ''');
 
@@ -171,7 +182,7 @@ class LocalDatabaseImpl implements LocalDatabase {
   ProfileDao get profileDao => ProfileDao(database);
 
   @override
-  ProgressDao get progressDao => ProgressDao(database);
+  WorkoutHistoryDao get workoutHistoryDao => WorkoutHistoryDao(database);
 
   @override
   SyncQueueDao get syncQueueDao => SyncQueueDao(database);

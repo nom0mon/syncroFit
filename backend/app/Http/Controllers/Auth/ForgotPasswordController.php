@@ -35,7 +35,11 @@ class ForgotPasswordController extends Controller
 
         // Attempt to send the reset link — we ignore the result
         // to always return the same response (anti-enumeration)
-        Password::sendResetLink(['email' => $email]);
+        try {
+            Password::sendResetLink(['email' => $email]);
+        } catch (\Exception $e) {
+            // Silently fail — anti-enumeration requires identical response
+        }
 
         return $this->successResponse(
             null,

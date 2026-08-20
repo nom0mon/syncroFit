@@ -213,11 +213,25 @@ class SyncEngineImpl implements SyncEngine {
 
   /// Builds the API path for a mutation based on entity type and operation.
   String _buildPath(SyncMutation mutation) {
-    final base = '${ApiConfig.baseUrl}/api/${mutation.entityType}s';
+    final segment = _entityTypeToPathSegment(mutation.entityType);
+    final base = '${ApiConfig.baseUrl}/api/$segment';
     if (mutation.operationType == 'create') {
       return base;
     }
     return '$base/${mutation.entityId}';
+  }
+
+  /// Maps an entity type to its corresponding API path segment.
+  ///
+  /// Most entity types simply append 's' (e.g., 'workout' → 'workouts'),
+  /// but some require a custom mapping (e.g., 'workout_history' → 'workout-history').
+  static String _entityTypeToPathSegment(String entityType) {
+    switch (entityType) {
+      case 'workout_history':
+        return 'workout-history';
+      default:
+        return '${entityType}s';
+    }
   }
 
   /// Handles a 409 Conflict response using the [ConflictResolver].

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/caching/caching_providers.dart';
+import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 
@@ -11,6 +12,12 @@ import '../../../shared/models/models.dart';
 /// with a mock in tests via ProviderScope overrides.
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return ref.watch(cachingWorkoutRepositoryProvider);
+});
+
+/// Provides the [WorkoutHistoryRepository] for saving completed sessions.
+final workoutHistoryRepositoryProvider =
+    Provider<WorkoutHistoryRepository>((ref) {
+  return ref.watch(cachingWorkoutHistoryRepositoryProvider);
 });
 
 /// State representing the current workout session in progress.
@@ -76,9 +83,11 @@ class WorkoutSessionState {
     return end.difference(startedAt!).inSeconds;
   }
 
-  /// Rest seconds for the current exercise (10-120, default 30).
+  /// Rest seconds between exercises (default 30, range 10-120).
   int get currentRestSeconds {
-    final rest = currentExercise?.restSeconds ?? 30;
+    // The simplified WorkoutExercise no longer stores restSeconds;
+    // use a fixed default rest period.
+    const rest = 30;
     return rest.clamp(10, 120);
   }
 
@@ -115,6 +124,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   final Ref _ref;
 
   WorkoutRepository get _repository => _ref.read(workoutRepositoryProvider);
+  WorkoutHistoryRepository get _historyRepo =>
+      _ref.read(workoutHistoryRepositoryProvider);
 
   /// Loads a workout by its [workoutId] from the repository.
   ///
@@ -150,8 +161,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     if (exercise == null) return;
 
     final completed = CompletedExercise(
-      exerciseId: exercise.exerciseId,
-      exerciseName: exercise.exerciseName,
+      exerciseId: exercise.exerciseId.toString(),
+      exerciseName: 'Exercise ${exercise.exerciseId}',
       setsCompleted: exercise.sets,
       repsOrDuration: exercise.durationSeconds > 0
           ? exercise.durationSeconds
@@ -212,23 +223,24 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     advanceToNextExercise();
   }
 
-  /// Builds and saves a [WorkoutSession] from the current completed state.
+  /// Builds and saves a [WorkoutHistory] from the current completed state.
   ///
-  /// Returns the saved session or null if the workout wasn't completed.
-  Future<WorkoutSession?> saveCompletedSession() async {
+  /// Returns the saved record or null if the workout wasn't completed.
+  Future<WorkoutHistory?> saveCompletedSession() async {
     if (!state.isCompleted || state.workout == null) return null;
 
-    final session = WorkoutSession(
-      id: 'session-${DateTime.now().millisecondsSinceEpoch}',
-      workoutId: state.workout!.id,
+    final record = WorkoutHistory(
+      id: 'history-${DateTime.now().millisecondsSinceEpoch}',
+      userId: '', // Will be set by backend
       workoutName: state.workout!.name,
       completedAt: state.completedAt ?? DateTime.now(),
       totalDurationSeconds: state.totalDurationSeconds,
-      exercisesCompleted: state.exercisesCompletedCount,
-      exercises: state.completedExercises,
+      exercisesCompleted: state.completedExercises
+          .map((e) => e.toJson())
+          .toList(),
     );
 
-    final result = await _repository.saveSession(session);
+    final result = await _historyRepo.save(record);
     switch (result) {
       case Success(value: final saved):
         return saved;

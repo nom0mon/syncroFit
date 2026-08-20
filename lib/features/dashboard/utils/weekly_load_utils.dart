@@ -1,4 +1,4 @@
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 
 /// A pair representing the start and end of a week range.
 /// [start] is Monday 00:00:00, [end] is Sunday 23:59:59.
@@ -69,7 +69,7 @@ bool isInWeek(DateTime date, DateTime weekStart) {
 ///
 /// Volume = sum of (setsCompleted × repsOrDuration) for all exercises
 /// in all sessions where completedAt falls within the week starting at [weekStart].
-int calculateWeeklyVolume(List<WorkoutSession> sessions, DateTime weekStart) {
+int calculateWeeklyVolume(List<WorkoutHistory> sessions, DateTime weekStart) {
   return sessions
       .where((s) => isInWeek(s.completedAt, weekStart))
       .expand((s) => s.exercises)

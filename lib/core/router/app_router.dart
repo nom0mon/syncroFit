@@ -22,11 +22,9 @@ import '../../features/settings/screens/change_password_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/settings_main_screen.dart';
 import '../../features/community/screens/post_detail_screen.dart';
-import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_and_recommendations_screen.dart';
 import '../../features/progress/screens/progress_summary_screen.dart';
-import '../../features/progress/screens/session_detail_screen.dart';
 import '../../features/workout/screens/rest_timer_screen.dart';
 import '../../features/workout/screens/workout_active_screen.dart';
 import '../../features/workout/screens/workout_detail_screen.dart';
@@ -95,7 +93,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.notifications,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NotificationsScreen(),
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Notifications have been removed.')),
+        ),
       ),
       GoRoute(
         path: RouteNames.settings,
@@ -221,15 +221,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RouteNames.progress,
                 builder: (context, state) => const ProgressSummaryScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'session/:id',
-                    builder: (context, state) {
-                      final id = state.pathParameters['id'] ?? '';
-                      return SessionDetailScreen(sessionId: id);
-                    },
-                  ),
-                ],
               ),
             ],
           ),

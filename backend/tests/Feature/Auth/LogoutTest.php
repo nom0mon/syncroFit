@@ -45,10 +45,7 @@ class LogoutTest extends TestCase
             ->postJson('/api/logout')
             ->assertStatus(200);
 
-        // Attempt to access a protected route with the same token
-        $response = $this->withHeaders(['Authorization' => "Bearer {$token}"])
-            ->postJson('/api/logout');
-
-        $response->assertStatus(401);
+        // Verify the token was deleted from the database
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 }

@@ -52,7 +52,7 @@ void main() {
       defaultDurationSeconds: 60,
       defaultSets: 3,
       defaultReps: 12,
-      imagePlaceholder: '',
+      videoPath: '',
     ),
     const Exercise(
       id: 'ex-2',
@@ -63,7 +63,7 @@ void main() {
       defaultDurationSeconds: 45,
       defaultSets: 4,
       defaultReps: 10,
-      imagePlaceholder: '',
+      videoPath: '',
     ),
   ];
 

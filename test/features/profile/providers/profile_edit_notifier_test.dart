@@ -15,7 +15,8 @@ void main() {
     mockRepository = MockProfileRepository();
     originalProfile = const UserProfile(
       userId: 'user-123',
-      name: 'John Doe',
+      firstName: 'John',
+      lastName: 'Doe',
       age: 25,
       heightCm: 175.0,
       weightKg: 70.0,
@@ -38,7 +39,8 @@ void main() {
   setUpAll(() {
     registerFallbackValue(UserProfile(
       userId: 'fallback',
-      name: 'Fallback',
+      firstName: 'Fallback',
+      lastName: '',
       age: 20,
       heightCm: 170.0,
       weightKg: 65.0,
@@ -67,37 +69,37 @@ void main() {
 
   group('ProfileEditNotifier - updateField', () {
     test('marks a field as dirty when value differs from original', () {
-      notifier.updateField('name', 'Jane Doe');
+      notifier.updateField('first_name', 'Jane');
 
-      expect(notifier.state.dirtyFields, {'name': 'Jane Doe'});
+      expect(notifier.state.dirtyFields, {'first_name': 'Jane'});
       expect(notifier.state.isDirty, isTrue);
     });
 
     test('removes field from dirty when value reverts to original', () {
-      notifier.updateField('name', 'Jane Doe');
+      notifier.updateField('first_name', 'Jane');
       expect(notifier.state.isDirty, isTrue);
 
-      notifier.updateField('name', 'John Doe');
-      expect(notifier.state.dirtyFields.containsKey('name'), isFalse);
+      notifier.updateField('first_name', 'John');
+      expect(notifier.state.dirtyFields.containsKey('first_name'), isFalse);
       expect(notifier.state.isDirty, isFalse);
     });
 
     test('tracks multiple dirty fields independently', () {
-      notifier.updateField('name', 'Jane');
+      notifier.updateField('first_name', 'Jane');
       notifier.updateField('age', 30);
 
-      expect(notifier.state.dirtyFields, {'name': 'Jane', 'age': 30});
+      expect(notifier.state.dirtyFields, {'first_name': 'Jane', 'age': 30});
     });
 
     test('clears field error when the field is updated', () {
       // First trigger validation to create an error
-      notifier.updateField('name', '');
+      notifier.updateField('first_name', '');
       notifier.validate();
-      expect(notifier.state.fieldErrors['name'], isNotNull);
+      expect(notifier.state.fieldErrors['first_name'], isNotNull);
 
       // Now update the field - error should be cleared
-      notifier.updateField('name', 'Valid Name');
-      expect(notifier.state.fieldErrors.containsKey('name'), isFalse);
+      notifier.updateField('first_name', 'Valid Name');
+      expect(notifier.state.fieldErrors.containsKey('first_name'), isFalse);
     });
 
     test('handles list field (availability_days) comparison correctly', () {
@@ -114,7 +116,7 @@ void main() {
 
   group('ProfileEditNotifier - validate', () {
     test('returns true when all dirty fields are valid', () {
-      notifier.updateField('name', 'Valid Name');
+      notifier.updateField('first_name', 'Valid');
       notifier.updateField('age', 25);
       notifier.updateField('height_cm', 180.0);
       notifier.updateField('weight_kg', 75.0);
@@ -123,11 +125,12 @@ void main() {
       expect(notifier.state.hasErrors, isFalse);
     });
 
-    test('rejects empty name', () {
-      notifier.updateField('name', '');
+    test('rejects empty first_name', () {
+      notifier.updateField('first_name', '');
 
       expect(notifier.validate(), isFalse);
-      expect(notifier.state.fieldErrors['name'], 'Name is required');
+      expect(
+          notifier.state.fieldErrors['first_name'], 'First name is required');
     });
 
     test('rejects age below 13', () {
@@ -259,14 +262,14 @@ void main() {
       when(() => mockRepository.updateProfile(any()))
           .thenAnswer((_) async => Success(originalProfile));
 
-      notifier.updateField('name', 'New Name');
+      notifier.updateField('first_name', 'New Name');
       await notifier.save();
 
       final captured =
           verify(() => mockRepository.updateProfile(captureAny())).captured;
       final updatedProfile = captured.first as UserProfile;
 
-      expect(updatedProfile.name, 'New Name');
+      expect(updatedProfile.firstName, 'New Name');
       expect(updatedProfile.age, 25); // unchanged
       expect(updatedProfile.heightCm, 175.0); // unchanged
       expect(updatedProfile.userId, 'user-123'); // preserved
@@ -276,7 +279,7 @@ void main() {
       when(() => mockRepository.updateProfile(any()))
           .thenAnswer((_) async => Success(originalProfile));
 
-      notifier.updateField('name', 'New Name');
+      notifier.updateField('first_name', 'New Name');
       await notifier.save();
 
       expect(notifier.state.isSuccess, isTrue);
@@ -288,7 +291,7 @@ void main() {
       when(() => mockRepository.updateProfile(any()))
           .thenAnswer((_) async => Failure(NetworkError()));
 
-      notifier.updateField('name', 'New Name');
+      notifier.updateField('first_name', 'New Name');
       await notifier.save();
 
       expect(notifier.state.isSuccess, isFalse);
@@ -319,7 +322,7 @@ void main() {
 
   group('ProfileEditNotifier - reset', () {
     test('clears all state back to initial', () {
-      notifier.updateField('name', 'Changed');
+      notifier.updateField('first_name', 'Changed');
       notifier.validate();
 
       notifier.reset();

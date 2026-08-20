@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:synchrofit/features/dashboard/utils/weekly_load_utils.dart';
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
 
 void main() {
@@ -97,20 +97,19 @@ void main() {
 
     test('returns 0 when no sessions fall in the week', () {
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Chest Day',
           completedAt: DateTime(2025, 1, 10), // Friday before the week
           totalDurationSeconds: 3600,
-          exercisesCompleted: 1,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e1',
               exerciseName: 'Bench Press',
               setsCompleted: 3,
               repsOrDuration: 10,
-            ),
+            ).toJson(),
           ],
         ),
       ];
@@ -121,42 +120,40 @@ void main() {
     test('correctly sums sets * reps for sessions in the week', () {
       final weekStart = DateTime(2025, 1, 13); // Monday
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Chest Day',
           completedAt: DateTime(2025, 1, 14), // Tuesday - in week
           totalDurationSeconds: 3600,
-          exercisesCompleted: 2,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e1',
               exerciseName: 'Bench Press',
               setsCompleted: 3,
               repsOrDuration: 10, // 30
-            ),
+            ).toJson(),
             const CompletedExercise(
               exerciseId: 'e2',
               exerciseName: 'Flyes',
               setsCompleted: 4,
               repsOrDuration: 12, // 48
-            ),
+            ).toJson(),
           ],
         ),
-        WorkoutSession(
+        WorkoutHistory(
           id: '2',
-          workoutId: 'w2',
+          userId: 'u1',
           workoutName: 'Leg Day',
           completedAt: DateTime(2025, 1, 16), // Thursday - in week
           totalDurationSeconds: 2400,
-          exercisesCompleted: 1,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e3',
               exerciseName: 'Squats',
               setsCompleted: 5,
               repsOrDuration: 8, // 40
-            ),
+            ).toJson(),
           ],
         ),
       ];
@@ -167,36 +164,34 @@ void main() {
     test('only includes sessions within the specified week', () {
       final weekStart = DateTime(2025, 1, 13); // Monday
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'In Week',
           completedAt: DateTime(2025, 1, 15), // Wednesday - in week
           totalDurationSeconds: 3600,
-          exercisesCompleted: 1,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e1',
               exerciseName: 'Deadlift',
               setsCompleted: 3,
               repsOrDuration: 5, // 15
-            ),
+            ).toJson(),
           ],
         ),
-        WorkoutSession(
+        WorkoutHistory(
           id: '2',
-          workoutId: 'w2',
+          userId: 'u1',
           workoutName: 'Outside Week',
           completedAt: DateTime(2025, 1, 20), // Monday next week - outside
           totalDurationSeconds: 1800,
-          exercisesCompleted: 1,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e2',
               exerciseName: 'Rows',
               setsCompleted: 4,
               repsOrDuration: 10, // 40 - should NOT be counted
-            ),
+            ).toJson(),
           ],
         ),
       ];

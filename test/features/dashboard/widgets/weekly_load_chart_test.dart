@@ -1,7 +1,7 @@
 import 'package:glados/glados.dart';
 import 'package:synchrofit/features/dashboard/utils/weekly_load_utils.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 
 void main() {
   group('Property 4: Four-week ranges are non-overlapping and chronologically ordered', () {
@@ -115,16 +115,15 @@ void main() {
         }).toList();
 
         final sessions = exercises.isEmpty
-            ? <WorkoutSession>[]
+            ? <WorkoutHistory>[]
             : [
-                WorkoutSession(
+                WorkoutHistory(
                   id: 'session1',
-                  workoutId: 'w1',
+                  userId: 'u1',
                   workoutName: 'Test Workout',
                   completedAt: sessionDate,
                   totalDurationSeconds: 3600,
-                  exercisesCompleted: exercises.length,
-                  exercises: exercises,
+                  exercisesCompleted: exercises.map((e) => e.toJson()).toList(),
                 ),
               ];
 
@@ -165,14 +164,13 @@ void main() {
         });
 
         final sessions = [
-          WorkoutSession(
+          WorkoutHistory(
             id: 'session1',
-            workoutId: 'w1',
+            userId: 'u1',
             workoutName: 'Test Workout',
             completedAt: sessionDate,
             totalDurationSeconds: 3600,
-            exercisesCompleted: exercises.length,
-            exercises: exercises,
+            exercisesCompleted: exercises.map((e) => e.toJson()).toList(),
           ),
         ];
 

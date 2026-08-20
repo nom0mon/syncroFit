@@ -4,7 +4,7 @@ import 'package:glados/glados.dart' hide expect, group, setUpAll, setUp, tearDow
 import 'package:synchrofit/features/dashboard/utils/session_display_utils.dart';
 import 'package:synchrofit/features/dashboard/widgets/completed_sessions_widget.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/shared/widgets/section_header.dart';
 
 void main() {
@@ -122,20 +122,19 @@ void main() {
 
     testWidgets('renders trailing label with session count', (tester) async {
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Push Day',
           completedAt: DateTime(2026, 4, 25),
           totalDurationSeconds: 2700,
-          exercisesCompleted: 5,
-          exercises: const [
-            CompletedExercise(
+          exercisesCompleted: [
+            const CompletedExercise(
               exerciseId: 'e1',
               exerciseName: 'Bench Press',
               setsCompleted: 3,
               repsOrDuration: 10,
-            ),
+            ).toJson(),
           ],
         ),
       ];
@@ -196,23 +195,21 @@ void main() {
 
     testWidgets('renders session rows when sessions exist', (tester) async {
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Push Day',
           completedAt: DateTime(2026, 4, 25),
           totalDurationSeconds: 2700,
-          exercisesCompleted: 5,
-          exercises: const [],
+          exercisesCompleted: const [],
         ),
-        WorkoutSession(
+        WorkoutHistory(
           id: '2',
-          workoutId: 'w2',
+          userId: 'u1',
           workoutName: 'Pull Day',
           completedAt: DateTime(2026, 4, 25),
           totalDurationSeconds: 3600,
-          exercisesCompleted: 4,
-          exercises: const [],
+          exercisesCompleted: const [],
         ),
       ];
 
@@ -237,14 +234,13 @@ void main() {
     testWidgets('does not show empty state when sessions exist',
         (tester) async {
       final sessions = [
-        WorkoutSession(
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Leg Day',
           completedAt: DateTime(2026, 4, 25),
           totalDurationSeconds: 1800,
-          exercisesCompleted: 3,
-          exercises: const [],
+          exercisesCompleted: const [],
         ),
       ];
 

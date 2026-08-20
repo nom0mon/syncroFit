@@ -91,7 +91,8 @@ class ProfileForm extends StatefulWidget {
 /// Data class holding validated form values.
 class ProfileFormData {
   const ProfileFormData({
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.age,
     required this.heightCm,
     required this.weightKg,
@@ -102,7 +103,8 @@ class ProfileFormData {
     required this.workoutAvailability,
   });
 
-  final String name;
+  final String firstName;
+  final String lastName;
   final int age;
   final double heightCm;
   final double weightKg;
@@ -116,7 +118,8 @@ class ProfileFormData {
 class _ProfileFormState extends State<ProfileForm> {
   final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _nameController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
   late final TextEditingController _ageController;
   late final TextEditingController _heightController;
   late final TextEditingController _weightController;
@@ -134,7 +137,9 @@ class _ProfileFormState extends State<ProfileForm> {
     super.initState();
     final profile = widget.initialProfile;
 
-    _nameController = TextEditingController(text: profile?.name ?? '');
+    _firstNameController =
+        TextEditingController(text: profile?.firstName ?? '');
+    _lastNameController = TextEditingController(text: profile?.lastName ?? '');
     _ageController = TextEditingController(
       text: profile != null ? profile.age.toString() : '',
     );
@@ -157,7 +162,8 @@ class _ProfileFormState extends State<ProfileForm> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -169,16 +175,16 @@ class _ProfileFormState extends State<ProfileForm> {
 
     // Validate availability separately
     setState(() {
-      _availabilityError = _selectedDays.isEmpty
-          ? 'Please select at least one day'
-          : null;
+      _availabilityError =
+          _selectedDays.isEmpty ? 'Please select at least one day' : null;
     });
 
     if (!isFormValid || _selectedDays.isEmpty) return;
 
     widget.onSubmit(
       ProfileFormData(
-        name: _nameController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
         age: int.parse(_ageController.text.trim()),
         heightCm: double.parse(_heightController.text.trim()),
         weightKg: double.parse(_weightController.text.trim()),
@@ -199,15 +205,29 @@ class _ProfileFormState extends State<ProfileForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Name
+          // First Name
           TextFormField(
-            controller: _nameController,
+            controller: _firstNameController,
             decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'Enter your name',
+              labelText: 'First Name',
+              hintText: 'Enter your first name',
             ),
             validator: validateName,
             textInputAction: TextInputAction.next,
+            maxLength: 50,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Last Name
+          TextFormField(
+            controller: _lastNameController,
+            decoration: const InputDecoration(
+              labelText: 'Last Name',
+              hintText: 'Enter your last name',
+            ),
+            validator: validateName,
+            textInputAction: TextInputAction.next,
+            maxLength: 50,
           ),
           const SizedBox(height: AppSpacing.md),
 
@@ -270,8 +290,7 @@ class _ProfileFormState extends State<ProfileForm> {
             items: FitnessGoal.values
                 .map((g) => DropdownMenuItem(value: g, child: Text(g.label)))
                 .toList(),
-            onChanged: (value) =>
-                setState(() => _selectedFitnessGoal = value),
+            onChanged: (value) => setState(() => _selectedFitnessGoal = value),
             validator: (value) =>
                 value == null ? 'Please select a fitness goal' : null,
           ),
@@ -284,8 +303,7 @@ class _ProfileFormState extends State<ProfileForm> {
             items: FitnessLevel.values
                 .map((l) => DropdownMenuItem(value: l, child: Text(l.label)))
                 .toList(),
-            onChanged: (value) =>
-                setState(() => _selectedFitnessLevel = value),
+            onChanged: (value) => setState(() => _selectedFitnessLevel = value),
             validator: (value) =>
                 value == null ? 'Please select a fitness level' : null,
           ),

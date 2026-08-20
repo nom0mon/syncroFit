@@ -6,11 +6,11 @@ import '../local/local_database.dart';
 import '../remote/providers.dart';
 import '../repositories/exercise_repository.dart';
 import '../repositories/profile_repository.dart';
-import '../repositories/progress_repository.dart';
+import '../repositories/workout_history_repository.dart';
 import '../repositories/workout_repository.dart';
 import 'caching_exercise_repository.dart';
 import 'caching_profile_repository.dart';
-import 'caching_progress_repository.dart';
+import 'caching_workout_history_repository.dart';
 import 'caching_workout_repository.dart';
 
 /// Provides a [CachingExerciseRepository] that wraps the remote repository
@@ -51,7 +51,6 @@ final cachingWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
       remote: remote,
       dao: db.workoutDao,
       cacheMetadataDao: db.cacheMetadataDao,
-      syncQueueDao: db.syncQueueDao,
       connectivity: connectivity,
       database: dbImpl.database,
     );
@@ -85,25 +84,29 @@ final cachingProfileRepositoryProvider = Provider<ProfileRepository>((ref) {
   }
 });
 
-/// Provides a [CachingProgressRepository] that wraps the remote repository
-/// with local SQLite caching, cache freshness logic, and offline mutation queuing.
+/// Provides a [CachingWorkoutHistoryRepository] that wraps the remote repository
+/// with local SQLite caching and offline mutation queuing.
+///
+/// When offline, completed workout_history records are saved locally and queued
+/// in the sync_queue for synchronization when connectivity resumes.
 ///
 /// Falls back to remote-only if the local database is not available.
-final cachingProgressRepositoryProvider = Provider<ProgressRepository>((ref) {
+final cachingWorkoutHistoryRepositoryProvider =
+    Provider<WorkoutHistoryRepository>((ref) {
   try {
     final db = ref.watch(localDatabaseProvider);
     final connectivity = ref.watch(connectivityMonitorProvider);
-    final remote = ref.watch(remoteProgressRepositoryProvider);
+    final remote = ref.watch(remoteWorkoutHistoryRepositoryProvider);
 
-    return CachingProgressRepository(
+    return CachingWorkoutHistoryRepository(
       remote: remote,
-      dao: db.progressDao,
+      dao: db.workoutHistoryDao,
       cacheMetadataDao: db.cacheMetadataDao,
       syncQueueDao: db.syncQueueDao,
       connectivity: connectivity,
     );
   } catch (e) {
     // Database not available (e.g., web without WASM) — fall back to remote only
-    return ref.watch(remoteProgressRepositoryProvider);
+    return ref.watch(remoteWorkoutHistoryRepositoryProvider);
   }
 });

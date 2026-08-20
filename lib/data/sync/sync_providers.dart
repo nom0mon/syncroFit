@@ -95,7 +95,7 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
           if (forceRefresh) {
             // Invalidate all cache metadata so subsequent fetches
             // always hit the backend regardless of cache age.
-            final cacheKeys = ['exercises', 'workouts', 'profile', 'progress'];
+            final cacheKeys = ['exercises', 'workouts', 'profile', 'workout_history'];
             for (final key in cacheKeys) {
               await db.cacheMetadataDao.updateLastSynced(
                 key,

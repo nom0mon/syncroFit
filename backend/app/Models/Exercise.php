@@ -19,7 +19,7 @@ class Exercise extends Model
         'default_sets',
         'default_reps',
         'default_duration_seconds',
-        'image_url',
+        'video_path',
     ];
 
     protected function casts(): array
@@ -30,21 +30,5 @@ class Exercise extends Model
             'default_reps' => 'integer',
             'default_duration_seconds' => 'integer',
         ];
-    }
-
-    /**
-     * Get the workout exercises that use this exercise.
-     */
-    public function workoutExercises()
-    {
-        return $this->hasMany(WorkoutExercise::class);
-    }
-
-    /**
-     * Get the session exercises that reference this exercise.
-     */
-    public function sessionExercises()
-    {
-        return $this->hasMany(SessionExercise::class);
     }
 }

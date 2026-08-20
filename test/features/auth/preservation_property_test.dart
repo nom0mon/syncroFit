@@ -151,7 +151,8 @@ void main() {
 
         // Call register directly on the provider
         await container.read(authStateProvider.notifier).register(
-              'TestUser',
+              'Test',
+              'User',
               'test@example.com',
               'password123',
             );
@@ -168,9 +169,9 @@ void main() {
           reason: 'User should be populated after registration',
         );
         expect(
-          state.user!.name,
-          equals('TestUser'),
-          reason: 'Registered user name should match provided name',
+          state.user!.fullName,
+          equals('Test User'),
+          reason: 'Registered user full name should match provided names',
         );
       },
     );

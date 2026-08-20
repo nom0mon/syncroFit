@@ -1,12 +1,10 @@
 import 'dart:convert';
 
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../core/network/connectivity_monitor.dart';
 import '../../shared/models/models.dart';
 import '../local/daos/cache_metadata_dao.dart';
-import '../local/daos/sync_queue_dao.dart';
 import '../local/daos/workout_dao.dart';
 import '../repositories/workout_repository.dart';
 
@@ -18,12 +16,14 @@ import '../repositories/workout_repository.dart';
 ///
 /// When offline:
 /// - Serves data from local SQLite cache.
-/// - Queues mutations (e.g., saveSession) to the SyncQueue for later sync.
+///
+/// The Workout model includes embedded exercises (as JSON) and the
+/// `isGenerated` flag to distinguish user-created from recommendation-generated
+/// workouts.
 class CachingWorkoutRepository implements WorkoutRepository {
   final WorkoutRepository _remote;
   final WorkoutDao _dao;
   final CacheMetadataDao _cacheMetadataDao;
-  final SyncQueueDao _syncQueueDao;
   final ConnectivityMonitor _connectivity;
   final Database _database;
 
@@ -31,21 +31,16 @@ class CachingWorkoutRepository implements WorkoutRepository {
   static const int _cacheFreshnessMinutes = 15;
 
   static const String _entityType = 'workout';
-  static const String _sessionsTable = 'workout_sessions';
-
-  static const _uuid = Uuid();
 
   CachingWorkoutRepository({
     required WorkoutRepository remote,
     required WorkoutDao dao,
     required CacheMetadataDao cacheMetadataDao,
-    required SyncQueueDao syncQueueDao,
     required ConnectivityMonitor connectivity,
     required Database database,
   })  : _remote = remote,
         _dao = dao,
         _cacheMetadataDao = cacheMetadataDao,
-        _syncQueueDao = syncQueueDao,
         _connectivity = connectivity,
         _database = database;
 
@@ -121,59 +116,6 @@ class CachingWorkoutRepository implements WorkoutRepository {
     return Success(todayWorkout);
   }
 
-  @override
-  Future<Result<List<WorkoutSession>, AppError>> getSessionHistory() async {
-    if (_connectivity.currentStatus == ConnectivityStatus.online) {
-      if (await _isCacheFresh()) {
-        final cached = await _getSessionsFromCache();
-        return Success(cached);
-      }
-
-      final result = await _remote.getSessionHistory();
-      if (result is Success<List<WorkoutSession>, AppError>) {
-        await _persistSessions(result.value);
-        await _cacheMetadataDao.updateLastSynced(
-          'workout_session',
-          DateTime.now(),
-        );
-      }
-      return result;
-    }
-
-    // Offline: serve from cache
-    final cached = await _getSessionsFromCache();
-    return Success(cached);
-  }
-
-  @override
-  Future<Result<WorkoutSession, AppError>> saveSession(
-    WorkoutSession session,
-  ) async {
-    if (_connectivity.currentStatus == ConnectivityStatus.online) {
-      final result = await _remote.saveSession(session);
-      if (result is Success<WorkoutSession, AppError>) {
-        // Persist the saved session locally
-        await _persistSession(result.value);
-      }
-      return result;
-    }
-
-    // Offline: save locally and enqueue for sync
-    await _persistSession(session);
-
-    final mutation = SyncMutation(
-      id: _uuid.v4(),
-      entityType: _entityType,
-      entityId: session.id,
-      operationType: 'create',
-      payload: session.toJson(),
-      createdAt: DateTime.now(),
-    );
-    await _syncQueueDao.enqueue(mutation);
-
-    return Success(session);
-  }
-
   // ─── Private Helpers ──────────────────────────────────────────────────
 
   /// Checks if the workout cache is still fresh (less than 15 minutes old).
@@ -204,73 +146,14 @@ class CachingWorkoutRepository implements WorkoutRepository {
 
     return Workout.fromJson({
       'id': rows.first['id'],
+      'user_id': rows.first['user_id'],
       'name': rows.first['name'],
+      'day_of_week': rows.first['day_of_week'],
       'estimated_duration_minutes': rows.first['estimated_duration_minutes'],
       'exercises': exercisesList,
+      'is_generated': rows.first['is_generated'],
+      'created_at': rows.first['created_at'],
+      'updated_at': rows.first['updated_at'],
     });
-  }
-
-  /// Retrieves all workout sessions from the local cache.
-  Future<List<WorkoutSession>> _getSessionsFromCache() async {
-    final rows = await _database.query(
-      _sessionsTable,
-      orderBy: 'completed_at DESC',
-    );
-    return rows.map(_sessionFromRow).toList();
-  }
-
-  /// Persists a list of workout sessions to the local cache.
-  Future<void> _persistSessions(List<WorkoutSession> sessions) async {
-    final batch = _database.batch();
-    for (final session in sessions) {
-      batch.insert(
-        _sessionsTable,
-        _sessionToRow(session),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
-  }
-
-  /// Persists a single workout session to the local cache.
-  Future<void> _persistSession(WorkoutSession session) async {
-    await _database.insert(
-      _sessionsTable,
-      _sessionToRow(session),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  /// Converts a database row to a [WorkoutSession].
-  WorkoutSession _sessionFromRow(Map<String, dynamic> row) {
-    final exercisesJson = row['exercises'] as String;
-    final exercisesList = (jsonDecode(exercisesJson) as List<dynamic>)
-        .map((e) => e as Map<String, dynamic>)
-        .toList();
-
-    return WorkoutSession.fromJson({
-      'id': row['id'],
-      'workout_id': row['workout_id'],
-      'workout_name': row['workout_name'],
-      'completed_at': row['completed_at'],
-      'total_duration_seconds': row['total_duration_seconds'],
-      'exercises_completed': row['exercises_completed'],
-      'exercises': exercisesList,
-    });
-  }
-
-  /// Converts a [WorkoutSession] to a database row map.
-  Map<String, dynamic> _sessionToRow(WorkoutSession session) {
-    return {
-      'id': session.id,
-      'workout_id': session.workoutId,
-      'workout_name': session.workoutName,
-      'completed_at': session.completedAt.toIso8601String(),
-      'total_duration_seconds': session.totalDurationSeconds,
-      'exercises_completed': session.exercisesCompleted,
-      'exercises': jsonEncode(
-        session.exercises.map((e) => e.toJson()).toList(),
-      ),
-    };
   }
 }

@@ -28,7 +28,7 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
   final Connectivity _connectivity;
   final Dio _dio;
 
-  ConnectivityStatus _currentStatus = ConnectivityStatus.offline;
+  ConnectivityStatus _currentStatus = ConnectivityStatus.online;
   final StreamController<ConnectivityStatus> _statusController =
       StreamController<ConnectivityStatus>.broadcast();
 

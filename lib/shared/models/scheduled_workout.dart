@@ -7,6 +7,7 @@ class ScheduledWorkout {
   final DayOfWeek dayOfWeek;
   final int estimatedDurationMinutes;
   final bool isCompleted;
+  final bool isGenerated;
   final DateTime? completedAt;
 
   const ScheduledWorkout({
@@ -15,6 +16,7 @@ class ScheduledWorkout {
     required this.dayOfWeek,
     required this.estimatedDurationMinutes,
     this.isCompleted = false,
+    this.isGenerated = false,
     this.completedAt,
   });
 
@@ -24,6 +26,7 @@ class ScheduledWorkout {
     DayOfWeek? dayOfWeek,
     int? estimatedDurationMinutes,
     bool? isCompleted,
+    bool? isGenerated,
     DateTime? completedAt,
   }) {
     return ScheduledWorkout(
@@ -33,6 +36,7 @@ class ScheduledWorkout {
       estimatedDurationMinutes:
           estimatedDurationMinutes ?? this.estimatedDurationMinutes,
       isCompleted: isCompleted ?? this.isCompleted,
+      isGenerated: isGenerated ?? this.isGenerated,
       completedAt: completedAt ?? this.completedAt,
     );
   }

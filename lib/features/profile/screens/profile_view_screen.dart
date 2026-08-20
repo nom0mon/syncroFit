@@ -43,7 +43,7 @@ class ProfileViewScreen extends ConsumerWidget {
                 data: (profile) => profile != null
                     ? IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () => context.go('/settings/edit-profile'),
+                        onPressed: () => context.push('/settings/edit-profile'),
                         tooltip: 'Edit Profile',
                       )
                     : null,
@@ -76,11 +76,21 @@ class ProfileViewScreen extends ConsumerWidget {
         ),
         data: (profile) {
           if (profile == null) {
-            // No profile exists — redirect to profile setup
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.go('/profile-setup');
-            });
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_outline, size: 64),
+                  const SizedBox(height: AppSpacing.md),
+                  const Text('No profile set up yet'),
+                  const SizedBox(height: AppSpacing.md),
+                  FilledButton(
+                    onPressed: () => context.go('/profile-setup'),
+                    child: const Text('Set Up Profile'),
+                  ),
+                ],
+              ),
+            );
           }
           return _ProfileContent(profile: profile);
         },

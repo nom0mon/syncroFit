@@ -15,7 +15,8 @@ class MockProfileRepository extends Mock implements ProfileRepository {}
 UserProfile _createOriginalProfile() {
   return const UserProfile(
     userId: 'test-user-1',
-    name: 'John Doe',
+    firstName: 'John',
+    lastName: 'Doe',
     age: 30,
     heightCm: 175.0,
     weightKg: 70.0,

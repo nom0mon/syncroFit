@@ -10,32 +10,24 @@ class Workout extends Model
     use HasFactory;
 
     protected $fillable = [
-        'recommendation_id',
+        'user_id',
         'name',
         'day_of_week',
         'estimated_duration_minutes',
+        'exercises',
+        'is_generated',
     ];
 
     protected function casts(): array
     {
         return [
-            'day_of_week' => 'integer',
-            'estimated_duration_minutes' => 'integer',
+            'exercises' => 'array',
+            'is_generated' => 'boolean',
         ];
     }
 
-    public function recommendation()
+    public function user()
     {
-        return $this->belongsTo(Recommendation::class);
-    }
-
-    public function exercises()
-    {
-        return $this->hasMany(WorkoutExercise::class);
-    }
-
-    public function sessions()
-    {
-        return $this->hasMany(WorkoutSession::class);
+        return $this->belongsTo(User::class);
     }
 }

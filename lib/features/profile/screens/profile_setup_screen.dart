@@ -32,7 +32,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     final profile = UserProfile(
       userId: userId,
-      name: data.name,
+      firstName: data.firstName,
+      lastName: data.lastName,
       age: data.age,
       heightCm: data.heightCm,
       weightKg: data.weightKg,
@@ -50,9 +51,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final state = ref.read(profileProvider);
     if (state.hasError) {
       setState(() => _isSaving = false);
-      final errorMessage = state.error is AppError
-          ? (state.error as AppError).message
-          : state.error.toString();
+      final error = state.error;
+      // If profile already exists (409), redirect to profile view
+      if (error is ServerError && error.statusCode == 409) {
+        context.go('/settings/profile');
+        return;
+      }
+      final errorMessage = error is AppError
+          ? error.message
+          : error.toString();
       debugPrint('Profile save error: ${state.error}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

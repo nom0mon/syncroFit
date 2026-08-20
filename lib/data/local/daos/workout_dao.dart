@@ -75,9 +75,14 @@ class WorkoutDao {
 
     return Workout.fromJson({
       'id': row['id'],
+      'user_id': row['user_id'],
       'name': row['name'],
+      'day_of_week': row['day_of_week'],
       'estimated_duration_minutes': row['estimated_duration_minutes'],
       'exercises': exercisesList,
+      'is_generated': row['is_generated'],
+      'created_at': row['created_at'],
+      'updated_at': row['updated_at'],
     });
   }
 
@@ -85,12 +90,16 @@ class WorkoutDao {
   Map<String, dynamic> _toRow(Workout workout) {
     return {
       'id': workout.id,
+      'user_id': workout.userId,
       'name': workout.name,
+      'day_of_week': workout.dayOfWeek,
       'estimated_duration_minutes': workout.estimatedDurationMinutes,
-      'day_of_week': null, // Populated separately for scheduled workouts
       'exercises': jsonEncode(
         workout.exercises.map((e) => e.toJson()).toList(),
       ),
+      'is_generated': workout.isGenerated ? 1 : 0,
+      'created_at': workout.createdAt?.toIso8601String(),
+      'updated_at': workout.updatedAt?.toIso8601String(),
     };
   }
 }

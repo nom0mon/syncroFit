@@ -139,6 +139,7 @@ class WorkoutSchedulerNotifier extends StateNotifier<WorkoutSchedulerState> {
           dayOfWeek: day,
           estimatedDurationMinutes: workout.estimatedDurationMinutes,
           isCompleted: isCompleted,
+          isGenerated: workout.isGenerated,
         ),
       );
     }

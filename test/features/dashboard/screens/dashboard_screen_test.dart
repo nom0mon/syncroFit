@@ -8,7 +8,7 @@ import 'package:synchrofit/features/dashboard/widgets/calendar_grid_widget.dart'
 import 'package:synchrofit/features/dashboard/widgets/completed_sessions_widget.dart';
 import 'package:synchrofit/features/dashboard/widgets/weekly_load_chart_widget.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
-import 'package:synchrofit/shared/models/workout_session.dart';
+import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/shared/widgets/edge_fade_gradient.dart';
 
 void main() {
@@ -32,21 +32,20 @@ void main() {
 
   group('DashboardScreen composition', () {
     final testState = DashboardState(
-      sessions: [
-        WorkoutSession(
+      history: [
+        WorkoutHistory(
           id: '1',
-          workoutId: 'w1',
+          userId: 'u1',
           workoutName: 'Upper Body',
           completedAt: DateTime.now(),
           totalDurationSeconds: 2700,
-          exercisesCompleted: 5,
-          exercises: [
+          exercisesCompleted: [
             const CompletedExercise(
               exerciseId: 'e1',
               exerciseName: 'Bench Press',
               setsCompleted: 3,
               repsOrDuration: 10,
-            ),
+            ).toJson(),
           ],
         ),
       ],

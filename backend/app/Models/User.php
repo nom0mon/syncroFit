@@ -17,10 +17,26 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['full_name'];
+
+    /**
+     * Get the user's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -54,34 +70,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's workout sessions.
+     * Get the user's workouts.
      */
-    public function workoutSessions()
+    public function workouts()
     {
-        return $this->hasMany(WorkoutSession::class);
+        return $this->hasMany(Workout::class);
     }
 
     /**
-     * Get the user's progress records.
+     * Get the user's workout history.
      */
-    public function progressRecords()
+    public function workoutHistory()
     {
-        return $this->hasMany(ProgressRecord::class);
-    }
-
-    /**
-     * Get the user's device tokens.
-     */
-    public function deviceTokens()
-    {
-        return $this->hasMany(DeviceToken::class);
-    }
-
-    /**
-     * Get the user's recommendations.
-     */
-    public function recommendations()
-    {
-        return $this->hasMany(Recommendation::class);
+        return $this->hasMany(WorkoutHistory::class);
     }
 }
