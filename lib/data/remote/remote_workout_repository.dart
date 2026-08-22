@@ -60,9 +60,22 @@ class RemoteWorkoutRepository implements WorkoutRepository {
   /// Generates new workouts via the recommendation engine.
   ///
   /// POST /api/workouts/generate
-  Future<Result<List<Workout>, AppError>> generateRecommendation() async {
+  ///
+  /// Optionally accepts [includedExercises] and [excludedExercises] as lists
+  /// of exercise IDs. These are only sent when non-empty. The backend accepts
+  /// a JSON body `{ "included_exercises": [...], "excluded_exercises": [...] }`.
+  Future<Result<List<Workout>, AppError>> generateRecommendation({
+    List<int> includedExercises = const [],
+    List<int> excludedExercises = const [],
+  }) async {
     return _apiClient.post<List<Workout>>(
       '/api/workouts/generate',
+      body: {
+        if (includedExercises.isNotEmpty)
+          'included_exercises': includedExercises,
+        if (excludedExercises.isNotEmpty)
+          'excluded_exercises': excludedExercises,
+      },
       fromJson: (json) => _parseWorkoutsList(json),
     );
   }

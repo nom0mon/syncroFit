@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
-import '../../../data/remote/providers.dart';
 import '../../../data/sync/sync_providers.dart';
 import '../../../shared/models/models.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -103,7 +102,7 @@ class _ScheduleContent extends StatelessWidget {
           ),
         ),
 
-        // Section header
+        // Section header with a persistent regenerate entry point.
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -112,11 +111,23 @@ class _ScheduleContent extends StatelessWidget {
               AppSpacing.md,
               AppSpacing.sm,
             ),
-            child: Text(
-              'Your Weekly Plan',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Your Weekly Plan',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
+                ),
+                TextButton.icon(
+                  onPressed: () =>
+                      context.push('/dashboard/workout-generator'),
+                  icon: const Icon(Icons.tune, size: 18),
+                  label: const Text('Regenerate'),
+                ),
+              ],
             ),
           ),
         ),
@@ -299,9 +310,11 @@ class _EmptyStateContent extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleGeneratePlan(BuildContext context, WidgetRef ref) async {
-    final profileAsync = ref.read(profileProvider);
-    final profile = profileAsync.valueOrNull;
+  /// Navigates to the dedicated workout generator screen where generation is
+  /// explicit. Keeps the profile check: if no profile exists, routes to
+  /// profile setup instead.
+  void _handleGeneratePlan(BuildContext context, WidgetRef ref) {
+    final profile = ref.read(profileProvider).valueOrNull;
 
     if (profile == null) {
       // User hasn't set up their profile — navigate to profile setup
@@ -309,37 +322,7 @@ class _EmptyStateContent extends ConsumerWidget {
       return;
     }
 
-    // Profile exists — generate the workout plan
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating your workout plan...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    final remoteRepo = ref.read(remoteWorkoutRepositoryProvider);
-    final result = await remoteRepo.generateRecommendation();
-
-    if (!context.mounted) return;
-
-    switch (result) {
-      case Success():
-        // Refresh the workout scheduler to show the new plan
-        ref.read(workoutSchedulerProvider.notifier).refresh();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Workout plan generated!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      case Failure(error: final error):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate plan: ${error.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-    }
+    context.push('/dashboard/workout-generator');
   }
 }
 

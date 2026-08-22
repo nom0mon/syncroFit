@@ -105,46 +105,84 @@ class WorkoutSchedulerNotifier extends StateNotifier<WorkoutSchedulerState> {
     await _loadSchedule();
   }
 
-  /// Maps a list of workouts to the user's availability days, producing
-  /// one [ScheduledWorkout] per availability day.
+  /// Maps a list of workouts to their assigned days, producing one
+  /// [ScheduledWorkout] per workout.
   ///
-  /// Workouts are assigned in order to the availability days. If there are
-  /// more availability days than workouts, the extra days are skipped.
-  /// If there are more workouts than availability days, the extra workouts
-  /// are not scheduled.
+  /// The workout's own `dayOfWeek` field (set by the backend recommendation
+  /// engine to match the user's selected availability days) is the source of
+  /// truth for scheduling. A workout is only scheduled on a day the user
+  /// actually selected — if a workout carries a day that is not in
+  /// [availabilityDays], it is skipped (defensive guard for Issue 1: date
+  /// accuracy).
+  ///
+  /// If a workout has no parseable day (e.g. user-created without a day),
+  /// it falls back to assigning the next unused availability day in order.
   List<ScheduledWorkout> _mapWorkoutsToSchedule(
     List<Workout> workouts,
     List<DayOfWeek> availabilityDays,
   ) {
     final today = _currentDayOfWeek();
+    final availabilitySet = availabilityDays.toSet();
     final scheduled = <ScheduledWorkout>[];
+    final usedDays = <DayOfWeek>{};
 
-    // Assign workouts to availability days in order.
-    // The number of scheduled workouts is the minimum of available workouts
-    // and availability days.
-    final count =
-        workouts.length < availabilityDays.length
-            ? workouts.length
-            : availabilityDays.length;
+    // Availability days sorted Monday→Sunday for deterministic fallback.
+    final sortedAvailability = [...availabilityDays]
+      ..sort((a, b) => a.index.compareTo(b.index));
 
-    for (var i = 0; i < count; i++) {
-      final workout = workouts[i];
-      final day = availabilityDays[i];
-      final isCompleted = _isDayCompleted(day, today);
+    for (final workout in workouts) {
+      final day = _parseWorkoutDay(workout.dayOfWeek);
 
+      DayOfWeek? assignedDay;
+      if (day != null && availabilitySet.contains(day)) {
+        // Use the backend-assigned day (matches a selected available day).
+        assignedDay = day;
+      } else {
+        // Fallback: assign the next unused availability day in order.
+        assignedDay = sortedAvailability
+            .cast<DayOfWeek?>()
+            .firstWhere((d) => !usedDays.contains(d), orElse: () => null);
+      }
+
+      if (assignedDay == null) {
+        // No valid day available for this workout — skip it rather than
+        // showing it on a day the user did not select.
+        continue;
+      }
+
+      usedDays.add(assignedDay);
       scheduled.add(
         ScheduledWorkout(
           workoutId: workout.id,
           workoutName: workout.name,
-          dayOfWeek: day,
+          dayOfWeek: assignedDay,
           estimatedDurationMinutes: workout.estimatedDurationMinutes,
-          isCompleted: isCompleted,
+          isCompleted: _isDayCompleted(assignedDay, today),
           isGenerated: workout.isGenerated,
         ),
       );
     }
 
     return scheduled;
+  }
+
+  /// Parses a workout's `dayOfWeek` string (e.g. "3" for Wednesday, or a day
+  /// name) into a [DayOfWeek] enum. Returns null if it cannot be parsed.
+  DayOfWeek? _parseWorkoutDay(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+
+    // Numeric form: "1" = Monday ... "7" = Sunday.
+    final asNumber = int.tryParse(raw.trim());
+    if (asNumber != null && asNumber >= 1 && asNumber <= 7) {
+      return DayOfWeek.values[asNumber - 1];
+    }
+
+    // Name form: "monday", "Tuesday", etc.
+    final lower = raw.trim().toLowerCase();
+    for (final day in DayOfWeek.values) {
+      if (day.name.toLowerCase() == lower) return day;
+    }
+    return null;
   }
 
   /// Determines whether a given day should be marked as completed.

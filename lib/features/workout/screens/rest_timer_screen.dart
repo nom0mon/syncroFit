@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/enums.dart';
+import '../../exercise_library/providers/exercise_provider.dart';
 import '../providers/timer_controller.dart';
 import '../providers/workout_provider.dart';
 
@@ -134,7 +135,14 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     if (workout == null) return '';
     final nextIndex = sessionState.currentExerciseIndex + 1;
     if (nextIndex >= workout.exercises.length) return '';
-    return 'Exercise ${workout.exercises[nextIndex].exerciseId}';
+
+    final nextExercise = workout.exercises[nextIndex];
+    // Resolve the real exercise name from the loaded library.
+    final exercises = ref.read(exerciseProvider).allExercises;
+    for (final e in exercises) {
+      if (int.tryParse(e.id) == nextExercise.exerciseId) return e.name;
+    }
+    return 'Exercise ${nextExercise.exerciseId}';
   }
 
   void _onRestComplete() {

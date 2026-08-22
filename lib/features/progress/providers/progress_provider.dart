@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/workout_history_repository.dart';
+import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../workout/providers/workout_provider.dart';
 
 /// Provides the [WorkoutHistoryRepository] instance used by the progress module.
 ///
@@ -35,11 +37,19 @@ class ProgressState {
   /// Recently completed workout history records.
   final List<WorkoutHistory> recentHistory;
 
+  /// Number of workouts planned in the user's current weekly schedule.
+  final int plannedThisWeek;
+
+  /// Number of scheduled workouts completed so far this week.
+  final int completedThisWeek;
+
   const ProgressState({
     this.totalWorkouts = 0,
     this.totalDurationSeconds = 0,
     this.weeklyStats = const [],
     this.recentHistory = const [],
+    this.plannedThisWeek = 0,
+    this.completedThisWeek = 0,
   });
 }
 
@@ -57,6 +67,8 @@ final progressProvider =
 class ProgressNotifier extends AsyncNotifier<ProgressState> {
   WorkoutHistoryRepository get _historyRepo =>
       ref.read(progressWorkoutHistoryRepositoryProvider);
+
+  WorkoutRepository get _workoutRepo => ref.read(workoutRepositoryProvider);
 
   @override
   Future<ProgressState> build() async {
@@ -83,12 +95,48 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     final sortedHistory = List<WorkoutHistory>.from(history)
       ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
 
+    // Planned workouts this week = number of workouts in the user's plan.
+    // Fetched via a one-shot repository call (not by watching the scheduler
+    // StateNotifier, which emitted multiple states and caused this async
+    // build to loop forever).
+    final workoutsResult = await _workoutRepo.getAll();
+    final plannedThisWeek = switch (workoutsResult) {
+      Success(value: final workouts) => workouts.length,
+      Failure() => 0,
+    };
+
+    // Completed this week = history records whose completedAt falls in the
+    // current Monday–Sunday week.
+    final (weekStart, weekEnd) = _currentWeekRange();
+    final completedThisWeek = history.where((r) {
+      return !r.completedAt.isBefore(weekStart) &&
+          !r.completedAt.isAfter(weekEnd);
+    }).length;
+
     return ProgressState(
       totalWorkouts: totalWorkouts,
       totalDurationSeconds: totalDurationSeconds,
       weeklyStats: weeklyStats,
       recentHistory: sortedHistory.take(10).toList(),
+      plannedThisWeek: plannedThisWeek,
+      completedThisWeek: completedThisWeek,
     );
+  }
+
+  /// Returns the Monday 00:00:00 → Sunday 23:59:59 range for the current week.
+  (DateTime, DateTime) _currentWeekRange() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final sunday = DateTime(
+      monday.year,
+      monday.month,
+      monday.day + 6,
+      23,
+      59,
+      59,
+    );
+    return (monday, sunday);
   }
 
   /// Groups workout history records by ISO week and counts workouts per week.

@@ -69,8 +69,18 @@ class WorkoutController extends Controller
             ], 422);
         }
 
+        $validated = $request->validate([
+            'included_exercises' => 'nullable|array',
+            'included_exercises.*' => 'integer',
+            'excluded_exercises' => 'nullable|array',
+            'excluded_exercises.*' => 'integer',
+        ]);
+
+        $included = $validated['included_exercises'] ?? [];
+        $excluded = $validated['excluded_exercises'] ?? [];
+
         $engine = new RecommendationEngine();
-        $result = $engine->generate($user);
+        $result = $engine->generate($user, $included, $excluded);
 
         // Delete previous generated workouts for this user
         Workout::where('user_id', $user->id)
@@ -90,7 +100,11 @@ class WorkoutController extends Controller
             ]);
         }
 
-        return response()->json(['success' => true, 'data' => $workouts], 201);
+        return response()->json([
+            'success' => true,
+            'data' => $workouts,
+            'meta' => $result['meta'] ?? [],
+        ], 201);
     }
 
     /**

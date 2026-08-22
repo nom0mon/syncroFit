@@ -20,6 +20,11 @@ class Exercise extends Model
         'default_reps',
         'default_duration_seconds',
         'video_path',
+        'movement_pattern',
+        'primary_muscles',
+        'secondary_muscles',
+        'exercise_type',
+        'goals',
     ];
 
     protected function casts(): array
@@ -29,6 +34,9 @@ class Exercise extends Model
             'default_sets' => 'integer',
             'default_reps' => 'integer',
             'default_duration_seconds' => 'integer',
+            'primary_muscles' => 'array',
+            'secondary_muscles' => 'array',
+            'goals' => 'array',
         ];
     }
 }

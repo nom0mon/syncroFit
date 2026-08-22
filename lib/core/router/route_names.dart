@@ -20,6 +20,7 @@ abstract final class RouteNames {
   static const String workoutActive = '/dashboard/workout/:id/active';
   static const String workoutRest = '/dashboard/workout/:id/rest';
   static const String workoutSummary = '/dashboard/workout/:id/summary';
+  static const String workoutGenerator = '/dashboard/workout-generator';
 
   // Tab 2 — Exercise Library
   static const String exercises = '/exercises';

@@ -28,6 +28,9 @@ class WorkoutSessionState {
   /// Index of the current exercise in [workout.exercises].
   final int currentExerciseIndex;
 
+  /// The current set number within the current exercise (1-based).
+  final int currentSet;
+
   /// List of exercises that have been completed in this session.
   final List<CompletedExercise> completedExercises;
 
@@ -49,6 +52,7 @@ class WorkoutSessionState {
   const WorkoutSessionState({
     this.workout,
     this.currentExerciseIndex = 0,
+    this.currentSet = 1,
     this.completedExercises = const [],
     this.isInProgress = false,
     this.isCompleted = false,
@@ -69,6 +73,16 @@ class WorkoutSessionState {
     if (workout == null) return true;
     return currentExerciseIndex >= workout!.exercises.length - 1;
   }
+
+  /// Whether the current set is the last set of the current exercise.
+  bool get isLastSet {
+    final exercise = currentExercise;
+    if (exercise == null) return true;
+    return currentSet >= exercise.sets;
+  }
+
+  /// Total number of sets in the current exercise.
+  int get totalSetsInCurrentExercise => currentExercise?.sets ?? 0;
 
   /// Total number of exercises in the workout.
   int get totalExercises => workout?.exercises.length ?? 0;
@@ -94,6 +108,7 @@ class WorkoutSessionState {
   WorkoutSessionState copyWith({
     Workout? workout,
     int? currentExerciseIndex,
+    int? currentSet,
     List<CompletedExercise>? completedExercises,
     bool? isInProgress,
     bool? isCompleted,
@@ -104,6 +119,7 @@ class WorkoutSessionState {
     return WorkoutSessionState(
       workout: workout ?? this.workout,
       currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
+      currentSet: currentSet ?? this.currentSet,
       completedExercises: completedExercises ?? this.completedExercises,
       isInProgress: isInProgress ?? this.isInProgress,
       isCompleted: isCompleted ?? this.isCompleted,
@@ -141,6 +157,22 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
+  /// A map of exercise id → display name, used to resolve human-readable
+  /// exercise names for the active session. Populated via [setExerciseNames].
+  Map<int, String> _exerciseNames = const {};
+
+  /// Provides a lookup of exercise id → name so completed records and the
+  /// active screen can show real exercise names instead of "Exercise {id}".
+  void setExerciseNames(Map<int, String> names) {
+    _exerciseNames = names;
+  }
+
+  /// Resolves the display name for a [WorkoutExercise].
+  String nameFor(WorkoutExercise exercise) {
+    return _exerciseNames[exercise.exerciseId] ??
+        'Exercise ${exercise.exerciseId}';
+  }
+
   /// Starts the workout session, marking it as in progress.
   void startWorkout() {
     if (state.workout == null) return;
@@ -148,31 +180,41 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
       isInProgress: true,
       startedAt: DateTime.now(),
       currentExerciseIndex: 0,
+      currentSet: 1,
       completedExercises: [],
       isCompleted: false,
       isResting: false,
     );
   }
 
-  /// Marks the current exercise as completed and begins the rest period
-  /// (unless it's the last exercise, in which case the workout completes).
-  void completeCurrentExercise() {
+  /// Finishes the current set.
+  ///
+  /// If more sets remain for the current exercise, advances to the next set.
+  /// If this was the last set, marks the exercise complete and either starts
+  /// a rest period (if more exercises remain) or completes the workout.
+  void finishCurrentSet() {
     final exercise = state.currentExercise;
     if (exercise == null) return;
 
+    if (!state.isLastSet) {
+      // Advance to the next set of the same exercise.
+      state = state.copyWith(currentSet: state.currentSet + 1);
+      return;
+    }
+
+    // Last set of this exercise — record completion.
     final completed = CompletedExercise(
       exerciseId: exercise.exerciseId.toString(),
-      exerciseName: 'Exercise ${exercise.exerciseId}',
+      exerciseName: nameFor(exercise),
       setsCompleted: exercise.sets,
-      repsOrDuration: exercise.durationSeconds > 0
-          ? exercise.durationSeconds
-          : exercise.reps,
+      repsOrDuration:
+          exercise.durationSeconds > 0 ? exercise.durationSeconds : exercise.reps,
+      isDuration: exercise.durationSeconds > 0,
     );
-
     final updatedCompleted = [...state.completedExercises, completed];
 
     if (state.isLastExercise) {
-      // Last exercise completed — finish the workout
+      // Last exercise's last set — finish the workout.
       state = state.copyWith(
         completedExercises: updatedCompleted,
         isInProgress: false,
@@ -181,7 +223,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
         isResting: false,
       );
     } else {
-      // Move to rest period before next exercise
+      // Rest before the next exercise.
       state = state.copyWith(
         completedExercises: updatedCompleted,
         isResting: true,
@@ -189,11 +231,49 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
-  /// Advances to the next exercise in the workout, ending the rest period.
+  /// Marks the current exercise as completed (all sets) and begins the rest
+  /// period, or completes the workout if it was the last exercise.
+  ///
+  /// Retained for compatibility; equivalent to finishing the final set.
+  void completeCurrentExercise() {
+    final exercise = state.currentExercise;
+    if (exercise == null) return;
+
+    final completed = CompletedExercise(
+      exerciseId: exercise.exerciseId.toString(),
+      exerciseName: nameFor(exercise),
+      setsCompleted: exercise.sets,
+      repsOrDuration: exercise.durationSeconds > 0
+          ? exercise.durationSeconds
+          : exercise.reps,
+      isDuration: exercise.durationSeconds > 0,
+    );
+
+    final updatedCompleted = [...state.completedExercises, completed];
+
+    if (state.isLastExercise) {
+      state = state.copyWith(
+        completedExercises: updatedCompleted,
+        isInProgress: false,
+        isCompleted: true,
+        completedAt: DateTime.now(),
+        isResting: false,
+      );
+    } else {
+      state = state.copyWith(
+        completedExercises: updatedCompleted,
+        isResting: true,
+      );
+    }
+  }
+
+  /// Advances to the next exercise in the workout, ending the rest period
+  /// and resetting the set counter to 1.
   void advanceToNextExercise() {
     if (state.isLastExercise) return;
     state = state.copyWith(
       currentExerciseIndex: state.currentExerciseIndex + 1,
+      currentSet: 1,
       isResting: false,
     );
   }
@@ -212,6 +292,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     } else {
       state = state.copyWith(
         currentExerciseIndex: state.currentExerciseIndex + 1,
+        currentSet: 1,
         isResting: false,
       );
     }

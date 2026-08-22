@@ -7,6 +7,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
+import '../../exercise_library/providers/exercise_provider.dart';
 import '../providers/workout_provider.dart';
 
 /// Displays the workout detail with all exercises listed, along with
@@ -49,7 +50,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
   }
 }
 
-class _WorkoutDetailContent extends StatelessWidget {
+class _WorkoutDetailContent extends ConsumerWidget {
   const _WorkoutDetailContent({
     required this.workout,
     required this.workoutId,
@@ -59,8 +60,16 @@ class _WorkoutDetailContent extends StatelessWidget {
   final String workoutId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // Build a lookup of exercise id → name from the loaded exercise library.
+    final exercises = ref.watch(exerciseProvider).allExercises;
+    final nameById = <int, String>{};
+    for (final e in exercises) {
+      final id = int.tryParse(e.id);
+      if (id != null) nameById[id] = e.name;
+    }
 
     return Column(
       children: [
@@ -112,7 +121,11 @@ class _WorkoutDetailContent extends StatelessWidget {
 
               // Exercise list
               ...workout.exercises.map(
-                (exercise) => _ExerciseListItem(exercise: exercise),
+                (exercise) => _ExerciseListItem(
+                  exercise: exercise,
+                  exerciseName: nameById[exercise.exerciseId] ??
+                      'Exercise ${exercise.exerciseId}',
+                ),
               ),
             ],
           ),
@@ -138,9 +151,13 @@ class _WorkoutDetailContent extends StatelessWidget {
 }
 
 class _ExerciseListItem extends StatelessWidget {
-  const _ExerciseListItem({required this.exercise});
+  const _ExerciseListItem({
+    required this.exercise,
+    required this.exerciseName,
+  });
 
   final WorkoutExercise exercise;
+  final String exerciseName;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +195,7 @@ class _ExerciseListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Exercise ${exercise.exerciseId}',
+                    exerciseName,
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.xs),

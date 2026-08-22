@@ -67,13 +67,15 @@ bool isInWeek(DateTime date, DateTime weekStart) {
 
 /// Calculates the total training volume for a given week.
 ///
-/// Volume = sum of (setsCompleted × repsOrDuration) for all exercises
-/// in all sessions where completedAt falls within the week starting at [weekStart].
+/// Volume = sum of total reps (setsCompleted × reps) for all rep-based
+/// exercises in sessions where completedAt falls within the week starting at
+/// [weekStart]. Timed exercises (e.g. Plank) contribute 0 so their duration
+/// in seconds does not inflate the rep-based total.
 int calculateWeeklyVolume(List<WorkoutHistory> sessions, DateTime weekStart) {
   return sessions
       .where((s) => isInWeek(s.completedAt, weekStart))
       .expand((s) => s.exercises)
-      .fold(0, (sum, e) => sum + e.setsCompleted * e.repsOrDuration);
+      .fold(0, (sum, e) => sum + e.repVolume);
 }
 
 /// Computes proportional bar heights for a list of volumes given a maximum

@@ -28,6 +28,7 @@ import '../../features/progress/screens/progress_summary_screen.dart';
 import '../../features/workout/screens/rest_timer_screen.dart';
 import '../../features/workout/screens/workout_active_screen.dart';
 import '../../features/workout/screens/workout_detail_screen.dart';
+import '../../features/workout/screens/workout_generator_screen.dart';
 import '../../features/workout/screens/workout_summary_screen.dart';
 import '../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../shared/widgets/offline_indicator.dart';
@@ -158,6 +159,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: RouteNames.dashboard,
                 builder: (context, state) => const DashboardScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'workout-generator',
+                    builder: (context, state) =>
+                        const WorkoutGeneratorScreen(),
+                  ),
                   GoRoute(
                     path: 'workout/:id',
                     builder: (context, state) {

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Exercise;
 use App\Models\User;
-use App\Models\Workout;
 use App\Models\WorkoutHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -40,39 +39,17 @@ class RecommendationEngine
     ];
 
     /**
-     * Rest periods (in seconds) by fitness goal.
+     * Profile goal -> engine goal mapping used for scoring.
      */
-    private const REST_BY_GOAL = [
-        'lose_weight' => ['min' => 30, 'max' => 60],
-        'build_muscle' => ['min' => 60, 'max' => 120],
-        'stay_fit' => ['min' => 45, 'max' => 90],
-        'increase_stamina' => ['min' => 30, 'max' => 45],
+    private const GOAL_MAP = [
+        'lose_weight' => 'fat_loss',
+        'build_muscle' => 'muscle_gain',
+        'stay_fit' => 'general_fitness',
+        'increase_stamina' => 'endurance',
     ];
 
     /**
-     * Muscle group rotation for 3 days.
-     */
-    private const ROTATION_3_DAYS = [
-        ['chest', 'triceps'],
-        ['back', 'biceps'],
-        ['legs', 'shoulders'],
-    ];
-
-    /**
-     * Muscle group rotation for more days (up to 7).
-     */
-    private const ROTATION_EXTENDED = [
-        ['chest'],
-        ['back'],
-        ['shoulders'],
-        ['legs'],
-        ['core', 'full_body'],
-        ['biceps', 'triceps'],
-        ['full_body'],
-    ];
-
-    /**
-     * Day name to day_of_week number mapping.
+     * Day name to day_of_week number mapping (1=Monday .. 7=Sunday).
      */
     private const DAY_MAP = [
         'monday' => 1,
@@ -85,154 +62,513 @@ class RecommendationEngine
     ];
 
     /**
-     * Day name labels for workout naming.
+     * Human-readable labels for each machine workout type key.
      */
-    private const DAY_LABELS = [
-        1 => 'Monday',
-        2 => 'Tuesday',
-        3 => 'Wednesday',
-        4 => 'Thursday',
-        5 => 'Friday',
-        6 => 'Saturday',
-        7 => 'Sunday',
+    private const WORKOUT_TYPE_LABELS = [
+        'full_body' => 'Full Body',
+        'full_body_a' => 'Full Body A',
+        'full_body_b' => 'Full Body B',
+        'full_body_c' => 'Full Body C',
+        'upper_a' => 'Upper A',
+        'upper_b' => 'Upper B',
+        'lower_a' => 'Lower A',
+        'lower_b' => 'Lower B',
+        'push_a' => 'Push A',
+        'push_b' => 'Push B',
+        'pull_a' => 'Pull A',
+        'pull_b' => 'Pull B',
+        'legs_a' => 'Legs A',
+        'legs_b' => 'Legs B',
+    ];
+
+    /**
+     * Required weekly muscle coverage targets.
+     */
+    private const REQUIRED_MUSCLES = [
+        'chest', 'back', 'shoulders', 'biceps', 'triceps',
+        'quadriceps', 'hamstrings', 'glutes', 'core',
     ];
 
     /**
      * Generate a personalized weekly workout plan for the user.
      *
-     * @param User $user
-     * @return array
+     * @param  User  $user
+     * @param  int[]  $includedExerciseIds  Exercise IDs to strongly favor.
+     * @param  int[]  $excludedExerciseIds  Exercise IDs to never include.
+     * @return array{workouts: array<int, array>, meta: array{coverage: array<string, float>, unresolved_slots: array}}
      */
-    public function generate(User $user): array
+    public function generate(User $user, array $includedExerciseIds = [], array $excludedExerciseIds = []): array
     {
         $profile = $user->profile;
 
         $goal = $profile->goal;
         $fitnessLevel = $profile->fitness_level;
         $workoutPreference = $profile->workout_preference;
-        $availabilityDays = $profile->availability_days;
+        $availabilityDays = $profile->availability_days ?? [];
 
-        // Get volume parameters
-        $repRange = self::REPS_BY_GOAL[$goal] ?? self::REPS_BY_GOAL['stay_fit'];
-        $setRange = self::SETS_BY_LEVEL[$fitnessLevel] ?? self::SETS_BY_LEVEL['intermediate'];
-        $restRange = self::REST_BY_GOAL[$goal] ?? self::REST_BY_GOAL['stay_fit'];
+        $includedExerciseIds = array_map('intval', $includedExerciseIds);
+        $excludedExerciseIds = array_map('intval', $excludedExerciseIds);
 
-        // Get adaptation factor based on workout history
-        $adaptationFactor = $this->getAdaptationFactor($user);
-
-        // Get allowed equipment
         $allowedEquipment = self::EQUIPMENT_BY_PREFERENCE[$workoutPreference] ?? self::EQUIPMENT_BY_PREFERENCE['gym'];
-
-        // Get difficulty levels to include based on fitness level
         $allowedDifficulties = $this->getAllowedDifficulties($fitnessLevel);
+        $mappedGoal = self::GOAL_MAP[$goal] ?? 'general_fitness';
 
-        // Fetch eligible exercises
-        $exercises = Exercise::whereIn('equipment', $allowedEquipment)
-            ->whereIn('difficulty', $allowedDifficulties)
-            ->get();
-
-        // Get muscle group rotation based on number of availability days
-        $muscleGroupRotation = $this->getMuscleGroupRotation(count($availabilityDays));
-
-        // Sort availability days by day_of_week number
+        // Sort available days Monday -> Sunday and cap generated workout count.
         $sortedDays = collect($availabilityDays)
-            ->map(fn($day) => ['name' => $day, 'number' => self::DAY_MAP[strtolower($day)] ?? 1])
-            ->sortBy('number')
+            ->map(fn ($day) => self::DAY_MAP[strtolower((string) $day)] ?? null)
+            ->filter()
+            ->unique()
+            ->sort()
             ->values();
 
-        // Build workouts
+        $numDays = $sortedDays->count();
+        $split = $this->determineSplit($numDays);
+
+        // If 7 days chosen the split caps at 6 (7th is recovery); zip only the
+        // first count($split) sorted days.
+        $split = array_slice($split, 0, min(count($split), $numDays));
+
+        $adaptationFactor = $this->getAdaptationFactor($user);
+
+        // IDs used so far this week for the variety rule.
+        $usedExerciseIds = [];
         $workouts = [];
-        foreach ($sortedDays as $index => $dayInfo) {
-            $muscleGroups = $muscleGroupRotation[$index % count($muscleGroupRotation)];
-            $dayNumber = $dayInfo['number'];
-            $dayLabel = self::DAY_LABELS[$dayNumber] ?? 'Day ' . $dayNumber;
+        $unresolvedSlots = [];
 
-            // Create workout name from muscle groups
-            $muscleGroupLabel = collect($muscleGroups)
-                ->map(fn($mg) => ucfirst(str_replace('_', ' ', $mg)))
-                ->implode(' & ');
+        foreach ($split as $index => $workoutType) {
+            $dayNumber = (int) $sortedDays[$index];
+            $slots = $this->slotsForWorkoutType($workoutType);
 
-            $workoutName = $dayLabel . ' - ' . $muscleGroupLabel;
+            $selectedExercises = [];
+            foreach ($slots as $slotIndex => $slot) {
+                $candidate = $this->selectExerciseForSlot(
+                    $slot,
+                    $allowedEquipment,
+                    $allowedDifficulties,
+                    $mappedGoal,
+                    $usedExerciseIds,
+                    $includedExerciseIds,
+                    $excludedExerciseIds
+                );
 
-            // Select exercises for this workout
-            $workoutExercises = $this->selectExercisesForWorkout(
-                $exercises,
-                $muscleGroups,
-                $goal
-            );
+                if ($candidate === null) {
+                    $unresolvedSlots[] = [
+                        'workout_type' => $workoutType,
+                        'day_of_week' => $dayNumber,
+                        'slot_index' => $slotIndex,
+                        'patterns' => $slot['patterns'],
+                    ];
+                    continue;
+                }
 
-            // Assign volume parameters to each exercise with adaptation applied
-            $exerciseList = [];
-            foreach ($workoutExercises as $order => $exercise) {
-                $baseSets = rand($setRange['min'], $setRange['max']);
-                $baseReps = rand($repRange['min'], $repRange['max']);
-                $restSeconds = rand($restRange['min'], $restRange['max']);
-
-                // Apply adaptation factor to sets and reps
-                $sets = $this->applyAdaptation($baseSets, $adaptationFactor, 2, 5);
-                $reps = $this->applyAdaptation($baseReps, $adaptationFactor, 5, 20);
-
-                $exerciseList[] = [
-                    'exercise_id' => $exercise->id,
-                    'sets' => $sets,
-                    'reps' => $reps,
-                    // This is the public workout JSON contract consumed by the
-                    // mobile client.  Use the exercise's prescribed duration;
-                    // it is zero for rep-based exercises.
-                    'duration_seconds' => $exercise->default_duration_seconds,
-                    // Used only while calculating the workout estimate below.
-                    // Rest is not part of the persisted WorkoutExercise schema.
-                    'rest_seconds' => $restSeconds,
-                    'order' => $order + 1,
-                ];
+                $usedExerciseIds[] = $candidate->id;
+                $selectedExercises[] = $candidate;
             }
 
-            // Calculate estimated duration
+            $exerciseList = $this->buildExerciseList($selectedExercises, $goal, $fitnessLevel, $adaptationFactor);
             $estimatedDuration = $this->calculateDuration($exerciseList);
 
-            // Keep the internal rest value out of the API/database payload.
-            $exerciseList = array_map(function (array $exercise): array {
-                unset($exercise['rest_seconds']);
-                return $exercise;
-            }, $exerciseList);
-
             $workouts[] = [
-                'name' => $workoutName,
+                'name' => self::WORKOUT_TYPE_LABELS[$workoutType] ?? ucwords(str_replace('_', ' ', $workoutType)),
+                'workout_type' => $workoutType,
                 'day_of_week' => $dayNumber,
                 'estimated_duration_minutes' => $estimatedDuration,
                 'exercises' => $exerciseList,
+                // Keep the exercise models around for coverage validation.
+                '_selected' => $selectedExercises,
             ];
         }
 
+        // Muscle coverage validation + best-effort remediation.
+        $this->ensureMuscleCoverage(
+            $workouts,
+            $usedExerciseIds,
+            $allowedEquipment,
+            $allowedDifficulties,
+            $mappedGoal,
+            $goal,
+            $fitnessLevel,
+            $adaptationFactor,
+            $excludedExerciseIds,
+            $includedExerciseIds
+        );
+
+        $coverage = $this->computeCoverage($workouts);
+
+        // Strip internal helper key from the public payload.
+        $workouts = array_map(function (array $workout): array {
+            unset($workout['_selected']);
+            return $workout;
+        }, $workouts);
+
         return [
-            'workouts' => $workouts,
+            'workouts' => array_values($workouts),
+            'meta' => [
+                'coverage' => $coverage,
+                'unresolved_slots' => $unresolvedSlots,
+            ],
         ];
     }
 
     /**
-     * Apply adaptation factor to a base volume value.
-     * Rounds to nearest integer and clamps within the given bounds.
-     * Ensures at least +1 change when factor > 1.0 and base value allows it.
+     * Determine the workout split from the number of available days.
+     *
+     * @return string[] machine keys for each workout in order
+     */
+    private function determineSplit(int $numDays): array
+    {
+        return match (true) {
+            $numDays <= 1 => ['full_body'],
+            $numDays === 2 => ['full_body_a', 'full_body_b'],
+            $numDays === 3 => ['full_body_a', 'full_body_b', 'full_body_c'],
+            $numDays === 4 => ['upper_a', 'lower_a', 'upper_b', 'lower_b'],
+            $numDays === 5 => ['upper_a', 'lower_a', 'full_body', 'upper_b', 'lower_b'],
+            // 6 or more days (cap at 6). If 7 days selected the 7th is recovery.
+            default => ['push_a', 'pull_a', 'legs_a', 'push_b', 'pull_b', 'legs_b'],
+        };
+    }
+
+    /**
+     * Required movement-pattern slots for a workout type.
+     *
+     * Each slot is ['patterns' => [...], 'label' => ...]. When more than one
+     * pattern is listed the earlier pools are tried first ("X OR Y").
+     *
+     * @return array<int, array{patterns: string[], label: string}>
+     */
+    private function slotsForWorkoutType(string $workoutType): array
+    {
+        $family = preg_replace('/_[abc]$/', '', $workoutType);
+
+        return match ($family) {
+            'full_body' => [
+                ['patterns' => ['knee_dominant', 'full_body'], 'label' => 'knee_dominant'],
+                ['patterns' => ['hip_dominant', 'full_body'], 'label' => 'hip_dominant'],
+                ['patterns' => ['horizontal_push', 'full_body'], 'label' => 'horizontal_push'],
+                ['patterns' => ['horizontal_pull', 'vertical_pull', 'full_body'], 'label' => 'horizontal_pull_or_vertical_pull'],
+                ['patterns' => ['vertical_push', 'accessory', 'full_body'], 'label' => 'vertical_push_or_accessory_upper'],
+                ['patterns' => ['core', 'full_body'], 'label' => 'core'],
+            ],
+            'upper' => [
+                ['patterns' => ['horizontal_push'], 'label' => 'horizontal_push'],
+                ['patterns' => ['vertical_push'], 'label' => 'vertical_push'],
+                ['patterns' => ['horizontal_pull'], 'label' => 'horizontal_pull'],
+                ['patterns' => ['vertical_pull'], 'label' => 'vertical_pull'],
+                ['patterns' => ['accessory'], 'label' => 'accessory'],
+                ['patterns' => ['core'], 'label' => 'core'],
+            ],
+            'lower' => [
+                ['patterns' => ['knee_dominant'], 'label' => 'knee_dominant'],
+                ['patterns' => ['hip_dominant'], 'label' => 'hip_dominant'],
+                ['patterns' => ['knee_dominant'], 'label' => 'knee_dominant_2'],
+                ['patterns' => ['core'], 'label' => 'core'],
+                ['patterns' => ['accessory'], 'label' => 'accessory'],
+            ],
+            'push' => [
+                ['patterns' => ['horizontal_push'], 'label' => 'horizontal_push'],
+                ['patterns' => ['vertical_push'], 'label' => 'vertical_push'],
+                ['patterns' => ['horizontal_push'], 'label' => 'horizontal_push_2'],
+                ['patterns' => ['accessory'], 'label' => 'accessory_triceps'],
+                ['patterns' => ['core'], 'label' => 'core'],
+            ],
+            'pull' => [
+                ['patterns' => ['vertical_pull'], 'label' => 'vertical_pull'],
+                ['patterns' => ['horizontal_pull'], 'label' => 'horizontal_pull'],
+                ['patterns' => ['horizontal_pull'], 'label' => 'horizontal_pull_2'],
+                ['patterns' => ['accessory'], 'label' => 'accessory_biceps'],
+                ['patterns' => ['core'], 'label' => 'core'],
+            ],
+            'legs' => [
+                ['patterns' => ['knee_dominant'], 'label' => 'knee_dominant'],
+                ['patterns' => ['hip_dominant'], 'label' => 'hip_dominant'],
+                ['patterns' => ['knee_dominant'], 'label' => 'knee_dominant_2'],
+                ['patterns' => ['core'], 'label' => 'core'],
+                ['patterns' => ['accessory'], 'label' => 'accessory'],
+            ],
+            default => [
+                ['patterns' => ['full_body'], 'label' => 'full_body'],
+            ],
+        };
+    }
+
+    /**
+     * Select the best exercise for a single slot.
+     *
+     * Follows the rule pipeline: pattern match (pools tried in order) ->
+     * exclude -> equipment -> difficulty -> variety -> score -> pick highest.
+     */
+    private function selectExerciseForSlot(
+        array $slot,
+        array $allowedEquipment,
+        array $allowedDifficulties,
+        string $mappedGoal,
+        array $usedExerciseIds,
+        array $includedExerciseIds,
+        array $excludedExerciseIds
+    ): ?Exercise {
+        // Try each pattern pool in order ("X OR Y").
+        foreach ($slot['patterns'] as $pattern) {
+            $candidates = Exercise::where('movement_pattern', $pattern)
+                ->whereIn('equipment', $allowedEquipment)
+                ->whereIn('difficulty', $allowedDifficulties)
+                ->get();
+
+            // Remove excluded IDs.
+            $candidates = $candidates->reject(
+                fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true)
+            );
+
+            // Variety: drop already-used exercises unless explicitly included.
+            $candidates = $candidates->reject(
+                fn (Exercise $e) => in_array($e->id, $usedExerciseIds, true)
+                    && !in_array($e->id, $includedExerciseIds, true)
+            );
+
+            if ($candidates->isEmpty()) {
+                continue;
+            }
+
+            $best = null;
+            $bestScore = PHP_INT_MIN;
+            foreach ($candidates as $candidate) {
+                $score = $this->scoreCandidate(
+                    $candidate,
+                    $mappedGoal,
+                    $usedExerciseIds,
+                    $includedExerciseIds
+                );
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $best = $candidate;
+                }
+            }
+
+            if ($best !== null) {
+                return $best;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Score a candidate exercise for slot selection.
+     */
+    private function scoreCandidate(
+        Exercise $exercise,
+        string $mappedGoal,
+        array $usedExerciseIds,
+        array $includedExerciseIds
+    ): int {
+        $score = 0;
+
+        if (in_array($exercise->id, $includedExerciseIds, true)) {
+            $score += 100;
+        }
+
+        $goals = $exercise->goals ?? [];
+        if (is_array($goals) && in_array($mappedGoal, $goals, true)) {
+            $score += 30;
+        }
+
+        if (!in_array($exercise->id, $usedExerciseIds, true)) {
+            $score += 20;
+        }
+
+        if ($exercise->exercise_type === 'compound') {
+            $score += 10;
+        }
+
+        // Small tie-breaker randomness so equally-valid candidates vary.
+        $score += random_int(0, 5);
+
+        return $score;
+    }
+
+    /**
+     * Build the output exercise list with sets/reps/duration/order.
+     *
+     * @param  Exercise[]  $exercises
+     * @return array<int, array{exercise_id:int, sets:int, reps:int, duration_seconds:int, order:int}>
+     */
+    private function buildExerciseList(array $exercises, string $goal, string $fitnessLevel, float $adaptationFactor): array
+    {
+        $repRange = self::REPS_BY_GOAL[$goal] ?? self::REPS_BY_GOAL['stay_fit'];
+        $setRange = self::SETS_BY_LEVEL[$fitnessLevel] ?? self::SETS_BY_LEVEL['intermediate'];
+
+        $list = [];
+        $order = 1;
+        foreach ($exercises as $exercise) {
+            $baseSets = random_int($setRange['min'], $setRange['max']);
+            $sets = $this->applyAdaptation($baseSets, $adaptationFactor, $setRange['min'], $setRange['max'] + 1);
+
+            $durationSeconds = (int) ($exercise->default_duration_seconds ?? 0);
+
+            if ($durationSeconds > 0) {
+                // Duration-based exercise (e.g. Plank): keep its default reps.
+                $reps = (int) ($exercise->default_reps ?? 1);
+            } else {
+                $baseReps = random_int($repRange['min'], $repRange['max']);
+                $reps = $this->applyAdaptation($baseReps, $adaptationFactor, $repRange['min'], $repRange['max']);
+            }
+
+            $list[] = [
+                'exercise_id' => (int) $exercise->id,
+                'sets' => $sets,
+                'reps' => $reps,
+                'duration_seconds' => $durationSeconds,
+                'order' => $order,
+            ];
+            $order++;
+        }
+
+        return $list;
+    }
+
+    /**
+     * Compute estimated workout duration in minutes.
+     * Roughly: sets * (reps * 3s) + ~60s rest between sets + 30s transition
+     * per exercise. Rounded up, minimum 1.
+     */
+    private function calculateDuration(array $exercises): int
+    {
+        $totalSeconds = 0;
+        $restBetweenSets = 60;
+
+        foreach ($exercises as $exercise) {
+            $sets = (int) $exercise['sets'];
+            $reps = (int) $exercise['reps'];
+            $duration = (int) $exercise['duration_seconds'];
+
+            if ($duration > 0) {
+                $workTime = $sets * $duration;
+            } else {
+                $workTime = $sets * ($reps * 3);
+            }
+
+            $restTime = max(0, $sets - 1) * $restBetweenSets;
+            $totalSeconds += $workTime + $restTime + 30; // 30s transition per exercise
+        }
+
+        return max(1, (int) ceil($totalSeconds / 60));
+    }
+
+    /**
+     * Best-effort remediation to cover any required muscle at 0 for the week.
+     *
+     * Attempts to swap a full-body or accessory slot exercise for one that
+     * covers a missing muscle. Non-fatal: if no swap is possible it is left.
+     */
+    private function ensureMuscleCoverage(
+        array &$workouts,
+        array &$usedExerciseIds,
+        array $allowedEquipment,
+        array $allowedDifficulties,
+        string $mappedGoal,
+        string $goal,
+        string $fitnessLevel,
+        float $adaptationFactor,
+        array $excludedExerciseIds,
+        array $includedExerciseIds
+    ): void {
+        foreach (self::REQUIRED_MUSCLES as $muscle) {
+            $coverage = $this->computeCoverage($workouts);
+            if (($coverage[$muscle] ?? 0.0) > 0.0) {
+                continue;
+            }
+
+            // Find an exercise covering this muscle that respects filters.
+            $replacement = Exercise::whereIn('equipment', $allowedEquipment)
+                ->whereIn('difficulty', $allowedDifficulties)
+                ->get()
+                ->reject(fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true))
+                ->first(function (Exercise $e) use ($muscle) {
+                    $primary = $e->primary_muscles ?? [];
+                    $secondary = $e->secondary_muscles ?? [];
+                    return in_array($muscle, $primary, true) || in_array($muscle, $secondary, true);
+                });
+
+            if ($replacement === null) {
+                continue;
+            }
+
+            // Find a swappable slot: prefer a full_body or accessory exercise.
+            $swapped = false;
+            foreach ($workouts as $wIndex => $workout) {
+                foreach ($workout['_selected'] as $sIndex => $selected) {
+                    $pattern = $selected->movement_pattern;
+                    if (in_array($pattern, ['full_body', 'accessory'], true)) {
+                        // Perform the swap.
+                        $workouts[$wIndex]['_selected'][$sIndex] = $replacement;
+                        $swapped = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if ($swapped) {
+                // Rebuild the affected workout's exercise list + duration.
+                $exerciseList = $this->buildExerciseList(
+                    array_values($workouts[$wIndex]['_selected']),
+                    $goal,
+                    $fitnessLevel,
+                    $adaptationFactor
+                );
+                $workouts[$wIndex]['exercises'] = $exerciseList;
+                $workouts[$wIndex]['estimated_duration_minutes'] = $this->calculateDuration($exerciseList);
+                $usedExerciseIds[] = $replacement->id;
+            }
+        }
+    }
+
+    /**
+     * Compute weekly muscle coverage from selected exercise models.
+     * primary_muscles weight 1.0, secondary_muscles weight 0.5.
+     *
+     * @return array<string, float>
+     */
+    private function computeCoverage(array $workouts): array
+    {
+        $coverage = array_fill_keys(self::REQUIRED_MUSCLES, 0.0);
+
+        foreach ($workouts as $workout) {
+            foreach ($workout['_selected'] as $exercise) {
+                foreach (($exercise->primary_muscles ?? []) as $muscle) {
+                    if (array_key_exists($muscle, $coverage)) {
+                        $coverage[$muscle] += 1.0;
+                    }
+                }
+                foreach (($exercise->secondary_muscles ?? []) as $muscle) {
+                    if (array_key_exists($muscle, $coverage)) {
+                        $coverage[$muscle] += 0.5;
+                    }
+                }
+            }
+        }
+
+        return $coverage;
+    }
+
+    /**
+     * Apply an adaptation factor to a base volume value.
+     * Rounds and clamps within the given bounds.
      */
     private function applyAdaptation(int $baseValue, float $factor, int $min, int $max): int
     {
         if ($factor === 1.0) {
-            return $baseValue;
+            return max($min, min($max, $baseValue));
         }
 
         $adapted = (int) round($baseValue * $factor);
 
-        // Ensure at least +1 change when increasing (if within bounds)
         if ($factor > 1.0 && $adapted <= $baseValue && $baseValue < $max) {
             $adapted = $baseValue + 1;
         }
 
-        // Ensure at least -1 change when decreasing (if within bounds)
         if ($factor < 1.0 && $adapted >= $baseValue && $baseValue > $min) {
             $adapted = $baseValue - 1;
         }
 
-        // Clamp to valid range
         return max($min, min($max, $adapted));
     }
 
@@ -250,17 +586,14 @@ class RecommendationEngine
     {
         $twoWeeksAgo = Carbon::now()->subDays(14);
 
-        // Get completed workout history from the past 14 days
         $recentHistory = WorkoutHistory::where('user_id', $user->id)
             ->where('completed_at', '>=', $twoWeeksAgo)
             ->get();
 
-        // If fewer than 2 completed sessions in the past 14 days, use baseline
         if ($recentHistory->count() < 2) {
             return 1.0;
         }
 
-        // Analyze exercises_completed from workout history records
         $totalExercises = 0;
         $completedCount = 0;
         $skippedCount = 0;
@@ -277,7 +610,6 @@ class RecommendationEngine
             }
         }
 
-        // If there are no exercises recorded, use baseline
         if ($totalExercises === 0) {
             return 1.0;
         }
@@ -285,26 +617,21 @@ class RecommendationEngine
         $completionRate = $completedCount / $totalExercises;
         $skipRate = $skippedCount / $totalExercises;
 
-        // Completion takes priority over skip rate
         if ($completionRate >= 0.80) {
-            // Increase volume by 5–10% (scale linearly between 80-100% completion)
             $scaleFactor = min(1.0, ($completionRate - 0.80) / 0.20);
-            return 1.05 + ($scaleFactor * 0.05); // 1.05 to 1.10
+            return 1.05 + ($scaleFactor * 0.05);
         }
 
         if ($skipRate >= 0.50) {
-            // Decrease volume by 5–10% (scale linearly between 50-100% skip rate)
             $scaleFactor = min(1.0, ($skipRate - 0.50) / 0.50);
-            return 0.95 - ($scaleFactor * 0.05); // 0.95 to 0.90
+            return 0.95 - ($scaleFactor * 0.05);
         }
 
-        // No adaptation needed
         return 1.0;
     }
 
     /**
      * Get allowed difficulty levels based on fitness level.
-     * Includes adjacent levels for more variety.
      */
     private function getAllowedDifficulties(string $fitnessLevel): array
     {
@@ -314,104 +641,5 @@ class RecommendationEngine
             'advanced' => ['intermediate', 'advanced'],
             default => ['beginner', 'intermediate', 'advanced'],
         };
-    }
-
-    /**
-     * Get muscle group rotation based on the number of available days.
-     */
-    private function getMuscleGroupRotation(int $numDays): array
-    {
-        if ($numDays <= 3) {
-            return self::ROTATION_3_DAYS;
-        }
-
-        // For more days, use the extended rotation
-        return array_slice(self::ROTATION_EXTENDED, 0, min($numDays, 7));
-    }
-
-    /**
-     * Select 4-8 exercises for a workout based on target muscle groups and goal.
-     */
-    private function selectExercisesForWorkout(
-        Collection $allExercises,
-        array $muscleGroups,
-        string $goal
-    ): Collection {
-        // Target exercise count based on goal
-        $targetCount = $this->getTargetExerciseCount($goal);
-
-        // Filter exercises matching the target muscle groups
-        $matchingExercises = $allExercises->filter(
-            fn($exercise) => in_array($exercise->muscle_group, $muscleGroups)
-        );
-
-        // If not enough matching exercises, include full_body exercises as fillers
-        if ($matchingExercises->count() < $targetCount) {
-            $fullBodyExercises = $allExercises->filter(
-                fn($exercise) => $exercise->muscle_group === 'full_body'
-                    && !$matchingExercises->contains('id', $exercise->id)
-            );
-            $matchingExercises = $matchingExercises->merge($fullBodyExercises);
-        }
-
-        // If still not enough, use whatever is available (repeat if necessary)
-        if ($matchingExercises->isEmpty()) {
-            $matchingExercises = $allExercises->take($targetCount);
-        }
-
-        // Shuffle and take the target count
-        $selected = $matchingExercises->shuffle()->take($targetCount);
-
-        // If we still don't have enough, repeat exercises to meet minimum of 4
-        if ($selected->count() < 4 && $selected->isNotEmpty()) {
-            while ($selected->count() < 4) {
-                $selected = $selected->merge(
-                    $matchingExercises->shuffle()->take(4 - $selected->count())
-                );
-            }
-        }
-
-        return $selected->values();
-    }
-
-    /**
-     * Get target exercise count based on fitness goal.
-     */
-    private function getTargetExerciseCount(string $goal): int
-    {
-        return match ($goal) {
-            'lose_weight' => rand(5, 8),
-            'build_muscle' => rand(4, 6),
-            'stay_fit' => rand(4, 7),
-            'increase_stamina' => rand(5, 8),
-            default => rand(4, 6),
-        };
-    }
-
-    /**
-     * Calculate estimated workout duration in minutes.
-     * Formula: sum of (sets * reps * ~3s per rep + rest between sets) for each exercise.
-     */
-    private function calculateDuration(array $exercises): int
-    {
-        $totalSeconds = 0;
-
-        foreach ($exercises as $exercise) {
-            $sets = $exercise['sets'];
-            $reps = $exercise['reps'];
-            $restSeconds = $exercise['rest_seconds'];
-
-            // Estimate ~3 seconds per rep for execution time
-            $exerciseTime = $sets * ($reps * 3);
-            // Rest between sets (rest applies between sets, so sets - 1 rest periods)
-            $restTime = ($sets - 1) * $restSeconds;
-
-            $totalSeconds += $exerciseTime + $restTime;
-        }
-
-        // Add transition time between exercises (~30 seconds per transition)
-        $totalSeconds += (count($exercises) - 1) * 30;
-
-        return max(1, (int) ceil($totalSeconds / 60));
     }
 }

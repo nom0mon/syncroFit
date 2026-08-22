@@ -73,6 +73,8 @@ class _ProgressContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _ThisWeekProgress(state: state),
+              const SizedBox(height: AppSpacing.lg),
               _SummaryStats(state: state),
               const SizedBox(height: AppSpacing.lg),
               _WeeklyStatsChart(data: state.weeklyStats),
@@ -94,6 +96,72 @@ class _ProgressContent extends StatelessWidget {
           left: 0,
           right: 0,
           child: EdgeFadeGradient(isTop: false),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shows this week's planned vs completed workouts so the user is aware of
+/// scheduled-but-not-completed sessions.
+class _ThisWeekProgress extends StatelessWidget {
+  const _ThisWeekProgress({required this.state});
+
+  final ProgressState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final planned = state.plannedThisWeek;
+    final completed = state.completedThisWeek;
+    final remaining = (planned - completed).clamp(0, planned);
+    final ratio = planned > 0 ? (completed / planned).clamp(0.0, 1.0) : 0.0;
+
+    // Hide the section entirely if there is no plan yet.
+    if (planned == 0) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('This Week', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$completed of $planned completed',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      remaining == 0
+                          ? 'All done 🎉'
+                          : '$remaining remaining',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 8,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
