@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/settings_provider.dart';
 
 /// Screen for managing notification preferences.
@@ -17,39 +18,67 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notification Settings'),
+        title: const Text(
+          'Notification Settings',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      body: ListView(
-        children: [
-          SwitchListTile(
-            title: const Text('Workout Reminders'),
-            subtitle: const Text('Get reminded about scheduled workouts'),
-            value: settings.workoutReminders,
-            onChanged: (value) =>
-                notifier.setNotificationPreference('workoutReminders', value),
+      body: SafeArea(
+        child: ResponsiveConstrainedPage(
+          child: ListView(
+            children: [
+              SwitchListTile(
+                title: const Text('Workout Reminders', softWrap: true),
+                subtitle: const Text(
+                  'Get reminded about scheduled workouts',
+                  softWrap: true,
+                ),
+                value: settings.workoutReminders,
+                onChanged: (value) => notifier.setNotificationPreference(
+                  'workoutReminders',
+                  value,
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Community Updates', softWrap: true),
+                subtitle: const Text(
+                  'Stay updated on community activity',
+                  softWrap: true,
+                ),
+                value: settings.communityUpdates,
+                onChanged: (value) => notifier.setNotificationPreference(
+                  'communityUpdates',
+                  value,
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Achievement Alerts', softWrap: true),
+                subtitle: const Text(
+                  'Celebrate when you reach milestones',
+                  softWrap: true,
+                ),
+                value: settings.achievementAlerts,
+                onChanged: (value) => notifier.setNotificationPreference(
+                  'achievementAlerts',
+                  value,
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Consultation Reminders', softWrap: true),
+                subtitle: const Text(
+                  'Reminders for upcoming trainer sessions',
+                  softWrap: true,
+                ),
+                value: settings.consultationReminders,
+                onChanged: (value) => notifier.setNotificationPreference(
+                  'consultationReminders',
+                  value,
+                ),
+              ),
+            ],
           ),
-          SwitchListTile(
-            title: const Text('Community Updates'),
-            subtitle: const Text('Stay updated on community activity'),
-            value: settings.communityUpdates,
-            onChanged: (value) =>
-                notifier.setNotificationPreference('communityUpdates', value),
-          ),
-          SwitchListTile(
-            title: const Text('Achievement Alerts'),
-            subtitle: const Text('Celebrate when you reach milestones'),
-            value: settings.achievementAlerts,
-            onChanged: (value) =>
-                notifier.setNotificationPreference('achievementAlerts', value),
-          ),
-          SwitchListTile(
-            title: const Text('Consultation Reminders'),
-            subtitle: const Text('Reminders for upcoming trainer sessions'),
-            value: settings.consultationReminders,
-            onChanged: (value) => notifier.setNotificationPreference(
-                'consultationReminders', value),
-          ),
-        ],
+        ),
       ),
     );
   }

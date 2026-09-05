@@ -16,4 +16,7 @@ abstract class CommunityRepository {
 
   /// Adds a comment to a post.
   Future<Result<Post, AppError>> addComment(String postId, Comment comment);
+
+  Future<Result<void, AppError>> deletePost(String postId);
+  Future<Result<void, AppError>> deleteComment(String postId, String commentId);
 }

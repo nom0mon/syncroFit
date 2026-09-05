@@ -1,20 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Securely stores and retrieves the authentication token.
-///
-/// Uses flutter_secure_storage which backs to:
-/// - Keychain on iOS
-/// - EncryptedSharedPreferences on Android
-/// - localStorage on Web (with dbName and publicKey options)
+/// Securely stores and retrieves the authentication token using Android's
+/// encrypted storage facilities.
 class TokenStorage {
   TokenStorage({FlutterSecureStorage? storage})
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              webOptions: WebOptions(
-                dbName: 'SyncroFitAuth',
-                publicKey: 'SyncroFitAuthKey',
-              ),
-            );
+      : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 

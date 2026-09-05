@@ -8,10 +8,22 @@ void main() {
     Widget buildSubject({
       int selectedIndex = 0,
       ValueChanged<int>? onDestinationSelected,
+      Size size = const Size(320, 640),
+      EdgeInsets viewPadding = EdgeInsets.zero,
+      double textScale = 1,
     }) {
       return MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: size,
+            padding: viewPadding,
+            viewPadding: viewPadding,
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: child!,
+        ),
         home: Scaffold(
-          body: FloatingPillNavBar(
+          bottomNavigationBar: FloatingPillNavBar(
             selectedIndex: selectedIndex,
             onDestinationSelected: onDestinationSelected ?? (_) {},
           ),
@@ -19,85 +31,100 @@ void main() {
       );
     }
 
-    testWidgets('renders exactly 4 icon widgets', (tester) async {
+    testWidgets('renders exactly four icon-only destinations', (tester) async {
       await tester.pumpWidget(buildSubject());
 
-      final iconFinder = find.byType(Icon);
-      expect(iconFinder, findsNWidgets(4));
+      expect(find.byType(Icon), findsNWidgets(4));
+      expect(
+        find.descendant(
+          of: find.byType(FloatingPillNavBar),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
     });
 
-    testWidgets('active icon at selectedIndex has white color',
-        (tester) async {
+    testWidgets('uses active and inactive destination colors', (tester) async {
       const activeIndex = 2;
       await tester.pumpWidget(buildSubject(selectedIndex: activeIndex));
 
       final icons = tester.widgetList<Icon>(find.byType(Icon)).toList();
       expect(icons[activeIndex].color, AppColors.textPrimary);
-    });
-
-    testWidgets('inactive icons have grey color (AppColors.iconInactive)',
-        (tester) async {
-      const activeIndex = 0;
-      await tester.pumpWidget(buildSubject(selectedIndex: activeIndex));
-
-      final icons = tester.widgetList<Icon>(find.byType(Icon)).toList();
-      for (var i = 0; i < icons.length; i++) {
-        if (i == activeIndex) continue;
-        expect(
-          icons[i].color,
-          AppColors.iconInactive,
-          reason: 'Icon at index $i should be inactive grey',
-        );
+      for (var index = 0; index < icons.length; index++) {
+        if (index == activeIndex) continue;
+        expect(icons[index].color, AppColors.iconInactive);
       }
     });
 
-    testWidgets('tapping an icon calls onDestinationSelected with correct index',
-        (tester) async {
+    testWidgets('tapping a destination reports its index', (tester) async {
       int? tappedIndex;
       await tester.pumpWidget(
         buildSubject(onDestinationSelected: (index) => tappedIndex = index),
       );
 
-      // Tap the 4th icon (index 3)
-      final icons = find.byType(Icon);
-      await tester.tap(icons.at(3));
+      await tester.tap(find.bySemanticsLabel('Community'));
       await tester.pump();
 
       expect(tappedIndex, 3);
     });
 
-    testWidgets('no Text widgets are rendered (no labels)', (tester) async {
-      await tester.pumpWidget(buildSubject());
+    testWidgets('exposes labels, selection, and 48dp targets', (tester) async {
+      await tester.pumpWidget(buildSubject(selectedIndex: 1, textScale: 2));
 
-      // No Text widgets should exist within the nav bar
-      final textInNavBar = find.descendant(
-        of: find.byType(FloatingPillNavBar),
-        matching: find.byType(Text),
+      for (final label in [
+        'Dashboard',
+        'Exercises',
+        'Progress',
+        'Community',
+      ]) {
+        final target = find.bySemanticsLabel(label);
+        expect(target, findsOneWidget);
+        final size = tester.getSize(target);
+        expect(size.width, greaterThanOrEqualTo(48));
+        expect(size.height, greaterThanOrEqualTo(48));
+      }
+
+      final exercises = tester.widget<Semantics>(
+        find.bySemanticsLabel('Exercises'),
       );
-      expect(textInNavBar, findsNothing);
+      expect(exercises.properties.selected, isTrue);
+      expect(tester.takeException(), isNull);
     });
 
-    testWidgets('container has height 56 and border radius 28',
-        (tester) async {
-      await tester.pumpWidget(buildSubject());
+    testWidgets('stays above Android gesture navigation inset', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.reset);
 
-      // The FloatingPillNavBar root is a Container with BoxDecoration
-      final container = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(FloatingPillNavBar),
-          matching: find.byType(Container),
-        ).first,
+      await tester.pumpWidget(
+        buildSubject(
+          viewPadding: const EdgeInsets.only(bottom: 32),
+          textScale: 2,
+        ),
       );
 
-      // Verify height
-      expect(container.constraints?.maxHeight ?? 0, 56);
-
-      // Verify border radius
-      final decoration = container.decoration as BoxDecoration;
-      expect(
-        decoration.borderRadius,
-        BorderRadius.circular(28),
+      final pill = find.descendant(
+        of: find.byType(FloatingPillNavBar),
+        matching: find.byType(Container),
       );
+      expect(tester.getBottomRight(pill).dy, lessThanOrEqualTo(608));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('constrains the pill on tablets', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(800, 1280);
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(buildSubject(size: const Size(800, 1280)));
+
+      final pill = find.descendant(
+        of: find.byType(FloatingPillNavBar),
+        matching: find.byType(Container),
+      );
+      expect(tester.getSize(pill).width, lessThanOrEqualTo(400));
+      expect(tester.getSize(pill).height, 56);
+      expect(tester.takeException(), isNull);
     });
   });
 }

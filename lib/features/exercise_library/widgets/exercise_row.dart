@@ -33,52 +33,63 @@ class ExerciseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap ?? () => context.go('/exercises/${exercise.id}'),
-      splashColor: AppColors.pressedOverlay,
-      highlightColor: AppColors.pressedOverlay,
-      child: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.cardBorder,
-              width: 0.5,
-            ),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.sm,
-          horizontal: AppSpacing.md,
-        ),
-        child: Row(
-          children: [
-            // Left side: name + subtitle
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    exercise.name,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _buildSubtitle(),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+    final subtitle = _buildSubtitle();
+
+    return Semantics(
+      button: true,
+      label: '${exercise.name}, $subtitle',
+      child: InkWell(
+        onTap: onTap ?? () => context.go('/exercises/${exercise.id}'),
+        splashColor: AppColors.pressedOverlay,
+        highlightColor: AppColors.pressedOverlay,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.cardBorder,
+                width: 0.5,
               ),
             ),
-            // Right side: body silhouette, vertically centered
-            BodySilhouetteWidget(
-              targetedMuscleGroups: [exercise.muscleGroup],
-            ),
-          ],
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.md,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      exercise.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              BodySilhouetteWidget(
+                targetedMuscleGroups: [exercise.muscleGroup],
+              ),
+            ],
+          ),
         ),
       ),
     );

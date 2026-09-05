@@ -46,7 +46,7 @@ class WorkoutSchedulerWidget extends ConsumerWidget {
   }
 }
 
-/// Displays the Mon–Sun horizontal scrollable row of day cards.
+/// Displays the Mon–Sun row of day cards, sized to the available width.
 class _ScheduleRow extends StatelessWidget {
   const _ScheduleRow({required this.workouts});
 
@@ -62,16 +62,18 @@ class _ScheduleRow extends StatelessWidget {
 
     return SizedBox(
       height: 88,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        itemCount: DayOfWeek.values.length,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (context, index) {
-          final day = DayOfWeek.values[index];
-          final workout = workoutByDay[day];
-          return _DayCard(day: day, workout: workout);
-        },
+      child: Row(
+        children: [
+          for (var index = 0; index < DayOfWeek.values.length; index++) ...[
+            if (index > 0) const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _DayCard(
+                day: DayOfWeek.values[index],
+                workout: workoutByDay[DayOfWeek.values[index]],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -126,7 +128,6 @@ class _DayCard extends StatelessWidget {
     return GestureDetector(
       onTap: hasWorkout ? () => _navigateToWorkout(context) : null,
       child: Container(
-        width: 64,
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(AppSpacing.sm),

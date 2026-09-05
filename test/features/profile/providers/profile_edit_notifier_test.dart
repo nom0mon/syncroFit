@@ -225,13 +225,13 @@ void main() {
     });
 
     test('reports multiple field errors at once', () {
-      notifier.updateField('name', '');
+      notifier.updateField('first_name', '');
       notifier.updateField('age', 5);
       notifier.updateField('height_cm', 10.0);
       notifier.updateField('weight_kg', 5.0);
 
       expect(notifier.validate(), isFalse);
-      expect(notifier.state.fieldErrors['name'], isNotNull);
+      expect(notifier.state.fieldErrors['first_name'], isNotNull);
       expect(notifier.state.fieldErrors['age'], isNotNull);
       expect(notifier.state.fieldErrors['height_cm'], isNotNull);
       expect(notifier.state.fieldErrors['weight_kg'], isNotNull);

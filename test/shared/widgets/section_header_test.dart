@@ -73,7 +73,7 @@ void main() {
       expect(opacityWidget.opacity, 0.5);
     });
 
-    testWidgets('uses Row with MainAxisAlignment.spaceBetween',
+    testWidgets('uses Wrap with WrapAlignment.spaceBetween',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -86,13 +86,13 @@ void main() {
         ),
       );
 
-      // Find the Row that is a direct descendant of SectionHeader
-      final rowFinder = find.descendant(
+      // Find the Wrap that is a descendant of SectionHeader
+      final wrapFinder = find.descendant(
         of: find.byType(SectionHeader),
-        matching: find.byType(Row),
+        matching: find.byType(Wrap),
       );
-      final row = tester.widget<Row>(rowFinder.first);
-      expect(row.mainAxisAlignment, MainAxisAlignment.spaceBetween);
+      final wrap = tester.widget<Wrap>(wrapFinder.first);
+      expect(wrap.alignment, WrapAlignment.spaceBetween);
     });
   });
 }

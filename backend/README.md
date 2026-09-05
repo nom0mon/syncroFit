@@ -4,9 +4,11 @@ Laravel 12 REST API with Sanctum token authentication and MySQL 8.
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.4.1+ for the current `composer.lock` (the manifest permits PHP 8.2, but the locked dependency set requires 8.4.1+)
 - Composer 2.x
 - MySQL 8.0+
+
+This API serves the Android-only SyncroFit client. See the root [`README.md`](../README.md) and [`docs/android-development.md`](../docs/android-development.md) for Android emulator/physical-device setup and local API connectivity.
 
 ## Setup
 

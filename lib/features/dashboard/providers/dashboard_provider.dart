@@ -4,6 +4,8 @@ import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../workout/providers/workout_history_refresh_provider.dart';
 
 /// Provides the [WorkoutRepository] instance used by the dashboard.
 ///
@@ -86,10 +88,14 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
 
   @override
   Future<DashboardState> build() async {
+    // Keep mounted dashboard tabs in sync with newly completed workouts.
+    ref.watch(workoutHistoryRefreshProvider);
+    final userId = ref.watch(authStateProvider).user?.id;
+
     // Fetch data concurrently for efficiency
     final results = await Future.wait([
       _workoutRepo.getTodaysWorkout(),
-      _historyRepo.getAll(''),
+      _historyRepo.getAll(userId ?? ''),
     ]);
 
     final workoutResult = results[0] as Result<Workout?, AppError>;

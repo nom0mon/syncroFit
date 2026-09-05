@@ -393,32 +393,11 @@ class RecommendationEngine
      */
     private function buildExerciseList(array $exercises, string $goal, string $fitnessLevel, float $adaptationFactor): array
     {
-        $repRange = self::REPS_BY_GOAL[$goal] ?? self::REPS_BY_GOAL['stay_fit'];
-        $setRange = self::SETS_BY_LEVEL[$fitnessLevel] ?? self::SETS_BY_LEVEL['intermediate'];
-
+        $policy = new WorkoutPrescriptionPolicy();
         $list = [];
         $order = 1;
         foreach ($exercises as $exercise) {
-            $baseSets = random_int($setRange['min'], $setRange['max']);
-            $sets = $this->applyAdaptation($baseSets, $adaptationFactor, $setRange['min'], $setRange['max'] + 1);
-
-            $durationSeconds = (int) ($exercise->default_duration_seconds ?? 0);
-
-            if ($durationSeconds > 0) {
-                // Duration-based exercise (e.g. Plank): keep its default reps.
-                $reps = (int) ($exercise->default_reps ?? 1);
-            } else {
-                $baseReps = random_int($repRange['min'], $repRange['max']);
-                $reps = $this->applyAdaptation($baseReps, $adaptationFactor, $repRange['min'], $repRange['max']);
-            }
-
-            $list[] = [
-                'exercise_id' => (int) $exercise->id,
-                'sets' => $sets,
-                'reps' => $reps,
-                'duration_seconds' => $durationSeconds,
-                'order' => $order,
-            ];
+            $list[] = $policy->prescribe($exercise, $fitnessLevel, $goal, $order);
             $order++;
         }
 
@@ -432,25 +411,7 @@ class RecommendationEngine
      */
     private function calculateDuration(array $exercises): int
     {
-        $totalSeconds = 0;
-        $restBetweenSets = 60;
-
-        foreach ($exercises as $exercise) {
-            $sets = (int) $exercise['sets'];
-            $reps = (int) $exercise['reps'];
-            $duration = (int) $exercise['duration_seconds'];
-
-            if ($duration > 0) {
-                $workTime = $sets * $duration;
-            } else {
-                $workTime = $sets * ($reps * 3);
-            }
-
-            $restTime = max(0, $sets - 1) * $restBetweenSets;
-            $totalSeconds += $workTime + $restTime + 30; // 30s transition per exercise
-        }
-
-        return max(1, (int) ceil($totalSeconds / 60));
+        return (new WorkoutPrescriptionPolicy())->estimatedDurationMinutes($exercises);
     }
 
     /**

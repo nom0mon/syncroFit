@@ -84,4 +84,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(WorkoutHistory::class);
     }
+
+    public function posts() { return $this->hasMany(Post::class); }
+    public function postLikes() { return $this->hasMany(PostLike::class); }
+    public function comments() { return $this->hasMany(Comment::class); }
 }

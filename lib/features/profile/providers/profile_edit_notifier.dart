@@ -218,6 +218,13 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
         }
         return null;
 
+      case 'availability_days':
+        final days = value is List ? value : null;
+        if (days == null || days.isEmpty) {
+          return 'Select at least one workout day';
+        }
+        return null;
+
       default:
         // No validation rules for other fields (enums, lists)
         return null;

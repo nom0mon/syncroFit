@@ -9,18 +9,23 @@ import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/exercise_provider.dart';
 import 'exercise_row.dart';
 
-/// A tab widget containing the exercise library with search and filter controls.
-///
-/// Extracted from [ExerciseListScreen] for use inside a [TabBarView].
-/// Uses [AutomaticKeepAliveClientMixin] to preserve scroll position and state
-/// across tab switches.
-///
-/// Validates: Requirements 8.2, 8.5
+/// A tab containing the responsive exercise library search, filters, and
+/// adaptive list/grid.
 class ExerciseLibraryTab extends ConsumerStatefulWidget {
-  const ExerciseLibraryTab({super.key});
+  const ExerciseLibraryTab({
+    super.key,
+    this.showStatusStates = true,
+  });
+
+  /// Whether this tab owns loading and error presentation.
+  ///
+  /// The standalone exercise-list screen handles those states above this
+  /// widget, while the released tab uses the default value.
+  final bool showStatusStates;
 
   @override
   ConsumerState<ExerciseLibraryTab> createState() => _ExerciseLibraryTabState();
@@ -31,11 +36,6 @@ class _ExerciseLibraryTabState extends ConsumerState<ExerciseLibraryTab>
   @override
   bool get wantKeepAlive => true;
 
-  /// Forces a refresh by calling refreshCaches with forceRefresh: true,
-  /// which invalidates cache metadata and forces a backend fetch regardless
-  /// of cache age, then reloads the exercise list.
-  ///
-  /// Validates: Requirements 11.3, 11.4
   Future<void> _onRefresh() async {
     final syncEngine = ref.read(syncEngineProvider);
     await syncEngine.refreshCaches(forceRefresh: true);
@@ -47,63 +47,69 @@ class _ExerciseLibraryTabState extends ConsumerState<ExerciseLibraryTab>
     super.build(context);
     final state = ref.watch(exerciseProvider);
 
-    if (state.isLoading) {
+    if (widget.showStatusStates && state.isLoading) {
       return const LoadingIndicator();
     }
 
-    if (state.errorMessage != null) {
+    if (widget.showStatusStates && state.errorMessage != null) {
       return ErrorDisplay(
         message: state.errorMessage!,
         onRetry: () => ref.read(exerciseProvider.notifier).loadExercises(),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: Column(
-        children: [
-          _SearchBar(searchQuery: state.searchQuery),
-          _FilterControls(
-            allExercises: state.allExercises,
-            selectedMuscleGroups: state.selectedMuscleGroups,
-            selectedDifficulty: state.selectedDifficulty,
+    return SafeArea(
+      top: false,
+      child: ResponsiveConstrainedPage(
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: Column(
+            children: [
+              _SearchBar(searchQuery: state.searchQuery),
+              _FilterControls(
+                allExercises: state.allExercises,
+                selectedMuscleGroups: state.selectedMuscleGroups,
+                selectedDifficulty: state.selectedDifficulty,
+              ),
+              Expanded(
+                child: state.filteredExercises.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          EmptyState(
+                            icon: Icons.search_off,
+                            message: 'No exercises found matching your filters',
+                          ),
+                        ],
+                      )
+                    : Stack(
+                        children: [
+                          _ExerciseResults(
+                            exercises: state.filteredExercises,
+                          ),
+                          const Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: EdgeFadeGradient(isTop: true),
+                          ),
+                          const Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: EdgeFadeGradient(isTop: false),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
           ),
-          Expanded(
-            child: state.filteredExercises.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      EmptyState(
-                        icon: Icons.search_off,
-                        message: 'No exercises found matching your filters',
-                      ),
-                    ],
-                  )
-                : Stack(
-                    children: [
-                      _ExerciseListView(exercises: state.filteredExercises),
-                      const Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: EdgeFadeGradient(isTop: true),
-                      ),
-                      const Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: EdgeFadeGradient(isTop: false),
-                      ),
-                    ],
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Search input with case-insensitive substring matching.
 class _SearchBar extends ConsumerStatefulWidget {
   const _SearchBar({required this.searchQuery});
 
@@ -141,9 +147,9 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
+        0,
         AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
+        0,
         AppSpacing.sm,
       ),
       child: TextField(
@@ -153,6 +159,7 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
           prefixIcon: const Icon(Icons.search),
           suffixIcon: widget.searchQuery.isNotEmpty
               ? IconButton(
+                  tooltip: 'Clear exercise search',
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _controller.clear();
@@ -161,6 +168,7 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
                 )
               : null,
         ),
+        textInputAction: TextInputAction.search,
         onChanged: (value) {
           ref.read(exerciseProvider.notifier).setSearchQuery(value);
         },
@@ -169,7 +177,6 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
   }
 }
 
-/// Filter controls: muscle group chips (multi-select) and difficulty chips.
 class _FilterControls extends ConsumerWidget {
   const _FilterControls({
     required this.allExercises,
@@ -186,84 +193,115 @@ class _FilterControls extends ConsumerWidget {
     final muscleGroups = allExercises.map((e) => e.muscleGroup).toSet().toList()
       ..sort();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final muscleChips = muscleGroups.map((group) {
+      final isSelected = selectedMuscleGroups.contains(group);
+      return FilterChip(
+        label: Text(group, overflow: TextOverflow.ellipsis),
+        selected: isSelected,
+        onSelected: (_) {
+          ref.read(exerciseProvider.notifier).toggleMuscleGroupFilter(group);
+        },
+      );
+    }).toList();
+
+    final difficultyChips = DifficultyLevel.values.map((level) {
+      final isSelected = selectedDifficulty == level;
+      return ChoiceChip(
+        label: Text(_difficultyLabel(level)),
+        selected: isSelected,
+        onSelected: (_) {
+          ref
+              .read(exerciseProvider.notifier)
+              .setDifficultyFilter(isSelected ? null : level);
+        },
+      );
+    }).toList();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final widthClass =
+            ResponsiveStandards.widthClassFor(constraints.maxWidth);
+        final wrapsFilters = widthClass == AppWidthClass.tablet ||
+            widthClass == AppWidthClass.large;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _AdaptiveChipGroup(
+              chips: muscleChips,
+              wraps: wrapsFilters,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _AdaptiveChipGroup(
+              chips: difficultyChips,
+              wraps: wrapsFilters,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AdaptiveChipGroup extends StatelessWidget {
+  const _AdaptiveChipGroup({
+    required this.chips,
+    required this.wraps,
+  });
+
+  final List<Widget> chips;
+  final bool wraps;
+
+  @override
+  Widget build(BuildContext context) {
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    if (wraps) {
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        children: chips,
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
         children: [
-          // Muscle group filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: muscleGroups.map((group) {
-                final isSelected = selectedMuscleGroups.contains(group);
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
-                  child: FilterChip(
-                    label: Text(group),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      ref
-                          .read(exerciseProvider.notifier)
-                          .toggleMuscleGroupFilter(group);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Difficulty filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: DifficultyLevel.values.map((level) {
-                final isSelected = selectedDifficulty == level;
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
-                  child: ChoiceChip(
-                    label: Text(_difficultyLabel(level)),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      ref
-                          .read(exerciseProvider.notifier)
-                          .setDifficultyFilter(isSelected ? null : level);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          for (var index = 0; index < chips.length; index++) ...[
+            if (index > 0) const SizedBox(width: AppSpacing.sm),
+            chips[index],
+          ],
         ],
       ),
     );
   }
 }
 
-/// Scrollable list of exercise items.
-class _ExerciseListView extends StatelessWidget {
-  const _ExerciseListView({required this.exercises});
+class _ExerciseResults extends StatelessWidget {
+  const _ExerciseResults({required this.exercises});
 
   final List<Exercise> exercises;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.sm,
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: AdaptiveGridList(
+        minItemWidth: 320,
+        maxColumns: 2,
+        spacing: AppSpacing.md,
+        runSpacing: AppSpacing.xs,
+        children: [
+          for (final exercise in exercises) ExerciseRow(exercise: exercise),
+        ],
       ),
-      itemCount: exercises.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
-      itemBuilder: (context, index) {
-        return ExerciseRow(exercise: exercises[index]);
-      },
     );
   }
 }
 
-/// Returns a user-friendly label for a difficulty level.
 String _difficultyLabel(DifficultyLevel level) {
   return switch (level) {
     DifficultyLevel.beginner => 'Beginner',

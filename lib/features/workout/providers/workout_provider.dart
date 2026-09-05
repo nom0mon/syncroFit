@@ -4,6 +4,8 @@ import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../auth/providers/auth_provider.dart';
+import 'workout_history_refresh_provider.dart';
 
 /// Provides the [WorkoutRepository] implementation.
 ///
@@ -46,7 +48,7 @@ class WorkoutSessionState {
   /// The timestamp when the workout was completed.
   final DateTime? completedAt;
 
-  /// Whether we are currently in a rest period between exercises.
+  /// Whether we are currently in a rest period between completed sets.
   final bool isResting;
 
   const WorkoutSessionState({
@@ -97,12 +99,9 @@ class WorkoutSessionState {
     return end.difference(startedAt!).inSeconds;
   }
 
-  /// Rest seconds between exercises (default 30, range 10-120).
+  /// Rest seconds prescribed for the current exercise.
   int get currentRestSeconds {
-    // The simplified WorkoutExercise no longer stores restSeconds;
-    // use a fixed default rest period.
-    const rest = 30;
-    return rest.clamp(10, 120);
+    return (currentExercise?.restSeconds ?? 120).clamp(10, 300);
   }
 
   WorkoutSessionState copyWith({
@@ -189,16 +188,16 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Finishes the current set.
   ///
-  /// If more sets remain for the current exercise, advances to the next set.
-  /// If this was the last set, marks the exercise complete and either starts
-  /// a rest period (if more exercises remain) or completes the workout.
+  /// Every completed set is followed by a rest period, except the final set
+  /// of the final exercise. Completing an exercise's final set records it
+  /// before resting.
   void finishCurrentSet() {
     final exercise = state.currentExercise;
     if (exercise == null) return;
 
     if (!state.isLastSet) {
-      // Advance to the next set of the same exercise.
-      state = state.copyWith(currentSet: state.currentSet + 1);
+      // Keep the set number during rest; [completeRest] advances it.
+      state = state.copyWith(isResting: true);
       return;
     }
 
@@ -267,15 +266,26 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
-  /// Advances to the next exercise in the workout, ending the rest period
-  /// and resetting the set counter to 1.
-  void advanceToNextExercise() {
-    if (state.isLastExercise) return;
-    state = state.copyWith(
-      currentExerciseIndex: state.currentExerciseIndex + 1,
-      currentSet: 1,
-      isResting: false,
-    );
+  /// Ends a rest period and continues with the appropriate next set or
+  /// exercise.
+  void completeRest() {
+    if (!state.isResting) return;
+
+    if (!state.isLastSet) {
+      state = state.copyWith(
+        currentSet: state.currentSet + 1,
+        isResting: false,
+      );
+      return;
+    }
+
+    if (!state.isLastExercise) {
+      state = state.copyWith(
+        currentExerciseIndex: state.currentExerciseIndex + 1,
+        currentSet: 1,
+        isResting: false,
+      );
+    }
   }
 
   /// Skips the current exercise without completing it and advances.
@@ -298,10 +308,9 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
-  /// Skips the rest period and immediately advances to the next exercise.
+  /// Skips the rest period and resumes the next set or exercise.
   void skipRest() {
-    if (!state.isResting) return;
-    advanceToNextExercise();
+    completeRest();
   }
 
   /// Builds and saves a [WorkoutHistory] from the current completed state.
@@ -312,7 +321,9 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
     final record = WorkoutHistory(
       id: 'history-${DateTime.now().millisecondsSinceEpoch}',
-      userId: '', // Will be set by backend
+      // Keeping the local record user-scoped is essential for offline mode:
+      // Progress and Dashboard query history using the authenticated id.
+      userId: _ref.read(authStateProvider).user?.id ?? '',
       workoutName: state.workout!.name,
       completedAt: state.completedAt ?? DateTime.now(),
       totalDurationSeconds: state.totalDurationSeconds,
@@ -324,6 +335,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     final result = await _historyRepo.save(record);
     switch (result) {
       case Success(value: final saved):
+        final refresh = _ref.read(workoutHistoryRefreshProvider.notifier);
+        refresh.state = refresh.state + 1;
         return saved;
       case Failure():
         return null;
@@ -338,7 +351,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
 /// Provider for the [WorkoutNotifier] managing the active workout session.
 final workoutProvider =
-    StateNotifierProvider.autoDispose<WorkoutNotifier, WorkoutSessionState>(
+    StateNotifierProvider<WorkoutNotifier, WorkoutSessionState>(
   (ref) => WorkoutNotifier(ref),
 );
 

@@ -3,6 +3,7 @@ class WorkoutExercise {
   final int sets;
   final int reps;
   final int durationSeconds;
+  final int restSeconds;
   final int order;
 
   const WorkoutExercise({
@@ -10,6 +11,7 @@ class WorkoutExercise {
     required this.sets,
     required this.reps,
     required this.durationSeconds,
+    this.restSeconds = 120,
     required this.order,
   });
 
@@ -18,11 +20,8 @@ class WorkoutExercise {
       exerciseId: json['exercise_id'] as int,
       sets: json['sets'] as int,
       reps: json['reps'] as int,
-      // `rest_seconds` was emitted by an earlier version of the plan
-      // generator.  Accept it for already-generated plans, while new API
-      // responses use the canonical `duration_seconds` field.
-      durationSeconds:
-          (json['duration_seconds'] ?? json['rest_seconds'] ?? 0) as int,
+      durationSeconds: (json['duration_seconds'] ?? 0) as int,
+      restSeconds: (json['rest_seconds'] ?? 120) as int,
       order: json['order'] as int,
     );
   }
@@ -32,6 +31,7 @@ class WorkoutExercise {
         'sets': sets,
         'reps': reps,
         'duration_seconds': durationSeconds,
+        'rest_seconds': restSeconds,
         'order': order,
       };
 
@@ -44,12 +44,14 @@ class WorkoutExercise {
           sets == other.sets &&
           reps == other.reps &&
           durationSeconds == other.durationSeconds &&
+          restSeconds == other.restSeconds &&
           order == other.order;
 
   @override
-  int get hashCode => Object.hash(exerciseId, sets, reps, durationSeconds, order);
+  int get hashCode => Object.hash(
+      exerciseId, sets, reps, durationSeconds, restSeconds, order);
 
   @override
   String toString() =>
-      'WorkoutExercise(exerciseId: $exerciseId, sets: $sets, reps: $reps, durationSeconds: $durationSeconds, order: $order)';
+      'WorkoutExercise(exerciseId: $exerciseId, sets: $sets, reps: $reps, durationSeconds: $durationSeconds, restSeconds: $restSeconds, order: $order)';
 }

@@ -4,10 +4,14 @@ import '../../core/network/api_client.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/exercise_repository.dart';
 import '../repositories/profile_repository.dart';
+import '../repositories/progress_log_repository.dart';
 import '../repositories/workout_history_repository.dart';
 import 'remote_auth_repository.dart';
 import 'remote_exercise_repository.dart';
 import 'remote_profile_repository.dart';
+import 'remote_progress_log_repository.dart';
+import 'remote_community_repository.dart';
+import '../repositories/community_repository.dart';
 import 'remote_workout_history_repository.dart';
 import 'remote_workout_repository.dart';
 
@@ -58,3 +62,10 @@ final remoteWorkoutHistoryRepositoryProvider =
   final apiClient = ref.watch(apiClientProvider);
   return RemoteWorkoutHistoryRepository(apiClient);
 });
+
+final remoteProgressLogRepositoryProvider = Provider<ProgressLogRepository>((ref) {
+  return RemoteProgressLogRepository(ref.watch(apiClientProvider));
+});
+
+final remoteCommunityRepositoryProvider = Provider<CommunityRepository>((ref) =>
+    RemoteCommunityRepository(ref.watch(apiClientProvider)));

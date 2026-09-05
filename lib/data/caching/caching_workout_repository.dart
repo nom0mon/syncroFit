@@ -20,7 +20,8 @@ import '../repositories/workout_repository.dart';
 /// The Workout model includes embedded exercises (as JSON) and the
 /// `isGenerated` flag to distinguish user-created from recommendation-generated
 /// workouts.
-class CachingWorkoutRepository implements WorkoutRepository {
+class CachingWorkoutRepository
+    implements WorkoutRepository, WorkoutCustomizationRepository {
   final WorkoutRepository _remote;
   final WorkoutDao _dao;
   final CacheMetadataDao _cacheMetadataDao;
@@ -114,6 +115,30 @@ class CachingWorkoutRepository implements WorkoutRepository {
     // Offline: try to serve from cache
     final todayWorkout = await _getTodaysWorkoutFromCache();
     return Success(todayWorkout);
+  }
+
+  @override
+  Future<Result<Workout, AppError>> customizeExercises(
+    String workoutId,
+    List<int> exerciseIds,
+  ) async {
+    if (_connectivity.currentStatus != ConnectivityStatus.online) {
+      return Failure(NetworkError());
+    }
+    final remote = _remote;
+    if (remote is! WorkoutCustomizationRepository) {
+      return Failure(ServerError(
+        statusCode: 0,
+        serverMessage: 'Workout customization is unavailable.',
+      ));
+    }
+    final result = await (remote as WorkoutCustomizationRepository)
+        .customizeExercises(workoutId, exerciseIds);
+    if (result is Success<Workout, AppError>) {
+      await _dao.upsert(result.value);
+      await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
+    }
+    return result;
   }
 
   // ─── Private Helpers ──────────────────────────────────────────────────

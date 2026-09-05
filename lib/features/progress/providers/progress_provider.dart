@@ -4,7 +4,26 @@ import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../workout/providers/workout_provider.dart';
+import '../../workout/providers/workout_history_refresh_provider.dart';
+import '../utils/bmi_utils.dart';
+
+/// BMI derived reactively from the current profile measurements.
+///
+/// A `null` data value means the authenticated user has no profile or their
+/// stored measurements are invalid. Loading and repository failures remain
+/// distinguishable through [AsyncValue].
+final bmiProvider = Provider<AsyncValue<BmiResult?>>((ref) {
+  return ref.watch(profileProvider).whenData((profile) {
+    if (profile == null) return null;
+    return calculateBmi(
+      heightCm: profile.heightCm,
+      weightKg: profile.weightKg,
+    );
+  });
+});
 
 /// Provides the [WorkoutHistoryRepository] instance used by the progress module.
 ///
@@ -72,8 +91,21 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
 
   @override
   Future<ProgressState> build() async {
-    // Use a dummy userId — in production this comes from the auth state.
-    const userId = '';
+    // Rebuild immediately after a workout session is successfully saved.
+    ref.watch(workoutHistoryRefreshProvider);
+    // Watch the auth state so this progress data rebinds/clears automatically
+    // on login, logout, and account switch. Any change to the authenticated
+    // user rebuilds this notifier with the correct user-scoped data.
+    final authState = ref.watch(authStateProvider);
+    final userId = authState.user?.id;
+
+    // When unauthenticated (or the id is missing/empty), return an empty state
+    // immediately WITHOUT hitting the history repository — an empty user id
+    // must never reach the caching repository's user_id filter.
+    if (!authState.isAuthenticated || userId == null || userId.isEmpty) {
+      return const ProgressState();
+    }
+
     final historyResult = await _historyRepo.getAll(userId);
 
     final history = switch (historyResult) {
@@ -85,8 +117,8 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     final totalWorkouts = history.length;
 
     // Compute total duration
-    final totalDurationSeconds =
-        history.fold<int>(0, (sum, record) => sum + record.totalDurationSeconds);
+    final totalDurationSeconds = history.fold<int>(
+        0, (sum, record) => sum + record.totalDurationSeconds);
 
     // Compute weekly stats from history
     final weeklyStats = _computeWeeklyStats(history);

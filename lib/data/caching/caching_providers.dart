@@ -16,8 +16,7 @@ import 'caching_workout_repository.dart';
 /// Provides a [CachingExerciseRepository] that wraps the remote repository
 /// with local SQLite caching and cache freshness logic.
 ///
-/// Falls back to remote-only if the local database is not available
-/// (e.g., on web without WASM worker support).
+/// Falls back to remote-only if the local database is not available.
 final cachingExerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
   try {
     final db = ref.watch(localDatabaseProvider);
@@ -31,7 +30,7 @@ final cachingExerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
       connectivity: connectivity,
     );
   } catch (e) {
-    // Database not available (e.g., web without WASM) — fall back to remote only
+    // Database not available — fall back to remote only.
     return ref.watch(remoteExerciseRepositoryProvider);
   }
 });
@@ -55,7 +54,7 @@ final cachingWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
       database: dbImpl.database,
     );
   } catch (e) {
-    // Database not available (e.g., web without WASM) — fall back to remote only
+    // Database not available — fall back to remote only.
     return ref.watch(remoteWorkoutRepositoryProvider);
   }
 });
@@ -79,7 +78,7 @@ final cachingProfileRepositoryProvider = Provider<ProfileRepository>((ref) {
       connectivity: connectivity,
     );
   } catch (e) {
-    // Database not available (e.g., web without WASM) — fall back to remote only
+    // Database not available — fall back to remote only.
     return ref.watch(remoteProfileRepositoryProvider);
   }
 });
@@ -106,7 +105,7 @@ final cachingWorkoutHistoryRepositoryProvider =
       connectivity: connectivity,
     );
   } catch (e) {
-    // Database not available (e.g., web without WASM) — fall back to remote only
+    // Database not available — fall back to remote only.
     return ref.watch(remoteWorkoutHistoryRepositoryProvider);
   }
 });

@@ -41,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['success' => true, 'data' => $user]);
     });
 
+    // Change password
+    Route::put('/user/password', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'update']);
+
     // Exercises
     Route::get('/exercises', [\App\Http\Controllers\ExerciseController::class, 'index']);
     Route::get('/exercises/{exercise}', [\App\Http\Controllers\ExerciseController::class, 'show']);
@@ -50,9 +53,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/workouts', [\App\Http\Controllers\WorkoutController::class, 'store']);
     Route::post('/workouts/generate', [\App\Http\Controllers\WorkoutController::class, 'generate']);
     Route::get('/workouts/generated', [\App\Http\Controllers\WorkoutController::class, 'generated']);
+    Route::put('/workouts/{workout}/exercises', [\App\Http\Controllers\WorkoutController::class, 'customize']);
 
     // Workout History
     Route::post('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'store']);
     Route::get('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'index']);
     Route::get('/workout-history/stats', [\App\Http\Controllers\WorkoutHistoryController::class, 'stats']);
+
+    // Private progress logs
+    Route::get('/progress-logs', [\App\Http\Controllers\ProgressLogController::class, 'index']);
+    Route::post('/progress-logs', [\App\Http\Controllers\ProgressLogController::class, 'store']);
+    Route::get('/progress-logs/{progressLog}', [\App\Http\Controllers\ProgressLogController::class, 'show']);
+    Route::get('/progress-logs/{progressLog}/image', [\App\Http\Controllers\ProgressLogController::class, 'image']);
+    Route::delete('/progress-logs/{progressLog}', [\App\Http\Controllers\ProgressLogController::class, 'destroy']);
+
+    // Community
+    Route::get('/community/posts', [\App\Http\Controllers\CommunityController::class, 'index']);
+    Route::post('/community/posts', [\App\Http\Controllers\CommunityController::class, 'store']);
+    Route::get('/community/posts/{post}', [\App\Http\Controllers\CommunityController::class, 'show']);
+    Route::delete('/community/posts/{post}', [\App\Http\Controllers\CommunityController::class, 'destroy']);
+    Route::put('/community/posts/{post}/like', [\App\Http\Controllers\CommunityController::class, 'like']);
+    Route::delete('/community/posts/{post}/like', [\App\Http\Controllers\CommunityController::class, 'unlike']);
+    Route::get('/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'comments']);
+    Route::post('/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'comment']);
+    Route::delete('/community/posts/{post}/comments/{comment}', [\App\Http\Controllers\CommunityController::class, 'destroyComment']);
 });

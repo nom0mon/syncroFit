@@ -10,6 +10,7 @@ export 'enums.dart';
 export 'exercise.dart';
 export 'notification_item.dart';
 export 'post.dart';
+export 'progress_log.dart';
 export 'result.dart';
 export 'scheduled_workout.dart';
 export 'sync_mutation.dart';

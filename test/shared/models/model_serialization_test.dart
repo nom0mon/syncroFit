@@ -507,7 +507,7 @@ void main() {
       expect(outputJson['order'], 2);
     });
 
-    test('accepts legacy generated exercises that used rest_seconds', () {
+    test('keeps rest separate from exercise duration', () {
       final exercise = WorkoutExercise.fromJson({
         'exercise_id': 3,
         'sets': 4,
@@ -516,7 +516,8 @@ void main() {
         'order': 2,
       });
 
-      expect(exercise.durationSeconds, 90);
+      expect(exercise.durationSeconds, 0);
+      expect(exercise.restSeconds, 90);
     });
   });
 }

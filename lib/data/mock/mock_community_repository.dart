@@ -95,4 +95,20 @@ class MockCommunityRepository implements CommunityRepository {
     _posts[index] = updatedPost;
     return Success(updatedPost);
   }
+
+  @override
+  Future<Result<void, AppError>> deletePost(String postId) async {
+    _posts.removeWhere((post) => post.id == postId);
+    return const Success(null);
+  }
+
+  @override
+  Future<Result<void, AppError>> deleteComment(String postId, String commentId) async {
+    final index = _posts.indexWhere((post) => post.id == postId);
+    if (index < 0) return Failure(NotFoundError(entityType: 'Post', id: postId));
+    final post = _posts[index];
+    final comments = post.comments.where((item) => item.id != commentId).toList();
+    _posts[index] = post.copyWith(comments: comments, commentCount: comments.length);
+    return const Success(null);
+  }
 }

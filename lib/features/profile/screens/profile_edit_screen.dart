@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../providers/profile_edit_notifier.dart';
 import '../providers/profile_provider.dart';
+import '../../workout/providers/workout_scheduler_provider.dart';
 import '../widgets/profile_form.dart'
     show
         GenderLabel,
@@ -145,31 +147,39 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
     // Navigate back on successful save
     ref.listen<ProfileEditState>(profileEditNotifierProvider, (previous, next) {
       if (next.isSuccess && !(previous?.isSuccess ?? false)) {
+        // The editor saves through its own notifier. Rebuild the shared
+        // profile and weekly schedule before leaving so day changes persist
+        // throughout the app immediately.
+        ref.invalidate(profileProvider);
+        ref.invalidate(workoutSchedulerProvider);
         Navigator.of(context).pop();
       }
     });
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Back',
         ),
-        title: const Text('Edit Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: state.isSaving ? null : _handleSave,
-            tooltip: 'Save',
-          ),
-        ],
+        title: const Text(
+          'Edit Profile',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
+          Expanded(
+            child: Stack(
+              children: [
+                SafeScrollableForm(
+                  // The scaffold resizes this expanded region for the
+                  // keyboard, so it must not consume the inset a second time.
+                  includeKeyboardInset: false,
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // First Name field
@@ -240,6 +250,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                 // Gender dropdown
                 DropdownButtonFormField<Gender>(
                   value: _currentGender(state, profile),
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Gender',
                     errorText: state.fieldErrors['gender'],
@@ -259,6 +270,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                 // Fitness Goal dropdown
                 DropdownButtonFormField<FitnessGoal>(
                   value: _currentFitnessGoal(state, profile),
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Fitness Goal',
                     errorText: state.fieldErrors['fitness_goal'],
@@ -278,6 +290,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                 // Fitness Level dropdown
                 DropdownButtonFormField<FitnessLevel>(
                   value: _currentFitnessLevel(state, profile),
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Fitness Level',
                     errorText: state.fieldErrors['fitness_level'],
@@ -297,6 +310,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                 // Workout Preference dropdown
                 DropdownButtonFormField<WorkoutPreference>(
                   value: _currentWorkoutPreference(state, profile),
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Workout Preference',
                     errorText: state.fieldErrors['workout_preference'],
@@ -329,17 +343,25 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                     return FilterChip(
                       label: Text(day.label),
                       selected: isSelected,
-                      onSelected: (selected) {
-                        final updated = List<DayOfWeek>.from(selectedDays);
-                        if (selected) {
-                          updated.add(day);
-                        } else {
-                          updated.remove(day);
-                        }
-                        // Sort to maintain consistent order
-                        updated.sort((a, b) => a.index.compareTo(b.index));
-                        notifier.updateField('availability_days', updated);
-                      },
+                      onSelected: !isSelected || selectedDays.length > 1
+                          ? (selected) {
+                              final updated =
+                                  List<DayOfWeek>.from(selectedDays);
+                              if (selected) {
+                                updated.add(day);
+                              } else {
+                                updated.remove(day);
+                              }
+                              // Sort to maintain consistent order.
+                              updated.sort(
+                                (a, b) => a.index.compareTo(b.index),
+                              );
+                              notifier.updateField(
+                                'availability_days',
+                                updated,
+                              );
+                            }
+                          : null,
                     );
                   }).toList(),
                 ),
@@ -366,17 +388,38 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
 
                 const SizedBox(height: AppSpacing.xl),
               ],
+                  ),
+                ),
+
+                // Loading overlay
+                if (state.isSaving)
+                  Container(
+                    color: Colors.black26,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
             ),
           ),
-
-          // Loading overlay
-          if (state.isSaving)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(),
+          SafeBottomActionBar(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const Key('profile-edit-save'),
+                onPressed: state.isSaving ? null : _handleSave,
+                icon: state.isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check),
+                label: const Text('Save Changes'),
               ),
             ),
+          ),
         ],
       ),
     );

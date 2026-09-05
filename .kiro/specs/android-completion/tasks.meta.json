@@ -1,0 +1,672 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Lock Android and release-support decisions": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720125680
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720140830
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787721094452
+      }
+    ],
+    "1.2 Audit platform, automation, dependency, and route usage": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126268
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720143856
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787721099921
+      }
+    ],
+    "1.3 Establish clean-checkout Android build baseline": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126624
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787721114024
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723561244
+      }
+    ],
+    "2.1 Remove unsupported Flutter platforms and dependencies": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126699
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787721120927
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723569079
+      }
+    ],
+    "2.2 Update Android manifests and runtime permission handling": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126749
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723588747
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727138606
+      }
+    ],
+    "2.3 Make documentation and developer workflows Android-only": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126811
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723591957
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727145808
+      }
+    ],
+    "2.4 Restrict CI and release automation to Android": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126871
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723611144
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727151446
+      }
+    ],
+    "3.1 Define reusable Android responsive standards": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720126947
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787721130371
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723576142
+      }
+    ],
+    "3.2 Add reusable safe form, dialog, and keyboard patterns": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127000
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723621115
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727157620
+      }
+    ],
+    "3.3 Create the responsive test harness": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127046
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723627387
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727165942
+      }
+    ],
+    "4.1 Remediate authentication and dashboard": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127094
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727188497
+      }
+    ],
+    "4.2 Remediate workout generation and active-workout flows": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127149
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727199232
+      }
+    ],
+    "4.3 Remediate exercise library and exercise detail": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127210
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727219116
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787728186253
+      }
+    ],
+    "4.4 Remediate progress and community screens": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127270
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727225190
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787728200695
+      }
+    ],
+    "4.5 Remediate profile, profile edit, settings, and remaining released tabs": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127326
+      },
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727239461
+      }
+    ],
+    "4.6 Complete accessibility remediation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127379
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729410506
+      }
+    ],
+    "5.1 Implement the authenticated change-password backend": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127429
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787728305014
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729086073
+      }
+    ],
+    "5.2 Connect and validate the Flutter change-password flow": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127483
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729411229
+      }
+    ],
+    "5.3 Remove the dead notification inbox and inconsistent notification backend": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127536
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787728306203
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729086981
+      }
+    ],
+    "5.4 Remove placeholder search functionality": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127587
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787728307166
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729088374
+      }
+    ],
+    "5.5 Remove mock-only consultation/trainer functionality from production": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127630
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787728308116
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729089314
+      }
+    ],
+    "5.6 Replace exercise-video placeholders with truthful states": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127686
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787728309219
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729090206
+      }
+    ],
+    "5.7 Bind progress history to authenticated identity": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127732
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729101842
+      },
+      {
+        "executionId": "bdc1e899-69d5-4bcf-b099-7797d7e5316a",
+        "chatSessionId": "sess_ff939318-9fb6-43c4-aea4-39adfdc3e5ff",
+        "timestamp": 1787729394719
+      }
+    ],
+    "6. Checkpoint — Android baseline and existing functionality": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127776
+      }
+    ],
+    "7.1 Create the progress-photo schema and model": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127827
+      }
+    ],
+    "7.2 Configure private media storage and image processing": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127882
+      }
+    ],
+    "7.3 Implement authorized progress-photo API endpoints": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720127938
+      }
+    ],
+    "7.4 Implement media lifecycle and deletion guarantees": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128000
+      }
+    ],
+    "7.5 Add progress-photo backend tests": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128055
+      }
+    ],
+    "8.1 Add Android media/share dependencies and domain models": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128110
+      }
+    ],
+    "8.2 Implement the remote progress-photo repository": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128164
+      }
+    ],
+    "8.3 Add local pending-upload persistence": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128215
+      }
+    ],
+    "8.4 Extend synchronization for progress-photo operations": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128268
+      }
+    ],
+    "8.5 Wire authenticated progress-photo providers and state": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128318
+      }
+    ],
+    "9.1 Add the Photos section and capture/select flow": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128399
+      }
+    ],
+    "9.2 Build the responsive photo timeline/grid": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128454
+      }
+    ],
+    "9.3 Implement full-screen viewing and deletion": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128504
+      }
+    ],
+    "9.4 Implement exactly-two-photo comparison": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128562
+      }
+    ],
+    "9.5 Implement explicit Android system sharing": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128606
+      }
+    ],
+    "9.6 Add progress-photo Flutter tests": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128655
+      }
+    ],
+    "10. Checkpoint — Progress photos complete": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128707
+      }
+    ],
+    "11.1 Create community schema and models": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128755
+      }
+    ],
+    "11.2 Add policies, validation, resources, and pagination contract": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128803
+      }
+    ],
+    "11.3 Implement feed, create-post, and post-detail endpoints": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128867
+      }
+    ],
+    "11.4 Implement idempotent like and unlike endpoints": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128918
+      }
+    ],
+    "11.5 Implement comment creation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720128961
+      }
+    ],
+    "11.6 Add abuse controls and operational moderation readiness": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129016
+      }
+    ],
+    "11.7 Add Laravel community feature tests": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129071
+      }
+    ],
+    "12.1 Define community models and remote repository": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129132
+      }
+    ],
+    "12.2 Replace production mock-provider wiring": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129177
+      }
+    ],
+    "12.3 Connect the feed and post composer": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129240
+      }
+    ],
+    "12.4 Connect post detail and comments": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129285
+      }
+    ],
+    "12.5 Implement optimistic like/unlike with rollback": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129335
+      }
+    ],
+    "12.6 Add Flutter community tests": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129389
+      }
+    ],
+    "13.1 Complete required responsive widget/golden coverage": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129443
+      }
+    ],
+    "13.2 Complete accessibility validation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129495
+      }
+    ],
+    "13.3 Complete authorization and privacy validation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129571
+      }
+    ],
+    "13.4 Complete offline and failure-mode validation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129616
+      }
+    ],
+    "14.1 Validate database upgrades, rollback, and backups": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129669
+      }
+    ],
+    "14.2 Configure observability and release metrics": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129723
+      }
+    ],
+    "14.3 Execute the Android manual QA matrix": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129815
+      }
+    ],
+    "14.4 Execute clean-checkout release validation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129866
+      }
+    ],
+    "15. Final checkpoint — Android production readiness": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787720129911
+      }
+    ],
+    "1. Release decisions, repository audit, and baseline": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787723561301
+      }
+    ],
+    "2. Android-only project and delivery configuration": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727151538
+      }
+    ],
+    "3. Responsive-layout foundation": [
+      {
+        "executionId": "d02f0ce0-de55-4956-b4af-37de93ed5e4c",
+        "chatSessionId": "sess_674c95cc-bf1b-49fa-b83c-227449823a72",
+        "timestamp": 1787727166003
+      }
+    ]
+  }
+}

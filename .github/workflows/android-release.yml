@@ -1,0 +1,189 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*+*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Required validation
+    uses: ./.github/workflows/ci.yml
+
+  verify-release-tag:
+    name: Verify release tag and version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version_name: ${{ steps.version.outputs.version_name }}
+      version_code: ${{ steps.version.outputs.version_code }}
+      artifact_name: ${{ steps.version.outputs.artifact_name }}
+
+    steps:
+      - name: Check out repository and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require a verified annotated tag
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.RELEASE_TAG;
+            const ref = await github.rest.git.getRef({
+              owner,
+              repo,
+              ref: `tags/${tag}`,
+            });
+
+            if (ref.data.object.type !== 'tag') {
+              core.setFailed('Release tags must be annotated and cryptographically signed.');
+              return;
+            }
+
+            const tagObject = await github.rest.git.getTag({
+              owner,
+              repo,
+              tag_sha: ref.data.object.sha,
+            });
+            const verification = tagObject.data.verification;
+
+            if (!verification?.verified) {
+              core.setFailed(
+                `Release tag signature is not verified (${verification?.reason ?? 'unknown reason'}).`,
+              );
+            }
+
+      - name: Match tag to pubspec version
+        id: version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml)"
+
+          if [[ ! "$version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)\+([1-9][0-9]*)$ ]]; then
+            echo "pubspec.yaml version must use MAJOR.MINOR.PATCH+BUILD with a positive build number." >&2
+            exit 1
+          fi
+
+          version_name="${BASH_REMATCH[1]}"
+          version_code="${BASH_REMATCH[2]}"
+
+          if [[ "$RELEASE_TAG" != "v$version" ]]; then
+            echo "Release tag must exactly match pubspec.yaml version: v$version" >&2
+            exit 1
+          fi
+
+          artifact_name="synchrofit-android-${version_name}-${version_code}-release.aab"
+          echo "version_name=$version_name" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Build signed Android App Bundle
+    needs:
+      - validate
+      - verify-release-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: android-production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.0
+          cache: true
+
+      - name: Restore Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Reconstruct protected upload signing material
+        shell: bash
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${ANDROID_UPLOAD_KEYSTORE_BASE64:?Missing Android upload keystore secret}"
+          : "${ANDROID_UPLOAD_KEY_ALIAS:?Missing Android upload key alias secret}"
+          : "${ANDROID_UPLOAD_STORE_PASSWORD:?Missing Android upload store password secret}"
+          : "${ANDROID_UPLOAD_KEY_PASSWORD:?Missing Android upload key password secret}"
+
+          keystore_path="$RUNNER_TEMP/upload-keystore.jks"
+          properties_path="$GITHUB_WORKSPACE/android/key.properties"
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          test -s "$keystore_path"
+
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$keystore_path" \
+            "$ANDROID_UPLOAD_STORE_PASSWORD" \
+            "$ANDROID_UPLOAD_KEY_ALIAS" \
+            "$ANDROID_UPLOAD_KEY_PASSWORD" > "$properties_path"
+          chmod 600 "$keystore_path" "$properties_path"
+
+      - name: Build signed Android release bundle
+        run: flutter build appbundle --release
+
+      - name: Verify signing and version artifact
+        id: artifact
+        shell: bash
+        env:
+          ARTIFACT_NAME: ${{ needs.verify-release-tag.outputs.artifact_name }}
+        run: |
+          set -euo pipefail
+          source_bundle="build/app/outputs/bundle/release/app-release.aab"
+          destination="dist/$ARTIFACT_NAME"
+          test -s "$source_bundle"
+
+          verification="$(jarsigner -verify "$source_bundle")"
+          if [[ "$verification" != *"jar verified."* ]]; then
+            echo "Android App Bundle signature verification failed." >&2
+            exit 1
+          fi
+
+          mkdir -p dist
+          mv "$source_bundle" "$destination"
+          sha256sum "$destination"
+          echo "path=$destination" >> "$GITHUB_OUTPUT"
+
+      - name: Upload versioned Android App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: synchrofit-android-${{ needs.verify-release-tag.outputs.version_name }}-${{ needs.verify-release-tag.outputs.version_code }}-release
+          path: ${{ steps.artifact.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/upload-keystore.jks"
+          rm -f "$GITHUB_WORKSPACE/android/key.properties"

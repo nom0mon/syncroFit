@@ -7,12 +7,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../providers/auth_provider.dart';
 
-/// Register screen matching Figma "Sign Up 1" design:
-/// Back arrow + logo in top row, centered "Sign Up" title,
-/// subtitle, First Name/Last Name/Password/Confirm Password/Email fields,
-/// "Next" button, copyright footer.
+/// Registration screen matching the Figma design while remaining usable across
+/// the supported Android viewport, cutout, keyboard, and text-scale matrix.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -21,6 +20,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  static const double _maxFormWidth = 480;
+
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -52,6 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final keyboardIsVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     ref.listen<AuthState>(authStateProvider, (previous, next) {
       if (next.errorMessage != null) {
@@ -68,53 +70,46 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Top bar with back button and logo
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => context.go(RouteNames.login),
-                      icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    ),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
+        body: SafeScrollableForm(
+          verticalPadding: AppSpacing.sm,
+          bottomAction: keyboardIsVisible ? null : const _RegisterFooter(),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _maxFormWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        tooltip: 'Back to sign in',
+                        onPressed: () => context.go(RouteNames.login),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black,
+                        ),
                       ),
-                      child: ClipRRect(
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: Image.asset(
                           'assets/images/app_icon.png',
+                          width: 48,
+                          height: 48,
                           fit: BoxFit.cover,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Expanded(
-                child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Form(
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Title
                         Text(
                           'Sign Up',
                           style: Theme.of(context)
@@ -127,8 +122,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.sm),
-
-                        // Subtitle
                         Text(
                           'This will serve as your sign in credentials',
                           style:
@@ -138,13 +131,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.xl),
-
-                        // First Name field
                         TextFormField(
                           controller: _firstNameController,
-                          decoration: const InputDecoration(
-                            hintText: 'First Name',
-                          ),
+                          decoration:
+                              const InputDecoration(hintText: 'First Name'),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
                           textInputAction: TextInputAction.next,
@@ -152,13 +142,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: validateName,
                         ),
                         const SizedBox(height: AppSpacing.md),
-
-                        // Last Name field
                         TextFormField(
                           controller: _lastNameController,
-                          decoration: const InputDecoration(
-                            hintText: 'Last Name',
-                          ),
+                          decoration:
+                              const InputDecoration(hintText: 'Last Name'),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
                           textInputAction: TextInputAction.next,
@@ -166,13 +153,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: validateName,
                         ),
                         const SizedBox(height: AppSpacing.md),
-
-                        // Password field
                         TextFormField(
                           controller: _passwordController,
-                          decoration: const InputDecoration(
-                            hintText: 'Password',
-                          ),
+                          decoration:
+                              const InputDecoration(hintText: 'Password'),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
                           obscureText: true,
@@ -180,8 +164,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: validatePassword,
                         ),
                         const SizedBox(height: AppSpacing.md),
-
-                        // Confirm Password field
                         TextFormField(
                           controller: _confirmPasswordController,
                           decoration: const InputDecoration(
@@ -197,8 +179,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
-
-                        // Email field
                         TextFormField(
                           controller: _emailController,
                           decoration: const InputDecoration(
@@ -212,11 +192,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onFieldSubmitted: (_) => _submit(),
                         ),
                         const SizedBox(height: AppSpacing.xl),
-
-                        // Next button
-                        SizedBox(
-                          height: 52,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 52),
                           child: ElevatedButton(
+                            key: const Key('register-submit'),
                             onPressed: authState.isLoading ? null : _submit,
                             child: authState.isLoading
                                 ? const SizedBox(
@@ -233,25 +212,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ],
                     ),
                   ),
-                ),
+                ],
               ),
-
-              // Copyright footer — hidden when keyboard is open
-              if (MediaQuery.of(context).viewInsets.bottom == 0)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: Text(
-                    'SyncroFit\nCopyright ©2026',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.grey500,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RegisterFooter extends StatelessWidget {
+  const _RegisterFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'SyncroFit\nCopyright ©2026',
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.grey500,
+          ),
+      textAlign: TextAlign.center,
     );
   }
 }

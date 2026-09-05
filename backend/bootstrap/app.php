@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\ForceJsonResponse::class,
+            \App\Http\Middleware\ResetAuthGuards::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 

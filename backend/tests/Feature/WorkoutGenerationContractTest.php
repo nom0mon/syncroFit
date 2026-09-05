@@ -44,7 +44,8 @@ class WorkoutGenerationContractTest extends TestCase
         foreach ($exercises as $exercise) {
             $this->assertArrayHasKey('duration_seconds', $exercise);
             $this->assertIsInt($exercise['duration_seconds']);
-            $this->assertArrayNotHasKey('rest_seconds', $exercise);
+            $this->assertArrayHasKey('rest_seconds', $exercise);
+            $this->assertIsInt($exercise['rest_seconds']);
         }
     }
 }

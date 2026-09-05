@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,14 +7,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/enums.dart';
+import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../providers/timer_controller.dart';
 import '../providers/workout_provider.dart';
 
 /// Displays a rest timer countdown between exercises.
-///
-/// The rest duration is configurable per exercise (10-120 seconds, default 30).
-/// The user can skip the rest to advance immediately.
 ///
 /// Validates: Requirements 7.7, 7.8
 class RestTimerScreen extends ConsumerStatefulWidget {
@@ -28,17 +29,16 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
   @override
   void initState() {
     super.initState();
+    // Riverpod forbids mutating a provider during initState. Start as soon as
+    // the first frame is built; the UI below supplies the prescribed value.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startRestTimer();
+      if (mounted) _startRestTimer();
     });
   }
 
   void _startRestTimer() {
-    final sessionState = ref.read(workoutProvider);
-    final restSeconds = sessionState.currentRestSeconds;
-    final restTimerNotifier = ref.read(restTimerControllerProvider.notifier);
-
-    restTimerNotifier.start(restSeconds);
+    final restSeconds = ref.read(workoutProvider).currentRestSeconds;
+    ref.read(restTimerControllerProvider.notifier).start(restSeconds);
   }
 
   @override
@@ -46,8 +46,10 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     final theme = Theme.of(context);
     final restTimerState = ref.watch(restTimerControllerProvider);
     final sessionState = ref.watch(workoutProvider);
+    final visibleRemainingSeconds = restTimerState.state == TimerState.idle
+        ? sessionState.currentRestSeconds
+        : restTimerState.remainingSeconds;
 
-    // Listen for rest timer completion → advance to next exercise
     ref.listen<TimerControllerState>(restTimerControllerProvider, (prev, next) {
       if (prev?.state != TimerState.completed &&
           next.state == TimerState.completed) {
@@ -60,106 +62,153 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
         title: const Text('Rest'),
         automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+      body: SafeArea(
+        top: false,
+        bottom: false,
         child: Column(
           children: [
-            const Spacer(),
-
-            // Rest label
-            Text(
-              'Rest Time',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Timer circle
-            Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: theme.colorScheme.tertiary,
-                  width: 4,
+            Expanded(
+              child: ResponsiveConstrainedPage(
+                maxWidth: 560,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      key: const Key('rest-timer-scroll'),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: math.max(
+                            0,
+                            constraints.maxHeight - (AppSpacing.md * 2),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                      Text(
+                        'Rest Time',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _RestTimerCircle(
+                        remainingSeconds: visibleRemainingSeconds,
+                      ),
+                      if (sessionState.currentExercise != null) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Up Next',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          _getNextActivity(sessionState),
+                          style: theme.textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                formatDuration(restTimerState.remainingSeconds),
-                style: theme.textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.tertiary,
+            ),
+            SafeBottomActionBar(
+              avoidKeyboard: false,
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('skip-rest-action'),
+                  onPressed: _onSkipRest,
+                  icon: const Icon(Icons.skip_next),
+                  label: const Text('Skip Rest'),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Next exercise info
-            if (sessionState.currentExercise != null) ...[
-              Text(
-                'Up Next',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                _getNextExerciseName(sessionState),
-                style: theme.textTheme.titleLarge,
-              ),
-            ],
-
-            const Spacer(),
-
-            // Skip button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _onSkipRest,
-                icon: const Icon(Icons.skip_next),
-                label: const Text('Skip Rest'),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
           ],
         ),
       ),
     );
   }
 
-  String _getNextExerciseName(WorkoutSessionState sessionState) {
+  String _getNextActivity(WorkoutSessionState sessionState) {
     final workout = sessionState.workout;
     if (workout == null) return '';
+
+    final current = sessionState.currentExercise;
+    if (current != null && !sessionState.isLastSet) {
+      return 'Set ${sessionState.currentSet + 1} of ${current.sets}';
+    }
+
     final nextIndex = sessionState.currentExerciseIndex + 1;
     if (nextIndex >= workout.exercises.length) return '';
 
     final nextExercise = workout.exercises[nextIndex];
-    // Resolve the real exercise name from the loaded library.
     final exercises = ref.read(exerciseProvider).allExercises;
-    for (final e in exercises) {
-      if (int.tryParse(e.id) == nextExercise.exerciseId) return e.name;
+    for (final exercise in exercises) {
+      if (int.tryParse(exercise.id) == nextExercise.exerciseId) {
+        return exercise.name;
+      }
     }
     return 'Exercise ${nextExercise.exerciseId}';
   }
 
   void _onRestComplete() {
-    final notifier = ref.read(workoutProvider.notifier);
-    notifier.advanceToNextExercise();
+    ref.read(workoutProvider.notifier).completeRest();
     context.go('/dashboard/workout/${widget.workoutId}/active');
   }
 
   void _onSkipRest() {
-    final restTimerNotifier = ref.read(restTimerControllerProvider.notifier);
-    final notifier = ref.read(workoutProvider.notifier);
-
-    // Cancel rest timer
-    restTimerNotifier.reset();
-
-    // Advance to next exercise
-    notifier.skipRest();
+    ref.read(restTimerControllerProvider.notifier).reset();
+    ref.read(workoutProvider.notifier).skipRest();
     context.go('/dashboard/workout/${widget.workoutId}/active');
+  }
+}
+
+class _RestTimerCircle extends StatelessWidget {
+  const _RestTimerCircle({required this.remainingSeconds});
+
+  final int remainingSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: theme.colorScheme.tertiary,
+              width: 4,
+            ),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          alignment: Alignment.center,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              formatDuration(remainingSeconds),
+              style: theme.textTheme.displayMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.tertiary,
+              ),
+              maxLines: 1,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

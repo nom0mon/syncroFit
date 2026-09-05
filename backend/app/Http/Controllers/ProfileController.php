@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProfileRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\Exercise;
+use App\Models\Workout;
+use App\Services\WorkoutPrescriptionPolicy;
 use Illuminate\Http\JsonResponse;
 
 class ProfileController extends Controller
@@ -65,6 +68,28 @@ class ProfileController extends Controller
 
         $profile->update($data);
         $profile->refresh();
+
+        if (array_key_exists('fitness_level', $data) || array_key_exists('goal', $data)) {
+            $policy = app(WorkoutPrescriptionPolicy::class);
+            Workout::where('user_id', $profile->user_id)
+                ->where('is_generated', true)
+                ->each(function (Workout $workout) use ($profile, $policy): void {
+                    $ids = collect($workout->exercises)->pluck('exercise_id')->map(fn ($id) => (int) $id)->all();
+                    $models = Exercise::whereIn('id', $ids)->get()->keyBy('id');
+                    $normalized = [];
+                    foreach ($ids as $index => $id) {
+                        if ($models->has($id)) {
+                            $normalized[] = $policy->prescribe($models[$id], $profile->fitness_level, $profile->goal, $index + 1);
+                        }
+                    }
+                    if ($normalized !== []) {
+                        $workout->update([
+                            'exercises' => $normalized,
+                            'estimated_duration_minutes' => $policy->estimatedDurationMinutes($normalized),
+                        ]);
+                    }
+                });
+        }
 
         return $this->successResponse($this->profileWithName($profile));
     }

@@ -86,6 +86,24 @@ class ApiClient {
     );
   }
 
+  /// Makes a multipart POST request (used for private media uploads).
+  Future<Result<T, AppError>> postForm<T>(
+    String path, {
+    required FormData formData,
+    T Function(dynamic json)? fromJson,
+    ProgressCallback? onSendProgress,
+  }) async {
+    return _request(
+      () => _dio.post(
+        path,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+        onSendProgress: onSendProgress,
+      ),
+      fromJson: fromJson,
+    );
+  }
+
   /// Makes a PUT request to [path] with optional [body].
   Future<Result<T, AppError>> put<T>(
     String path, {
@@ -116,6 +134,11 @@ class ApiClient {
       () => _dio.delete(path),
     );
   }
+
+  Future<Result<T, AppError>> deleteData<T>(
+    String path, {
+    T Function(dynamic json)? fromJson,
+  }) => _request<T>(() => _dio.delete(path), fromJson: fromJson);
 
   /// Core request handler that wraps all HTTP calls with:
   /// - Response envelope parsing

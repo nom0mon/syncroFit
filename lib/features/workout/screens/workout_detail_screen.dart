@@ -131,18 +131,30 @@ class _WorkoutDetailContent extends ConsumerWidget {
           ),
         ),
 
-        // Start Workout button
+        // Workout actions
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (workout.isGenerated) ...[
+                OutlinedButton.icon(
+                  onPressed: () => context.push(
+                    '/dashboard/workout/$workoutId/customize',
+                  ),
+                  icon: const Icon(Icons.tune),
+                  label: const Text('Customize Workout'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              FilledButton.icon(
               onPressed: () {
                 context.go('/dashboard/workout/$workoutId/active');
               },
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start Workout'),
             ),
+            ],
           ),
         ),
       ],
@@ -165,8 +177,8 @@ class _ExerciseListItem extends StatelessWidget {
 
     // Determine reps/duration display
     final detailText = exercise.durationSeconds > 0
-        ? '${exercise.sets} sets • ${formatDuration(exercise.durationSeconds)}'
-        : '${exercise.sets} sets • ${exercise.reps} reps';
+        ? '${exercise.sets} sets • ${formatDuration(exercise.durationSeconds)} • ${exercise.restSeconds}s rest'
+        : '${exercise.sets} sets • ${exercise.reps} reps • ${exercise.restSeconds}s rest';
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),

@@ -102,26 +102,38 @@ class CalendarGridWidget extends StatelessWidget {
         final date = DateTime(displayYear, displayMonth, day);
         final status = getDayStatus(date, completedDates);
 
-        return GestureDetector(
-          onTap: () => onDateSelected(date),
-          behavior: HitTestBehavior.opaque,
-          child: Center(
-            child: _buildDayCell(day, status, theme),
+        final isSelected = _isSameDay(date, selectedDate);
+        return Semantics(
+          button: true,
+          selected: isSelected,
+          label: 'Select ${date.year}-${date.month}-${date.day}',
+          child: GestureDetector(
+            onTap: () => onDateSelected(date),
+            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: _buildDayCell(day, status, isSelected, theme),
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildDayCell(int day, DayStatus status, ThemeData theme) {
+  Widget _buildDayCell(
+    int day,
+    DayStatus status,
+    bool isSelected,
+    ThemeData theme,
+  ) {
     const cellSize = 32.0;
     final onSurface = theme.colorScheme.onSurface;
     final surface = theme.colorScheme.surface;
 
+    late final Widget content;
     switch (status) {
       case DayStatus.completed:
         // Filled circle with inverted colors
-        return Container(
+        content = Container(
           width: cellSize,
           height: cellSize,
           decoration: BoxDecoration(
@@ -137,9 +149,10 @@ class CalendarGridWidget extends StatelessWidget {
             ),
           ),
         );
+        break;
       case DayStatus.today:
         // Outlined circle
-        return Container(
+        content = Container(
           width: cellSize,
           height: cellSize,
           decoration: BoxDecoration(
@@ -158,14 +171,37 @@ class CalendarGridWidget extends StatelessWidget {
             ),
           ),
         );
+        break;
       case DayStatus.normal:
         // No decoration
-        return Text(
+        content = Text(
           '$day',
           style: AppTextStyles.bodySmall.copyWith(
             color: onSurface,
           ),
         );
+        break;
     }
+
+    if (!isSelected) return content;
+
+    // Selection is separate from workout status: a completed day remains
+    // filled, while the outer ring confirms which day's sessions are shown.
+    return Container(
+      width: cellSize + 8,
+      height: cellSize + 8,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: onSurface, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: content,
+    );
+  }
+
+  bool _isSameDay(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
   }
 }

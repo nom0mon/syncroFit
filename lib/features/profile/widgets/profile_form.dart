@@ -273,6 +273,7 @@ class _ProfileFormState extends State<ProfileForm> {
           // Gender dropdown
           DropdownButtonFormField<Gender>(
             initialValue: _selectedGender,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Gender'),
             items: Gender.values
                 .map((g) => DropdownMenuItem(value: g, child: Text(g.label)))
@@ -286,6 +287,7 @@ class _ProfileFormState extends State<ProfileForm> {
           // Fitness Goal dropdown
           DropdownButtonFormField<FitnessGoal>(
             initialValue: _selectedFitnessGoal,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Fitness Goal'),
             items: FitnessGoal.values
                 .map((g) => DropdownMenuItem(value: g, child: Text(g.label)))
@@ -299,6 +301,7 @@ class _ProfileFormState extends State<ProfileForm> {
           // Fitness Level dropdown
           DropdownButtonFormField<FitnessLevel>(
             initialValue: _selectedFitnessLevel,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Fitness Level'),
             items: FitnessLevel.values
                 .map((l) => DropdownMenuItem(value: l, child: Text(l.label)))
@@ -312,6 +315,7 @@ class _ProfileFormState extends State<ProfileForm> {
           // Workout Preference dropdown
           DropdownButtonFormField<WorkoutPreference>(
             initialValue: _selectedWorkoutPreference,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Workout Preference'),
             items: WorkoutPreference.values
                 .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))

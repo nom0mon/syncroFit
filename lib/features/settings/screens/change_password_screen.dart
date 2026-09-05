@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/validators.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../providers/settings_provider.dart';
 
 /// Screen for changing the user's password.
@@ -68,11 +70,16 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     final state = ref.watch(changePasswordProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Change Password'),
+        title: const Text(
+          'Change Password',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: SafeScrollableForm(
+        includeKeyboardInset: true,
         child: Form(
           key: _formKey,
           child: Column(
@@ -81,13 +88,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               TextFormField(
                 controller: _currentPasswordController,
                 obscureText: _obscureCurrent,
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Current Password',
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureCurrent
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscureCurrent ? Icons.visibility_off : Icons.visibility,
                     ),
                     onPressed: () =>
                         setState(() => _obscureCurrent = !_obscureCurrent),
@@ -99,14 +105,14 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               TextFormField(
                 controller: _newPasswordController,
                 obscureText: _obscureNew,
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'New Password',
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureNew ? Icons.visibility_off : Icons.visibility,
                     ),
-                    onPressed: () =>
-                        setState(() => _obscureNew = !_obscureNew),
+                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
                 ),
                 validator: validatePassword,
@@ -115,13 +121,15 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) {
+                  if (!state.isLoading) _handleSubmit();
+                },
                 decoration: InputDecoration(
                   labelText: 'Confirm New Password',
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirm
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
                     ),
                     onPressed: () =>
                         setState(() => _obscureConfirm = !_obscureConfirm),
@@ -133,7 +141,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ),
               ),
               if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   state.errorMessage!,
                   style: TextStyle(
@@ -141,18 +149,24 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: state.isLoading ? null : _handleSubmit,
-                child: state.isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Change Password'),
-              ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeBottomActionBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            key: const Key('change-password-submit'),
+            onPressed: state.isLoading ? null : _handleSubmit,
+            child: state.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Change Password'),
           ),
         ),
       ),

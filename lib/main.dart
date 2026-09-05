@@ -1,9 +1,6 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'app.dart';
 import 'data/local/database_provider.dart';
@@ -16,14 +13,11 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  // Initialize the local database with graceful degradation.
-  // If SQLite is not available (web without WASM), the app runs without
-  // offline caching and uses remote repositories directly.
+  // Initialize the Android local database with graceful degradation.
+  // If SQLite initialization fails, the app runs without offline caching
+  // and uses remote repositories directly.
   LocalDatabaseImpl? database;
   try {
-    if (kIsWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
-    }
     database = LocalDatabaseImpl();
     await database.initialize();
   } catch (e, stack) {

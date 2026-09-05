@@ -11,3 +11,11 @@ abstract class WorkoutRepository {
   /// Retrieves today's scheduled workout.
   Future<Result<Workout?, AppError>> getTodaysWorkout();
 }
+
+/// Additional capability for changing generated workout exercise membership.
+abstract class WorkoutCustomizationRepository {
+  Future<Result<Workout, AppError>> customizeExercises(
+    String workoutId,
+    List<int> exerciseIds,
+  );
+}

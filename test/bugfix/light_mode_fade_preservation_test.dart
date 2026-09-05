@@ -234,9 +234,9 @@ void main() {
               builder: (context, state) => const SettingsMainScreen(),
             ),
             GoRoute(
-              path: '/settings/edit-profile',
+              path: '/settings/profile',
               builder: (context, state) => const Scaffold(
-                body: Text('Edit Profile Page'),
+                body: Text('Profile Page'),
               ),
             ),
             GoRoute(
@@ -267,19 +267,19 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Tap on "Edit Profile" which uses context.push (already correct)
-        await tester.tap(find.text('Edit Profile'));
+        // Tap on "My Profile" which uses context.push (already correct)
+        await tester.tap(find.text('My Profile'));
         await tester.pumpAndSettle();
 
-        // Verify we navigated to edit profile
-        expect(find.text('Edit Profile Page'), findsOneWidget);
+        // Verify we navigated to the profile page
+        expect(find.text('Profile Page'), findsOneWidget);
 
         // Verify we can pop back (push preserves the stack)
         expect(
           router.canPop(),
           isTrue,
           reason:
-              'After navigating to /settings/edit-profile via context.push, '
+              'After navigating to /settings/profile via context.push, '
               'the router should be able to pop back to /settings',
         );
 
@@ -287,7 +287,7 @@ void main() {
         router.pop();
         await tester.pumpAndSettle();
 
-        expect(find.text('Edit Profile'), findsOneWidget);
+        expect(find.text('My Profile'), findsOneWidget);
       },
     );
   });

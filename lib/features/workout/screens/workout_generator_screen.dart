@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/theme.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/workout_generator_provider.dart';
@@ -12,9 +15,6 @@ import '../providers/workout_generator_provider.dart';
 /// Generation is explicit: it only happens when the user presses the
 /// persistent "Generate Workout" button (or "Regenerate Workout" once a plan
 /// exists). Nothing is generated on navigation or load.
-///
-/// The layout is fully responsive — it uses [Column] + [Expanded] +
-/// scrollable lists and wraps content so long exercise names never overflow.
 class WorkoutGeneratorScreen extends ConsumerWidget {
   const WorkoutGeneratorScreen({super.key});
 
@@ -24,48 +24,57 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
     final notifier = ref.read(workoutGeneratorProvider.notifier);
     final exerciseState = ref.watch(exerciseProvider);
 
-    // Build a lookup of exercise id (int) → name for resolving workout
-    // exercises. Exercise.id is a String, so parse to int where possible.
     final exerciseNames = <int, String>{};
     for (final exercise in exerciseState.allExercises) {
       final id = int.tryParse(exercise.id);
-      if (id != null) {
-        exerciseNames[id] = exercise.name;
-      }
+      if (id != null) exerciseNames[id] = exercise.name;
     }
 
     final isGenerating = state.status == WorkoutGeneratorStatus.generating;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workout Generator'),
-      ),
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(title: const Text('Workout Generator')),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            // ── Top: preferences summary + include/exclude entry points ──
-            _PreferencesSection(
-              state: state,
-              exercises: exerciseState.allExercises,
-              notifier: notifier,
-            ),
-            const Divider(height: 1),
-
-            // ── Content area, switches on status ──
             Expanded(
-              child: _ContentArea(
-                state: state,
-                exerciseNames: exerciseNames,
+              child: ResponsiveConstrainedPage(
+                child: SingleChildScrollView(
+                  key: const Key('workout-generator-scroll'),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _PreferencesSection(
+                        state: state,
+                        exercises: exerciseState.allExercises,
+                        notifier: notifier,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const Divider(height: 1),
+                      const SizedBox(height: AppSpacing.md),
+                      _ContentArea(
+                        state: state,
+                        exerciseNames: exerciseNames,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-
-            // ── Persistent bottom generate/regenerate button ──
-            _GenerateButtonBar(
-              isGenerating: isGenerating,
-              isGenerated: state.status == WorkoutGeneratorStatus.generated,
-              onPressed: isGenerating
-                  ? null
-                  : () => _onGeneratePressed(context, ref, notifier),
+            SafeBottomActionBar(
+              avoidKeyboard: false,
+              child: _GenerateButton(
+                isGenerating: isGenerating,
+                isGenerated: state.status == WorkoutGeneratorStatus.generated,
+                onPressed: isGenerating
+                    ? null
+                    : () => _onGeneratePressed(context, ref, notifier),
+              ),
             ),
           ],
         ),
@@ -73,8 +82,6 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
     );
   }
 
-  /// Handles the generate action. Requires a profile — if none exists, routes
-  /// to profile setup and shows a snackbar instead of generating.
   void _onGeneratePressed(
     BuildContext context,
     WidgetRef ref,
@@ -94,8 +101,6 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
   }
 }
 
-/// Scrollable top section showing the preferences summary and the
-/// include/exclude entry-point buttons.
 class _PreferencesSection extends StatelessWidget {
   const _PreferencesSection({
     required this.state,
@@ -113,150 +118,149 @@ class _PreferencesSection extends StatelessWidget {
     final includedCount = state.includedExerciseIds.length;
     final excludedCount = state.excludedExerciseIds.length;
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Preferences',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Optionally choose exercises to prefer or exclude before generating.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
-          // Wrap keeps the two buttons responsive on narrow screens.
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _openSelectionSheet(
-                  context,
-                  isInclude: true,
-                ),
-                icon: const Icon(Icons.thumb_up_alt_outlined),
-                label: Text('Preferred ($includedCount)'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Preferences',
+          style: theme.textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Optionally choose exercises to prefer or exclude before generating.',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AdaptiveGridList(
+          minItemWidth: 220,
+          maxColumns: 2,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => _openSelectionSheet(
+                context,
+                isInclude: true,
               ),
-              OutlinedButton.icon(
-                onPressed: () => _openSelectionSheet(
-                  context,
-                  isInclude: false,
-                ),
-                icon: const Icon(Icons.block),
-                label: Text('Excluded ($excludedCount)'),
+              icon: const Icon(Icons.thumb_up_alt_outlined),
+              label: Text('Preferred ($includedCount)'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => _openSelectionSheet(
+                context,
+                isInclude: false,
               ),
-            ],
-          ),
-        ],
-      ),
+              icon: const Icon(Icons.block),
+              label: Text('Excluded ($excludedCount)'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   void _openSelectionSheet(BuildContext context, {required bool isInclude}) {
-    showModalBottomSheet<void>(
+    showSafeModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
+      title: Text(
+        isInclude ? 'Preferred Exercises' : 'Excluded Exercises',
+      ),
+      bottomAction: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Done'),
+        ),
+      ),
       builder: (_) => _ExerciseSelectionSheet(
         isInclude: isInclude,
         exercises: exercises,
         notifier: notifier,
+        initiallySelectedIds:
+            isInclude ? state.includedExerciseIds : state.excludedExerciseIds,
       ),
     );
   }
 }
 
-/// Bottom sheet listing exercises with a toggle for include or exclude.
+/// A keyboard-safe, height-constrained exercise selection sheet.
 ///
-/// Reads the live generator state so toggles reflect immediately.
-class _ExerciseSelectionSheet extends ConsumerWidget {
+/// [SafeScrollableBottomSheet] owns scrolling, so long exercise lists remain
+/// reachable while its Done action stays visible above system and keyboard
+/// insets. Selection state is local because modal routes may be mounted above
+/// the provider scope that opened them.
+class _ExerciseSelectionSheet extends StatefulWidget {
   const _ExerciseSelectionSheet({
     required this.isInclude,
     required this.exercises,
     required this.notifier,
+    required this.initiallySelectedIds,
   });
 
   final bool isInclude;
   final List<Exercise> exercises;
   final WorkoutGeneratorNotifier notifier;
+  final Set<int> initiallySelectedIds;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final state = ref.watch(workoutGeneratorProvider);
-    final selectedIds =
-        isInclude ? state.includedExerciseIds : state.excludedExerciseIds;
+  State<_ExerciseSelectionSheet> createState() =>
+      _ExerciseSelectionSheetState();
+}
 
-    return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
+class _ExerciseSelectionSheetState extends State<_ExerciseSelectionSheet> {
+  late final Set<int> _selectedIds = Set<int>.of(widget.initiallySelectedIds);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (widget.exercises.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+        child: Text(
+          'No exercises available.',
+          style: theme.textTheme.bodyMedium,
+          textAlign: TextAlign.center,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text(
-                isInclude ? 'Preferred Exercises' : 'Excluded Exercises',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-            if (exercises.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No exercises available.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: exercises.length,
-                  itemBuilder: (context, index) {
-                    final exercise = exercises[index];
-                    final id = int.tryParse(exercise.id);
-                    final selected =
-                        id != null && selectedIds.contains(id);
-                    return CheckboxListTile(
-                      value: selected,
-                      title: Text(exercise.name),
-                      subtitle: Text(
-                        exercise.muscleGroup,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onChanged: id == null
-                          ? null
-                          : (_) {
-                              if (isInclude) {
-                                notifier.toggleIncluded(id);
-                              } else {
-                                notifier.toggleExcluded(id);
-                              }
-                            },
-                    );
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final exercise in widget.exercises)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: int.tryParse(exercise.id) != null &&
+                _selectedIds.contains(int.parse(exercise.id)),
+            title: Text(exercise.name),
+            subtitle: Text(exercise.muscleGroup),
+            controlAffinity: ListTileControlAffinity.trailing,
+            onChanged: int.tryParse(exercise.id) == null
+                ? null
+                : (_) {
+                    final id = int.parse(exercise.id);
+                    setState(() {
+                      if (_selectedIds.contains(id)) {
+                        _selectedIds.remove(id);
+                      } else {
+                        _selectedIds.add(id);
+                      }
+                    });
+                    if (widget.isInclude) {
+                      widget.notifier.toggleIncluded(id);
+                    } else {
+                      widget.notifier.toggleExcluded(id);
+                    }
                   },
-                ),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 }
 
-/// Switches the main content area based on the generator status.
 class _ContentArea extends StatelessWidget {
   const _ContentArea({
     required this.state,
@@ -276,12 +280,13 @@ class _ContentArea extends StatelessWidget {
               'Select your preferences and press Generate Workout to create your exercise set.',
         );
       case WorkoutGeneratorStatus.generating:
-        return const Center(
+        return const Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(),
-              SizedBox(height: 16),
+              SizedBox(height: AppSpacing.md),
               Text('Generating...'),
             ],
           ),
@@ -290,7 +295,8 @@ class _ContentArea extends StatelessWidget {
         if (state.generatedWorkouts.isEmpty) {
           return const _CenteredHint(
             icon: Icons.info_outline,
-            message: 'No workouts were generated. Try adjusting your preferences.',
+            message:
+                'No workouts were generated. Try adjusting your preferences.',
           );
         }
         return _GeneratedWorkoutList(
@@ -300,14 +306,14 @@ class _ContentArea extends StatelessWidget {
       case WorkoutGeneratorStatus.error:
         return _CenteredHint(
           icon: Icons.error_outline,
-          message: state.errorMessage ?? 'Something went wrong. Please try again.',
+          message:
+              state.errorMessage ?? 'Something went wrong. Please try again.',
           isError: true,
         );
     }
   }
 }
 
-/// Centered informational / hint / error message.
 class _CenteredHint extends StatelessWidget {
   const _CenteredHint({
     required this.icon,
@@ -322,31 +328,29 @@ class _CenteredHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = isError
-        ? theme.colorScheme.error
-        : theme.colorScheme.onSurfaceVariant;
+    final color =
+        isError ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: color),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: color),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 56, color: color),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(color: color),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Scrollable list of generated workouts, one section per workout/day.
+/// Vertically flowing generated content. The page-level scroll view is the
+/// single scroll owner, which keeps the persistent completion action visible.
 class _GeneratedWorkoutList extends StatelessWidget {
   const _GeneratedWorkoutList({
     required this.workouts,
@@ -358,20 +362,19 @@ class _GeneratedWorkoutList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: workouts.length,
-      itemBuilder: (context, index) {
-        return _WorkoutSection(
-          workout: workouts[index],
-          exerciseNames: exerciseNames,
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final workout in workouts)
+          _WorkoutSection(
+            workout: workout,
+            exerciseNames: exerciseNames,
+          ),
+      ],
     );
   }
 }
 
-/// A single generated workout: day label + name + duration + exercise cards.
 class _WorkoutSection extends StatelessWidget {
   const _WorkoutSection({
     required this.workout,
@@ -387,7 +390,7 @@ class _WorkoutSection extends StatelessWidget {
     final dayLabel = _dayLabel(workout.dayOfWeek);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -399,34 +402,30 @@ class _WorkoutSection extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             workout.name,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '${workout.estimatedDurationMinutes} min • ${workout.exercises.length} exercises',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 8),
-          // Single-column, vertically flowing cards — no horizontal overflow.
-          ...workout.exercises.map(
-            (we) => _ExerciseCard(
-              workoutExercise: we,
-              name: exerciseNames[we.exerciseId] ??
-                  'Exercise #${we.exerciseId}',
+          const SizedBox(height: AppSpacing.sm),
+          for (final workoutExercise in workout.exercises)
+            _ExerciseCard(
+              workoutExercise: workoutExercise,
+              name: exerciseNames[workoutExercise.exerciseId] ??
+                  'Exercise #${workoutExercise.exerciseId}',
             ),
-          ),
         ],
       ),
     );
   }
 
-  /// Converts a workout's dayOfWeek string ("1".."7" or a name) into a
-  /// readable label. Returns null when it cannot be parsed.
   String? _dayLabel(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
 
@@ -453,7 +452,6 @@ class _WorkoutSection extends StatelessWidget {
   }
 }
 
-/// Responsive card for a single exercise within a generated workout.
 class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.workoutExercise,
@@ -467,55 +465,38 @@ class _ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: theme.textTheme.bodyLarge,
-                    // Allow long names to wrap instead of overflowing.
-                    softWrap: true,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _detailText(),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+    return ResponsiveCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(name, style: theme.textTheme.bodyLarge),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _detailText(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   String _detailText() {
-    // Prefer sets x reps; fall back to a duration-based description.
     if (workoutExercise.reps > 0) {
       return '${workoutExercise.sets} x ${workoutExercise.reps} reps';
     }
     if (workoutExercise.durationSeconds > 0) {
-      final secs = workoutExercise.durationSeconds;
-      return '${workoutExercise.sets} x ${secs}s';
+      return '${workoutExercise.sets} x ${workoutExercise.durationSeconds}s';
     }
     return '${workoutExercise.sets} sets';
   }
 }
 
-/// Persistent full-width bottom action bar.
-class _GenerateButtonBar extends StatelessWidget {
-  const _GenerateButtonBar({
+class _GenerateButton extends StatelessWidget {
+  const _GenerateButton({
     required this.isGenerating,
     required this.isGenerated,
     required this.onPressed,
@@ -529,14 +510,12 @@ class _GenerateButtonBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = isGenerated ? 'Regenerate Workout' : 'Generate Workout';
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: onPressed,
-          child: Text(label),
-        ),
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        key: const Key('generate-workout-action'),
+        onPressed: onPressed,
+        child: Text(isGenerating ? 'Generating…' : label),
       ),
     );
   }

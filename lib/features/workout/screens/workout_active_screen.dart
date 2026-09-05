@@ -5,18 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/exercise.dart';
+import '../../../shared/widgets/exercise_media.dart';
+import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../providers/workout_provider.dart';
 
 /// Displays the currently active exercise as a per-set flow.
-///
-/// Each set is shown one at a time (e.g. "Set 1 · 6 reps") with a single
-/// "Finish Set" button. There is no start button and no exercise countdown
-/// timer — the user simply performs the set and taps finish. After the last
-/// set of an exercise, the rest timer applies before the next exercise.
-///
-/// The screen also surfaces the exercise procedure (instructions) and a
-/// video guide area (placeholder until real videos are added).
 class WorkoutActiveScreen extends ConsumerStatefulWidget {
   const WorkoutActiveScreen({super.key, required this.workoutId});
 
@@ -29,6 +24,7 @@ class WorkoutActiveScreen extends ConsumerStatefulWidget {
 
 class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   bool _initialized = false;
+  String? _loadError;
 
   @override
   void initState() {
@@ -40,14 +36,21 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
 
   Future<void> _initializeWorkout() async {
     final notifier = ref.read(workoutProvider.notifier);
-    final sessionState = ref.read(workoutProvider);
-
-    // Provide exercise-name resolution so real names show instead of ids.
     _seedExerciseNames(notifier);
 
+    final sessionState = ref.read(workoutProvider);
     if (sessionState.workout == null ||
         sessionState.workout!.id != widget.workoutId) {
-      await notifier.loadWorkout(widget.workoutId);
+      final loaded = await notifier.loadWorkout(widget.workoutId);
+      if (!loaded) {
+        if (mounted) {
+          setState(() {
+            _loadError = 'Unable to load this workout. Please try again.';
+            _initialized = true;
+          });
+        }
+        return;
+      }
       notifier.startWorkout();
     } else if (!sessionState.isInProgress && !sessionState.isCompleted) {
       notifier.startWorkout();
@@ -56,26 +59,22 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     if (mounted) setState(() => _initialized = true);
   }
 
-  /// Builds a map of exercise id → name from the loaded exercise library and
-  /// hands it to the workout notifier for name resolution.
   void _seedExerciseNames(WorkoutNotifier notifier) {
     final exercises = ref.read(exerciseProvider).allExercises;
     final map = <int, String>{};
-    for (final e in exercises) {
-      final id = int.tryParse(e.id);
-      if (id != null) map[id] = e.name;
+    for (final exercise in exercises) {
+      final id = int.tryParse(exercise.id);
+      if (id != null) map[id] = exercise.name;
     }
     notifier.setExerciseNames(map);
   }
 
-  /// Looks up the full [Exercise] record for the current workout exercise.
   Exercise? _currentExerciseDetails() {
-    final sessionState = ref.read(workoutProvider);
-    final current = sessionState.currentExercise;
+    final current = ref.read(workoutProvider).currentExercise;
     if (current == null) return null;
     final exercises = ref.read(exerciseProvider).allExercises;
-    for (final e in exercises) {
-      if (int.tryParse(e.id) == current.exerciseId) return e;
+    for (final exercise in exercises) {
+      if (int.tryParse(exercise.id) == current.exerciseId) return exercise;
     }
     return null;
   }
@@ -84,10 +83,17 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   Widget build(BuildContext context) {
     final sessionState = ref.watch(workoutProvider);
 
-    if (!_initialized || sessionState.workout == null) {
+    if (!_initialized) {
       return Scaffold(
         appBar: AppBar(title: const Text('Workout')),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_loadError != null || sessionState.workout == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Workout')),
+        body: Center(child: Text(_loadError ?? 'Workout not found.')),
       );
     }
 
@@ -114,92 +120,124 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     final notifier = ref.read(workoutProvider.notifier);
     final details = _currentExerciseDetails();
     final exerciseName = details?.name ?? notifier.nameFor(currentExercise);
-
     final isDuration = currentExercise.durationSeconds > 0;
     final perSetLabel = isDuration
         ? formatDuration(currentExercise.durationSeconds)
         : '${currentExercise.reps} reps';
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(
           'Exercise ${sessionState.currentExerciseIndex + 1} of ${sessionState.totalExercises}',
         ),
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Video guide area (placeholder until real videos exist).
-                    _VideoGuide(videoPath: details?.videoPath),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Exercise name.
-                    Text(
-                      exerciseName,
-                      style: theme.textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-
-                    // Overall sets summary.
-                    Text(
-                      isDuration
-                          ? '${currentExercise.sets} sets · ${formatDuration(currentExercise.durationSeconds)}'
-                          : '${currentExercise.sets} sets · ${currentExercise.reps} reps',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: ResponsiveConstrainedPage(
+                maxWidth: 720,
+                child: SingleChildScrollView(
+                  key: const Key('active-workout-scroll'),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                ResponsiveCard(
+                  margin: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sessionState.workout!.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Current set card.
-                    _CurrentSetCard(
-                      setNumber: sessionState.currentSet,
-                      totalSets: currentExercise.sets,
-                      perSetLabel: perSetLabel,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Procedure / instructions.
-                    if (details != null && details.instructions.isNotEmpty)
-                      _ProcedureSection(instructions: details.instructions),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // Finish set button + skip. There is no "Start" — the
-                    // user performs the set then taps finish.
-                    FilledButton.icon(
-                      onPressed: () => _onFinishSet(sessionState.isLastSet),
-                      icon: const Icon(Icons.check),
-                      label: Text(
-                        'Finish Set ${sessionState.currentSet} of ${currentExercise.sets}',
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        exerciseName,
+                        key: const Key('active-exercise-name'),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextButton.icon(
-                      onPressed: _onSkipExercise,
-                      icon: const Icon(Icons.skip_next),
-                      label: const Text('Skip Exercise'),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ExerciseMedia(
+                  videoPath: details?.videoPath,
+                  // The library can still be loading when a session starts.
+                  // Use the resolved workout name so the media and screen
+                  // never render as an unnamed exercise.
+                  exerciseName: exerciseName,
+                  borderRadius: AppSpacing.md,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  isDuration
+                      ? '${currentExercise.sets} sets · ${formatDuration(currentExercise.durationSeconds)}'
+                      : '${currentExercise.sets} sets · ${currentExercise.reps} reps',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _CurrentSetCard(
+                  setNumber: sessionState.currentSet,
+                  totalSets: currentExercise.sets,
+                  perSetLabel: perSetLabel,
+                ),
+                if (details != null && details.instructions.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _ProcedureSection(instructions: details.instructions),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
                 ),
               ),
-            );
-          },
+            ),
+            SafeBottomActionBar(
+              avoidKeyboard: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton.icon(
+                    key: const Key('finish-set-action'),
+                    onPressed: () => _onFinishSet(sessionState.isLastSet),
+                    icon: const Icon(Icons.check),
+                    label: Text(
+                      'Finish Set ${sessionState.currentSet} of ${currentExercise.sets}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  TextButton.icon(
+                    key: const Key('skip-exercise-action'),
+                    onPressed: _onSkipExercise,
+                    icon: const Icon(Icons.skip_next),
+                    label: const Text('Skip Exercise'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _onFinishSet(bool wasLastSet) {
+  void _onFinishSet(bool _) {
     final notifier = ref.read(workoutProvider.notifier);
     notifier.finishCurrentSet();
 
@@ -207,10 +245,8 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     if (updated.isCompleted) {
       context.go('/dashboard/workout/${widget.workoutId}/summary');
     } else if (updated.isResting) {
-      // Finished the last set of this exercise → rest before the next one.
       context.go('/dashboard/workout/${widget.workoutId}/rest');
     }
-    // Otherwise we simply advanced to the next set — stay on this screen.
   }
 
   void _onSkipExercise() {
@@ -221,11 +257,9 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     if (updated.isCompleted) {
       context.go('/dashboard/workout/${widget.workoutId}/summary');
     }
-    // Otherwise the notifier advanced to the next exercise (set reset to 1).
   }
 }
 
-/// Card showing the current set and its rep/duration target.
 class _CurrentSetCard extends StatelessWidget {
   const _CurrentSetCard({
     required this.setNumber,
@@ -241,78 +275,36 @@ class _CurrentSetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.lg,
-          horizontal: AppSpacing.md,
-        ),
-        child: Column(
-          children: [
-            Text(
-              'Set $setNumber of $totalSets',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w600,
-              ),
+    return ResponsiveCard(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.md,
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Set $setNumber of $totalSets',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              perSetLabel,
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            perSetLabel,
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Video guide area. Shows a play placeholder until real videos are available.
-class _VideoGuide extends StatelessWidget {
-  const _VideoGuide({this.videoPath});
-
-  final String? videoPath;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.play_circle_outline,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Video guide coming soon',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Numbered procedure/instructions for the current exercise.
 class _ProcedureSection extends StatelessWidget {
   const _ProcedureSection({required this.instructions});
 
@@ -332,23 +324,25 @@ class _ProcedureSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        ...instructions.asMap().entries.map((entry) {
-          final step = entry.key + 1;
-          return Padding(
+        for (final entry in instructions.asMap().entries)
+          Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 24,
-                  height: 24,
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '$step',
+                    '${entry.key + 1}',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -358,7 +352,7 @@ class _ProcedureSection extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
                     child: Text(
                       entry.value,
                       style: theme.textTheme.bodyMedium,
@@ -367,8 +361,7 @@ class _ProcedureSection extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        }),
+          ),
       ],
     );
   }

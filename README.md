@@ -1,135 +1,135 @@
 # SyncroFit
 
-SyncroFit is a fitness application with a **Flutter** mobile/web client and a **Laravel** REST API backend. It generates personalized, schedule-aware workout plans, tracks completed sessions, and works offline-first with local caching and background sync.
+SyncroFit is an **Android-only** fitness application built with Flutter and a Laravel REST API backend. Android is the only supported client runtime and release target. The supported product covers Android 7.0 (API 24) through Android 15 (API 35) on phones, tablets, and single-window foldable layouts from 320–1,280 dp.
 
 ## Features
 
-- **Authentication** — register, login, logout, and forgot-password flows (Laravel Sanctum token auth).
-- **User Profile** — set up and edit your profile (age, height, weight, gender, fitness goal, level, workout preference, and available training days). Read-only profile view with an edit action.
-- **Exercise Library** — browse exercises with search and filtering by muscle group and difficulty, plus an exercise detail screen with a procedure guide and video placeholder.
-- **Workout Recommendation Engine** — a rule-based, movement-pattern-driven generator that builds a weekly plan from your selected available days:
-  - Determines the split by day count (1 day → Full Body; 2–3 → Full Body A/B/C; 4 → Upper/Lower; 5 → Upper/Lower/Full Body; 6+ → Push/Pull/Legs, reserving a recovery day on 7).
-  - Fills movement-pattern slots (knee/hip dominant, horizontal/vertical push/pull, core, accessory) and scores candidates by goal, equipment, difficulty, variety, and include/exclude preferences.
-  - Validates weekly muscle coverage and maps each workout to your exact selected day.
-  - Generation is **explicit** — workouts are only created when you press **Generate Workout**.
-- **Active Workout (per-set flow)** — performs one set at a time ("Set 1 · 8 reps") with a Finish Set button; a rest timer applies after the last set of each exercise. Shows the exercise procedure and a video guide area.
-- **Progress Tracking** — total workouts, total duration, weekly statistics, a "This Week" planned-vs-completed indicator, and recent workout history.
-- **Dashboard** — today's workout, weekly training load chart, and a weekly schedule overview.
-- **Offline-first** — local SQLite caching, a sync queue for offline mutations, and automatic sync when connectivity resumes.
-- **Settings** — dark mode toggle, notification settings, change password, and sign out.
+- **Authentication** — register, login, logout, and forgot-password flows using Laravel Sanctum token authentication.
+- **User profile** — create, view, and edit fitness profile and workout-availability data.
+- **Exercise library** — browse and filter exercises and view exercise instructions.
+- **Workout recommendation engine** — generate schedule-aware workout plans from profile, goals, equipment, and exercise preferences.
+- **Active workouts** — complete per-set workout flows with rest timing and session summaries.
+- **Progress tracking** — review workout totals, weekly statistics, planned-versus-completed activity, and recent history.
+- **Offline-first data** — cache data in SQLite and synchronize queued mutations when connectivity returns.
+- **Settings** — manage appearance, local notification preferences, account security, and sign-out.
 
-## Tech Stack
+Some routed or placeholder features identified by the Android completion audit are still being implemented or retired before release. Do not treat mock-only, unreachable, or placeholder behavior as production-ready; see `PRD.md` section 5 and `.kiro/specs/android-completion/audit.md`.
 
-### Frontend (Flutter)
-- **State management:** flutter_riverpod
-- **Routing:** go_router
-- **Networking:** dio
-- **Local storage:** sqflite / sqflite_common_ffi_web, flutter_secure_storage, shared_preferences
-- **Charts:** fl_chart
-- **Connectivity:** connectivity_plus
-- **Testing:** flutter_test, mocktail, glados (property-based testing)
+## Technology
 
-### Backend (Laravel)
-- **Framework:** Laravel (PHP)
-- **Auth:** Laravel Sanctum
-- **Database:** MySQL / SQLite
-- **Testing:** PHPUnit with Eris (property-based testing)
+### Android client
 
-## Project Structure
+- Flutter 3.44.0 / Dart 3.12.0 baseline
+- Riverpod state management and `go_router` routing
+- Dio networking
+- SQLite (`sqflite`) caching and sync queue
+- Android secure storage and shared preferences
+- Flutter unit, widget, and Glados property tests
 
-```
+### Backend
+
+- Laravel 12 and Sanctum
+- MySQL 8 runtime database
+- In-memory SQLite test database
+- PHPUnit and Eris property tests
+
+## Project structure
+
+```text
 syncroFit/
-├── lib/                          # Flutter app
-│   ├── core/                     # Router, network, theme, models, utils
-│   ├── data/                     # Repositories, remote/caching, local DB, sync
-│   ├── features/                 # Feature modules
-│   │   ├── auth/
-│   │   ├── profile/
-│   │   ├── exercise_library/
-│   │   ├── workout/              # Generator, active session, rest timer
-│   │   ├── dashboard/
-│   │   ├── progress/
-│   │   ├── settings/
-│   │   ├── community/
-│   │   ├── consultation/
-│   │   └── ...
-│   └── shared/                   # Shared models and widgets
-├── test/                         # Unit, widget, integration, property tests
-├── backend/                      # Laravel API
-│   ├── app/Http/Controllers/     # Auth, Profile, Exercise, Workout, WorkoutHistory
-│   ├── app/Models/               # User, Profile, Exercise, Workout, WorkoutHistory
-│   ├── app/Services/             # RecommendationEngine
-│   ├── database/migrations/
-│   └── database/seeders/         # ExerciseSeeder
+├── android/                      # The only supported Flutter platform target
+├── lib/                          # Flutter application
+│   ├── core/                     # Routing, networking, theme, models, utilities
+│   ├── data/                     # Remote/local repositories, cache, and sync
+│   ├── features/                 # Product feature modules
+│   └── shared/                   # Shared widgets and models
+├── test/                         # Flutter unit, widget, and property tests
+├── backend/                      # Laravel API, migrations, seeders, and tests
+├── docs/
+│   ├── android-development.md    # Contributor onboarding and local device setup
+│   ├── android-qa-release.md     # Android QA matrix and release procedure
+│   └── android-responsive-layout.md
 └── assets/
 ```
 
-## Database Schema
+## Developer onboarding
 
-The backend uses a simplified 5-table core schema:
+### Required tools
 
-- **users** — accounts (first_name, last_name, email, password).
-- **profiles** — user fitness profile and availability days.
-- **exercises** — exercise library with movement pattern, primary/secondary muscles, exercise type, equipment, difficulty, goals, and a video path.
-- **workouts** — user-created and generated workouts; exercises are embedded as a JSON array with an `is_generated` flag.
-- **workout_history** — completed session records used to derive progress statistics.
+- Flutter 3.44.0 stable with Dart 3.12.0 (the captured clean-checkout baseline)
+- Android Studio and Android SDK command-line tools
+- Android SDK Platform 35 or newer, with an API 24 and an API 35 emulator image available for minimum/latest coverage
+- JDK 17
+- PHP 8.4.1 or newer for the current `composer.lock`, Composer 2.x, and MySQL 8.0+
 
-## API Endpoints
+Validate the Android toolchain before restoring dependencies:
 
-All protected routes require a Sanctum bearer token (`auth:sanctum`).
+```powershell
+flutter --version
+flutter doctor -v
+flutter doctor --android-licenses
+```
 
-**Auth (public):**
-- `POST /api/register`
-- `POST /api/login`
-- `POST /api/forgot-password`
+`flutter doctor -v` must report a healthy Android toolchain. Other Flutter host toolchains are outside this repository's support scope.
 
-**Protected:**
-- `POST /api/logout`
-- `GET|POST|PUT /api/profile`
-- `GET /api/exercises`, `GET /api/exercises/{exercise}`
-- `GET /api/workouts`, `POST /api/workouts`
-- `POST /api/workouts/generate` — generate a weekly plan (accepts optional `included_exercises` / `excluded_exercises`)
-- `GET /api/workouts/generated`
-- `POST /api/workout-history`, `GET /api/workout-history`, `GET /api/workout-history/stats`
+### Restore and run
 
-## Getting Started
-
-### Prerequisites
-- Flutter SDK (>= 3.0.0)
-- PHP (>= 8.1) and Composer
-- MySQL (or SQLite)
-
-### Backend Setup
-
-```bash
-cd backend
-composer install
-cp .env.example .env        # configure DB_DATABASE, DB_USERNAME, DB_PASSWORD
+```powershell
+flutter pub get --enforce-lockfile
+Set-Location backend
+composer install --no-interaction --prefer-dist --no-progress
+Copy-Item .env.example .env
 php artisan key:generate
-php artisan migrate --seed  # creates the schema and seeds the exercise library
-php artisan serve           # serves the API at http://localhost:8000
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-### Frontend Setup
+In a second terminal, connect an Android emulator or a USB-debuggable physical Android device, then run:
 
-```bash
-flutter pub get
-flutter run                 # or: flutter run -d chrome
+```powershell
+adb reverse tcp:8000 tcp:8000
+flutter devices
+flutter run -d <android-device-id>
 ```
 
-Configure the API base URL in `lib/core/network/api_config.dart` to point at your backend.
+The app currently uses `http://127.0.0.1:8000` from `lib/core/network/api_config.dart`; `adb reverse` maps that device endpoint to the local Laravel server. Use an approved HTTPS development endpoint instead when reverse port forwarding is unavailable. Do not enable cleartext traffic in release configuration.
 
-## Testing
+Complete emulator, physical-device, networking, NDK, and troubleshooting instructions are in [`docs/android-development.md`](docs/android-development.md).
 
-**Frontend:**
-```bash
-flutter test
+## Supported commands
+
+These are the supported client validation and build commands:
+
+```powershell
+flutter analyze
+flutter test --reporter compact
+flutter build apk --debug
+flutter build appbundle --release
 ```
 
-**Backend:**
-```bash
-cd backend
+- The debug APK is for local Android QA only.
+- The Android App Bundle is the only release artifact. A release candidate must be named `synchrofit-android-<MAJOR.MINOR.PATCH>-<BUILD>-release.aab` from the `pubspec.yaml` version.
+- A production AAB requires protected release signing; the current clean-checkout baseline still uses debug signing and is not releasable.
+- Do not use generated artifacts from a build command that exits nonzero.
+
+Run backend validation from `backend/`:
+
+```powershell
 php artisan test
 ```
 
-Both suites include property-based tests (glados on the frontend, Eris on the backend) covering serialization round-trips, validation, DAO integrity, and statistics computation.
+See [`docs/android-qa-release.md`](docs/android-qa-release.md) for the mandatory device matrix, full release gates, signing constraints, artifact handling, and current blockers.
+
+## API endpoints
+
+Protected routes require a Sanctum bearer token (`auth:sanctum`). Current core routes include:
+
+- `POST /api/register`, `POST /api/login`, `POST /api/forgot-password`
+- `POST /api/logout`
+- `GET|POST|PUT /api/profile`
+- `GET /api/exercises`, `GET /api/exercises/{exercise}`
+- `GET /api/workouts`, `POST /api/workouts`, `POST /api/workouts/generate`
+- `GET /api/workouts/generated`
+- `POST /api/workout-history`, `GET /api/workout-history`, `GET /api/workout-history/stats`
+
+The Android completion plan adds or retires other routes before production release; the code and API tests are authoritative during that work.

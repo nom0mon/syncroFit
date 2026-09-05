@@ -25,7 +25,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
@@ -43,3 +42,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android release signing material is injected by protected CI/environment only
+/android/key.properties
+/android/app/key.properties
+/android/app/upload-keystore.jks
+/android/app/*.keystore
+/android/app/*.jks

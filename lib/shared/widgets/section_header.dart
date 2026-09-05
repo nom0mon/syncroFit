@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 
-/// A reusable section header widget that renders a left-aligned title
-/// and an optional right-aligned trailing label in uppercase monospaced style.
-///
-/// Used throughout the dashboard to label sections like "CALENDAR GRID",
-/// "WEEKLY LOAD", and "COMPLETED SESSIONS".
+/// A reusable section header that intentionally wraps its trailing label when
+/// compact width or enlarged text cannot keep both labels readable in one row.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -14,18 +12,18 @@ class SectionHeader extends StatelessWidget {
     this.trailingLabel,
   });
 
-  /// The section title displayed on the left (rendered uppercase).
   final String title;
-
-  /// An optional label displayed on the right at reduced opacity.
   final String? trailingLabel;
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurface;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
       children: [
         Text(
           title.toUpperCase(),

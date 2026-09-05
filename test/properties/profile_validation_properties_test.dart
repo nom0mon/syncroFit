@@ -251,7 +251,7 @@ void main() {
         );
 
         final fieldUpdates = <String, dynamic>{
-          'name': 'Jane Smith',
+          'first_name': 'Jane',
           'age': 25,
           'height_cm': 160.0,
           'weight_kg': 55.0,
@@ -263,7 +263,7 @@ void main() {
         };
 
         final originalValues = <String, dynamic>{
-          'name': original.name,
+          'first_name': original.firstName,
           'age': original.age,
           'height_cm': original.heightCm,
           'weight_kg': original.weightKg,
@@ -311,7 +311,7 @@ void main() {
         );
 
         final fieldUpdates = <String, dynamic>{
-          'name': 'Jane Smith',
+          'first_name': 'Jane',
           'age': 25,
           'height_cm': 160.0,
           'weight_kg': 55.0,
@@ -323,7 +323,7 @@ void main() {
         };
 
         final originalValues = <String, dynamic>{
-          'name': original.name,
+          'first_name': original.firstName,
           'age': original.age,
           'height_cm': original.heightCm,
           'weight_kg': original.weightKg,

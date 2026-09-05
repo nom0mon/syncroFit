@@ -1159,8 +1159,8 @@ void main() {
 
       // Payload should contain only changed fields + updated_at
       final payload = mutation.payload;
-      expect(payload.containsKey('name'), isTrue);
-      expect(payload['name'], equals('New Name'));
+      expect(payload.containsKey('first_name'), isTrue);
+      expect(payload['first_name'], equals('New Name'));
       expect(payload.containsKey('age'), isTrue);
       expect(payload['age'], equals(30));
       expect(payload.containsKey('updated_at'), isTrue);

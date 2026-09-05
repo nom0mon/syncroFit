@@ -25,9 +25,11 @@ import '../../features/community/screens/post_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_and_recommendations_screen.dart';
 import '../../features/progress/screens/progress_summary_screen.dart';
+import '../../features/progress/screens/progress_log_create_screen.dart';
 import '../../features/workout/screens/rest_timer_screen.dart';
 import '../../features/workout/screens/workout_active_screen.dart';
 import '../../features/workout/screens/workout_detail_screen.dart';
+import '../../features/workout/screens/workout_customize_screen.dart';
 import '../../features/workout/screens/workout_generator_screen.dart';
 import '../../features/workout/screens/workout_summary_screen.dart';
 import '../../shared/widgets/floating_pill_nav_bar.dart';
@@ -161,8 +163,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'workout-generator',
-                    builder: (context, state) =>
-                        const WorkoutGeneratorScreen(),
+                    builder: (context, state) => const WorkoutGeneratorScreen(),
                   ),
                   GoRoute(
                     path: 'workout/:id',
@@ -171,6 +172,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       return WorkoutDetailScreen(workoutId: id);
                     },
                     routes: [
+                      GoRoute(
+                        path: 'customize',
+                        builder: (context, state) {
+                          final id = state.pathParameters['id'] ?? '';
+                          return WorkoutCustomizeScreen(workoutId: id);
+                        },
+                      ),
                       GoRoute(
                         path: 'active',
                         builder: (context, state) {
@@ -227,6 +235,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RouteNames.progress,
                 builder: (context, state) => const ProgressSummaryScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'log',
+                    builder: (context, state) => const ProgressLogCreateScreen(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -291,7 +305,9 @@ class _MainShellScreen extends ConsumerWidget {
             const OfflineIndicator(),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 72),
+                padding: EdgeInsets.only(
+                  bottom: 72 + MediaQuery.viewPaddingOf(context).bottom,
+                ),
                 child: navigationShell,
               ),
             ),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_spacing.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_form.dart';
 
@@ -57,9 +57,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         context.go('/settings/profile');
         return;
       }
-      final errorMessage = error is AppError
-          ? error.message
-          : error.toString();
+      final errorMessage = error is AppError ? error.message : error.toString();
       debugPrint('Profile save error: ${state.error}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -85,7 +83,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             onPressed: () => context.go('/dashboard'),
             tooltip: 'Back',
           ),
-          title: const Text('Profile Setup'),
+          title: const Text(
+            'Profile Setup',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         body: const Center(child: CircularProgressIndicator()),
       ),
@@ -120,16 +122,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           },
           tooltip: 'Back',
         ),
-        title: const Text('Profile Setup'),
+        title: const Text(
+          'Profile Setup',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: ProfileForm(
-            onSubmit: _handleSubmit,
-            submitLabel: 'Save Profile',
-            isLoading: _isSaving,
-          ),
+      body: SafeScrollableForm(
+        child: ProfileForm(
+          onSubmit: _handleSubmit,
+          submitLabel: 'Save Profile',
+          isLoading: _isSaving,
         ),
       ),
     );

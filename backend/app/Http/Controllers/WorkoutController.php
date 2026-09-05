@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Workout;
 use App\Services\RecommendationEngine;
+use App\Services\WorkoutPrescriptionPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -118,5 +119,59 @@ class WorkoutController extends Controller
             ->get();
 
         return response()->json(['success' => true, 'data' => $workouts]);
+    }
+
+    /** Customize a generated workout using an ordered list of exercise IDs. */
+    public function customize(Request $request, Workout $workout, WorkoutPrescriptionPolicy $policy): JsonResponse
+    {
+        if ((int) $workout->user_id !== (int) $request->user()->id || !$workout->is_generated) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'exercise_ids' => ['required', 'array', 'min:1', 'max:10'],
+            'exercise_ids.*' => ['required', 'integer', 'distinct', 'exists:exercises,id'],
+            'sets' => ['prohibited'],
+            'reps' => ['prohibited'],
+            'duration_seconds' => ['prohibited'],
+            'rest_seconds' => ['prohibited'],
+            'exercises' => ['prohibited'],
+        ]);
+
+        $profile = $request->user()->profile;
+        if (!$profile) {
+            return response()->json(['success' => false, 'message' => 'Complete your profile before customizing workouts.'], 422);
+        }
+
+        $ids = array_map('intval', $validated['exercise_ids']);
+        $models = \App\Models\Exercise::whereIn('id', $ids)->get()->keyBy('id');
+        $patternCounts = [];
+        $muscleSets = [];
+        $prescriptions = [];
+
+        foreach ($ids as $index => $id) {
+            $exercise = $models[$id];
+            $patternKey = ($exercise->muscle_group ?? 'unknown').'|'.($exercise->movement_pattern ?? 'unknown');
+            $patternCounts[$patternKey] = ($patternCounts[$patternKey] ?? 0) + 1;
+            if ($patternCounts[$patternKey] > 2) {
+                return response()->json(['success' => false, 'message' => 'Too many exercises repeat the same muscle and movement pattern.', 'errors' => ['exercise_ids' => ['Choose a different movement pattern to avoid redundant fatigue.']]], 422);
+            }
+
+            $prescription = $policy->prescribe($exercise, $profile->fitness_level, $profile->goal, $index + 1);
+            foreach (($exercise->primary_muscles ?? [$exercise->muscle_group]) as $muscle) {
+                $muscleSets[$muscle] = ($muscleSets[$muscle] ?? 0) + $prescription['sets'];
+                if ($muscleSets[$muscle] > 10) {
+                    return response()->json(['success' => false, 'message' => 'This workout exceeds the per-muscle set limit.', 'errors' => ['exercise_ids' => ["Reduce exercises targeting {$muscle}."]]], 422);
+                }
+            }
+            $prescriptions[] = $prescription;
+        }
+
+        $workout->update([
+            'exercises' => $prescriptions,
+            'estimated_duration_minutes' => $policy->estimatedDurationMinutes($prescriptions),
+        ]);
+
+        return response()->json(['success' => true, 'data' => $workout->fresh()]);
     }
 }
