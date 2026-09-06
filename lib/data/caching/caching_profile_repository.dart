@@ -50,8 +50,8 @@ class CachingProfileRepository implements ProfileRepository {
       final lastSynced = await _cacheMetadataDao.getLastSynced(_cacheEntityType(userId));
       if (lastSynced != null &&
           DateTime.now().difference(lastSynced) < _cacheDuration) {
-        final cached = await _dao.get();
-        if (cached != null && cached.userId == userId) {
+        final cached = await _dao.get(userId: userId);
+        if (cached != null) {
           return Success(cached);
         }
       }
@@ -61,13 +61,18 @@ class CachingProfileRepository implements ProfileRepository {
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
         await _cacheMetadataDao.updateLastSynced(_cacheEntityType(userId), DateTime.now());
+        return result;
       }
+      // Connectivity starts optimistically online. If the cold-start request
+      // loses that race, preserve access to the account-scoped SQLite copy.
+      final cached = await _dao.get(userId: userId);
+      if (cached != null) return Success(cached);
       return result;
     }
 
     // Offline: serve from DAO
-    final cached = await _dao.get();
-    if (cached != null && cached.userId == userId) {
+    final cached = await _dao.get(userId: userId);
+    if (cached != null) {
       return Success(cached);
     }
     return Failure(NetworkError());
@@ -149,7 +154,7 @@ class CachingProfileRepository implements ProfileRepository {
     );
 
     // Get the current cached profile to compute dirty fields
-    final existingProfile = await _dao.get();
+    final existingProfile = await _dao.get(userId: profile.userId);
     final dirtyFields = _computeDirtyFields(existingProfile, profile);
 
     // Always include updated_at for conflict resolution

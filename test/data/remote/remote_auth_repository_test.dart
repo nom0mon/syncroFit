@@ -8,8 +8,11 @@ import 'package:synchrofit/shared/models/models.dart';
 class MockApiClient extends Mock implements ApiClient {}
 
 class MockTokenStorage extends Mock implements TokenStorage {}
+class FakeUser extends Fake implements User {}
 
 void main() {
+  setUpAll(() => registerFallbackValue(FakeUser()));
+
   late MockApiClient mockApiClient;
   late MockTokenStorage mockTokenStorage;
   late RemoteAuthRepository repository;
@@ -18,6 +21,8 @@ void main() {
     mockApiClient = MockApiClient();
     mockTokenStorage = MockTokenStorage();
     repository = RemoteAuthRepository(mockApiClient, mockTokenStorage);
+    when(() => mockTokenStorage.saveUser(any())).thenAnswer((_) async {});
+    when(() => mockTokenStorage.clearUser()).thenAnswer((_) async {});
   });
 
   group('RemoteAuthRepository - login', () {

@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
-import '../../../data/remote/providers.dart';
+import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
+import '../providers/workout_provider.dart';
 
 /// Displays a Mon–Sun horizontal row of day cards showing the user's
 /// weekly workout schedule.
@@ -264,8 +265,10 @@ class _EmptyState extends ConsumerWidget {
       ),
     );
 
-    final remoteRepo = ref.read(remoteWorkoutRepositoryProvider);
-    final result = await remoteRepo.generateRecommendation();
+    final repository = ref.read(workoutRepositoryProvider);
+    if (repository is! WorkoutGenerationRepository) return;
+    final generationRepository = repository as WorkoutGenerationRepository;
+    final result = await generationRepository.generateRecommendation();
 
     if (!context.mounted) return;
 

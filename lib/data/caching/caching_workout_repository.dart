@@ -21,7 +21,11 @@ import '../repositories/workout_repository.dart';
 /// `isGenerated` flag to distinguish user-created from recommendation-generated
 /// workouts.
 class CachingWorkoutRepository
-    implements WorkoutRepository, WorkoutCustomizationRepository {
+    implements
+        WorkoutRepository,
+        WorkoutCustomizationRepository,
+        WorkoutGenerationRepository,
+        WorkoutPlanAcceptanceRepository {
   final WorkoutRepository _remote;
   final WorkoutDao _dao;
   final CacheMetadataDao _cacheMetadataDao;
@@ -53,7 +57,10 @@ class CachingWorkoutRepository
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       if (await _isCacheFresh()) {
         final cached = await _cachedForUser();
-        return Success(cached);
+        // Freshness metadata without account-scoped rows can remain after an
+        // account transition or an older cache write. Fetch instead of
+        // treating that inconsistent state as a real empty workout plan.
+        if (cached.isNotEmpty) return Success(cached);
       }
 
       final result = await _remote.getAll();
@@ -63,7 +70,10 @@ class CachingWorkoutRepository
           _entityType,
           DateTime.now(),
         );
+        return result;
       }
+      final cached = await _cachedForUser();
+      if (cached.isNotEmpty) return Success(cached);
       return result;
     }
 
@@ -85,6 +95,11 @@ class CachingWorkoutRepository
       final result = await _remote.getById(id);
       if (result is Success<Workout, AppError>) {
         await _dao.upsert(result.value);
+        return result;
+      }
+      final cached = await _dao.getById(id);
+      if (cached != null && (_userId.isEmpty || cached.userId == _userId)) {
+        return Success(cached);
       }
       return result;
     }
@@ -111,7 +126,10 @@ class CachingWorkoutRepository
       final result = await _remote.getTodaysWorkout();
       if (result is Success<Workout?, AppError> && result.value != null) {
         await _dao.upsert(result.value!);
+        return result;
       }
+      final cached = await _getTodaysWorkoutFromCache();
+      if (cached != null) return Success(cached);
       return result;
     }
 
@@ -139,6 +157,52 @@ class CachingWorkoutRepository
         .customizeExercises(workoutId, exerciseIds);
     if (result is Success<Workout, AppError>) {
       await _dao.upsert(result.value);
+      await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
+    }
+    return result;
+  }
+
+  @override
+  Future<Result<List<Workout>, AppError>> generateRecommendation({
+    List<int> includedExercises = const [],
+    List<int> excludedExercises = const [],
+  }) async {
+    if (_connectivity.currentStatus != ConnectivityStatus.online) {
+      return Failure(NetworkError());
+    }
+    final remote = _remote;
+    if (remote is! WorkoutGenerationRepository) {
+      return Failure(ServerError(
+        statusCode: 0,
+        serverMessage: 'Workout generation is unavailable.',
+      ));
+    }
+    final generationRepository = remote as WorkoutGenerationRepository;
+    final result = await generationRepository.generateRecommendation(
+      includedExercises: includedExercises,
+      excludedExercises: excludedExercises,
+    );
+    // Generated workouts remain server-side drafts until explicitly accepted.
+    return result;
+  }
+
+  @override
+  Future<Result<List<Workout>, AppError>> acceptPlan(String planId) async {
+    if (_connectivity.currentStatus != ConnectivityStatus.online) {
+      return Failure(NetworkError());
+    }
+    final remote = _remote;
+    if (remote is! WorkoutPlanAcceptanceRepository) {
+      return Failure(ServerError(
+        statusCode: 0,
+        serverMessage: 'Workout plan acceptance is unavailable.',
+      ));
+    }
+    final acceptanceRepository = remote as WorkoutPlanAcceptanceRepository;
+    final result = await acceptanceRepository.acceptPlan(planId);
+    if (result case Success(value: final workouts)) {
+      await _dao.deleteGeneratedByUser(_userId);
+      await _dao.upsertAll(workouts);
       await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
     }
     return result;

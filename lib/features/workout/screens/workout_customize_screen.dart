@@ -137,7 +137,9 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
         ref.invalidate(progress.progressProvider);
         Navigator.pop(context);
       case Failure(error: final error):
-        final message = error is ValidationError && error.fieldErrors.isNotEmpty
+        final message = error is NetworkError
+            ? 'Workout customization requires a connection. Your existing workout was not changed.'
+            : error is ValidationError && error.fieldErrors.isNotEmpty
             ? error.fieldErrors.values.first
             : error.message;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

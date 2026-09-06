@@ -28,7 +28,9 @@ final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 /// Manages authentication state and exposes login, register, and
 /// forgotPassword operations.
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._ref) : super(const AuthState());
+  AuthNotifier(this._ref) : super(const AuthState(isLoading: true)) {
+    _restoreSession();
+  }
 
   final Ref _ref;
 
@@ -37,6 +39,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Convenience getter for the remote auth repository which exposes logout.
   RemoteAuthRepository get _remoteRepo =>
       _ref.read(authRepositoryProvider) as RemoteAuthRepository;
+
+  Future<void> _restoreSession() async {
+    final storage = _ref.read(tokenStorageProvider);
+    final token = await storage.getToken();
+    final user = await storage.getUser();
+    if (!mounted) return;
+    state = token != null && token.isNotEmpty && user != null
+        ? AuthState(isAuthenticated: true, user: user)
+        : const AuthState();
+  }
 
   /// Attempts to log in with the given [email] and [password].
   ///

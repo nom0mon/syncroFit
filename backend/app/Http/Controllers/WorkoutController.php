@@ -7,6 +7,8 @@ use App\Services\RecommendationEngine;
 use App\Services\WorkoutPrescriptionPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class WorkoutController extends Controller
 {
@@ -15,7 +17,8 @@ class WorkoutController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Workout::where('user_id', $request->user()->id);
+        $query = Workout::where('user_id', $request->user()->id)
+            ->where('is_accepted', true);
 
         if ($request->has('is_generated')) {
             $query->where('is_generated', filter_var($request->query('is_generated'), FILTER_VALIDATE_BOOLEAN));
@@ -83,21 +86,25 @@ class WorkoutController extends Controller
         $engine = new RecommendationEngine();
         $result = $engine->generate($user, $included, $excluded);
 
-        // Delete previous generated workouts for this user
+        // Replace any abandoned draft, while preserving the accepted plan
+        // until the user explicitly approves this new one.
         Workout::where('user_id', $user->id)
             ->where('is_generated', true)
+            ->where('is_accepted', false)
             ->delete();
 
-        // Store the generated workouts
+        $planId = (string) Str::uuid();
         $workouts = [];
         foreach ($result['workouts'] as $workoutData) {
             $workouts[] = Workout::create([
                 'user_id' => $user->id,
+                'plan_id' => $planId,
                 'name' => $workoutData['name'],
                 'day_of_week' => (string) $workoutData['day_of_week'],
                 'estimated_duration_minutes' => $workoutData['estimated_duration_minutes'],
                 'exercises' => $workoutData['exercises'],
                 'is_generated' => true,
+                'is_accepted' => false,
             ]);
         }
 
@@ -115,10 +122,53 @@ class WorkoutController extends Controller
     {
         $workouts = Workout::where('user_id', $request->user()->id)
             ->where('is_generated', true)
+            ->where('is_accepted', true)
             ->orderBy('day_of_week')
             ->get();
 
         return response()->json(['success' => true, 'data' => $workouts]);
+    }
+
+    /** Accept a generated draft and atomically replace the active plan. */
+    public function acceptPlan(Request $request, string $planId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        $drafts = Workout::where('user_id', $userId)
+            ->where('plan_id', $planId)
+            ->where('is_generated', true)
+            ->where('is_accepted', false)
+            ->get();
+
+        if ($drafts->isEmpty()) {
+            abort(404);
+        }
+
+        DB::transaction(function () use ($userId, $planId): void {
+            Workout::where('user_id', $userId)
+                ->where('is_generated', true)
+                ->where('is_accepted', true)
+                ->delete();
+
+            Workout::where('user_id', $userId)
+                ->where('plan_id', $planId)
+                ->where('is_accepted', false)
+                ->update([
+                    'is_accepted' => true,
+                    'accepted_at' => now(),
+                ]);
+        });
+
+        $accepted = Workout::where('user_id', $userId)
+            ->where('plan_id', $planId)
+            ->where('is_accepted', true)
+            ->orderBy('day_of_week')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $accepted,
+            'message' => 'Workout plan accepted.',
+        ]);
     }
 
     /** Customize a generated workout using an ordered list of exercise IDs. */

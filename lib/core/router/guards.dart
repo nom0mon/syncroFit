@@ -15,6 +15,10 @@ const _authRoutes = <String>[
 ///
 /// Returns the redirect path, or `null` if no redirect is needed.
 String? guardRedirect(AuthState authState, GoRouterState state) {
+  // Do not redirect to sign-in while secure storage is restoring an existing
+  // session. The router will reevaluate when restoration completes.
+  if (authState.isLoading) return null;
+
   final isAuthenticated = authState.isAuthenticated;
   final currentLocation = state.uri.path;
 

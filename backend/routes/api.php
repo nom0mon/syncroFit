@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/workouts', [\App\Http\Controllers\WorkoutController::class, 'index']);
     Route::post('/workouts', [\App\Http\Controllers\WorkoutController::class, 'store']);
     Route::post('/workouts/generate', [\App\Http\Controllers\WorkoutController::class, 'generate']);
+    Route::post('/workouts/plans/{planId}/accept', [\App\Http\Controllers\WorkoutController::class, 'acceptPlan']);
     Route::get('/workouts/generated', [\App\Http\Controllers\WorkoutController::class, 'generated']);
     Route::put('/workouts/{workout}/exercises', [\App\Http\Controllers\WorkoutController::class, 'customize']);
 

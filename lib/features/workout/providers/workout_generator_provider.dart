@@ -1,12 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/remote/providers.dart';
+import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 import 'workout_scheduler_provider.dart';
+import 'workout_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// The lifecycle status of the workout generator flow.
-enum WorkoutGeneratorStatus { idle, generating, generated, error }
+enum WorkoutGeneratorStatus {
+  idle,
+  generating,
+  generated,
+  accepting,
+  accepted,
+  error,
+}
 
 /// Immutable state for the workout generator.
 ///
@@ -113,8 +121,16 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
       clearError: true,
     );
 
-    final result =
-        await _ref.read(remoteWorkoutRepositoryProvider).generateRecommendation(
+    final repository = _ref.read(workoutRepositoryProvider);
+    if (repository is! WorkoutGenerationRepository) {
+      state = state.copyWith(
+        status: WorkoutGeneratorStatus.error,
+        errorMessage: 'Workout generation is unavailable.',
+      );
+      return;
+    }
+    final generationRepository = repository as WorkoutGenerationRepository;
+    final result = await generationRepository.generateRecommendation(
               includedExercises: [...state.includedExerciseIds],
               excludedExercises: [...state.excludedExerciseIds],
             );
@@ -126,13 +142,49 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
           generatedWorkouts: workouts,
           clearError: true,
         );
-        // Refresh the schedule-aware view with the freshly generated plan.
-        _ref.read(workoutSchedulerProvider.notifier).refresh();
       case Failure(error: final error):
         state = state.copyWith(
           status: WorkoutGeneratorStatus.error,
           errorMessage: error.message,
         );
+    }
+  }
+
+  Future<bool> acceptPlan() async {
+    String? planId;
+    for (final workout in state.generatedWorkouts) {
+      if (workout.planId != null) {
+        planId = workout.planId;
+        break;
+      }
+    }
+    final repository = _ref.read(workoutRepositoryProvider);
+    if (planId == null || repository is! WorkoutPlanAcceptanceRepository) {
+      state = state.copyWith(
+        status: WorkoutGeneratorStatus.error,
+        errorMessage: 'This generated plan cannot be accepted.',
+      );
+      return false;
+    }
+
+    state = state.copyWith(status: WorkoutGeneratorStatus.accepting);
+    final acceptanceRepository = repository as WorkoutPlanAcceptanceRepository;
+    final result = await acceptanceRepository.acceptPlan(planId);
+    switch (result) {
+      case Success(value: final workouts):
+        state = state.copyWith(
+          status: WorkoutGeneratorStatus.accepted,
+          generatedWorkouts: workouts,
+          clearError: true,
+        );
+        await _ref.read(workoutSchedulerProvider.notifier).refresh();
+        return true;
+      case Failure(error: final error):
+        state = state.copyWith(
+          status: WorkoutGeneratorStatus.generated,
+          errorMessage: error.message,
+        );
+        return false;
     }
   }
 

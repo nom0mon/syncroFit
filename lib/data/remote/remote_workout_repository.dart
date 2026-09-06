@@ -11,7 +11,11 @@ import 'package:synchrofit/shared/models/models.dart';
 /// - POST /api/workouts/generate → generate new recommendation
 /// - GET  /api/workouts/generated → list generated workouts
 class RemoteWorkoutRepository
-    implements WorkoutRepository, WorkoutCustomizationRepository {
+    implements
+        WorkoutRepository,
+        WorkoutCustomizationRepository,
+        WorkoutGenerationRepository,
+        WorkoutPlanAcceptanceRepository {
   final ApiClient _apiClient;
 
   RemoteWorkoutRepository(this._apiClient);
@@ -99,6 +103,14 @@ class RemoteWorkoutRepository
   Future<Result<List<Workout>, AppError>> getGenerated() async {
     return _apiClient.get<List<Workout>>(
       '/api/workouts/generated',
+      fromJson: (json) => _parseWorkoutsList(json),
+    );
+  }
+
+  @override
+  Future<Result<List<Workout>, AppError>> acceptPlan(String planId) {
+    return _apiClient.post<List<Workout>>(
+      '/api/workouts/plans/$planId/accept',
       fromJson: (json) => _parseWorkoutsList(json),
     );
   }

@@ -19,3 +19,15 @@ abstract class WorkoutCustomizationRepository {
     List<int> exerciseIds,
   );
 }
+
+/// Additional capability for generating and persistently caching a plan.
+abstract class WorkoutGenerationRepository {
+  Future<Result<List<Workout>, AppError>> generateRecommendation({
+    List<int> includedExercises = const [],
+    List<int> excludedExercises = const [],
+  });
+}
+
+abstract class WorkoutPlanAcceptanceRepository {
+  Future<Result<List<Workout>, AppError>> acceptPlan(String planId);
+}

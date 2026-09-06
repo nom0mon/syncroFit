@@ -24,6 +24,7 @@ class RemoteAuthRepository implements AuthRepository {
         final token = data['token'] as String;
         await _tokenStorage.saveToken(token);
         final user = User.fromJson(data['user'] as Map<String, dynamic>);
+        await _tokenStorage.saveUser(user);
         return Success(user);
       case Failure(error: final error):
         return Failure(error);
@@ -53,6 +54,7 @@ class RemoteAuthRepository implements AuthRepository {
         final token = data['token'] as String;
         await _tokenStorage.saveToken(token);
         final user = User.fromJson(data['user'] as Map<String, dynamic>);
+        await _tokenStorage.saveUser(user);
         return Success(user);
       case Failure(error: final error):
         return Failure(error);
@@ -75,6 +77,7 @@ class RemoteAuthRepository implements AuthRepository {
   Future<Result<void, AppError>> logout() async {
     final result = await _apiClient.post<void>('/api/logout');
     await _tokenStorage.clearToken();
+    await _tokenStorage.clearUser();
     return result;
   }
 

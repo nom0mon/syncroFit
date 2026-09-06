@@ -366,6 +366,20 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 
 ## Cross-feature verification
 
+### Device-test follow-ups
+
+- [x] Restore the authenticated user and token from secure local storage so a
+      previously signed-in user can reopen cached workouts while offline.
+- [x] Replace the generic offline workout-customization failure with an
+      explicit connection requirement that confirms the saved plan is intact.
+- [ ] Add an explicit accept/approve step after workout generation.
+- [ ] Remove the 50-character first/last-name restrictions across Flutter,
+      Laravel validation, and database storage.
+- [ ] Add a unique customizable username, populate profile names from signup,
+      and prevent duplicate usernames.
+- [ ] Calculate weekly progress against the actual scheduled days and prevent
+      the completed count from exceeding the planned count.
+
 - [ ] All new backend migrations run on a clean database and upgrade an
       existing development database.
 - [ ] API responses and Flutter serializers agree on nullability and types.
@@ -427,6 +441,10 @@ No unresolved decisions currently block implementation.
 | 2026-09-06 | Encode Community images as repeated `photos[]` multipart file entries. | Laravel only validates the upload as an array when PHP receives array-style multipart field names. |
 | 2026-09-06 | Drive dashboard calendar outlines from `scheduledWorkoutsProvider`, the same mapped source used by the recommendations weekly plan. | Raw workout weekdays can differ from scheduler fallback assignments based on the user's availability. |
 | 2026-09-06 | Preserve Community photo contents with contained fitting and allocate a square gallery for three or four photos. | A fixed 16:9 gallery cropped portrait images and clipped the second row of a four-photo grid. |
+| 2026-09-06 | Restore offline authentication from a securely cached user identity paired with the existing secure token. | A token alone could authorize cached requests but could not reconstruct account-scoped application state after a cold offline restart. |
+| 2026-09-06 | Keep workout customization online-only and state that requirement explicitly in the UI. | The backend must recalculate and validate level-based sets, reps, and rest; silently queueing only exercise IDs could apply against a changed plan later. |
+| 2026-09-06 | Fall back to account-scoped SQLite profile/workout records whenever an optimistic cold-start request fails, and write generated plans through the caching repository. | Device testing showed authentication survived restart while profile and workout data disappeared because reachability detection completed after providers attempted remote reads. |
+| 2026-09-06 | Query cached profiles by authenticated user ID instead of returning the first SQLite row. | Direct device-database inspection showed multiple valid account profiles; returning Simon's first row caused Aquil's profile check to fail and prevented schedule construction offline. |
 
 ## Progress summary
 

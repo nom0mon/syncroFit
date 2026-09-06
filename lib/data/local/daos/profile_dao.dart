@@ -6,8 +6,8 @@ import '../../../shared/models/user_profile.dart';
 
 /// Data Access Object for user profile in the local SQLite database.
 ///
-/// Only a single profile is stored at any time since SyncroFit is a
-/// single-user app on the device.
+/// Profiles are keyed by user ID so switching accounts on one device does not
+/// expose or hide another account's cached profile.
 class ProfileDao {
   final Database _database;
 
@@ -18,8 +18,13 @@ class ProfileDao {
   /// Retrieves the cached user profile.
   ///
   /// Returns `null` if no profile is stored locally.
-  Future<UserProfile?> get() async {
-    final rows = await _database.query(_table, limit: 1);
+  Future<UserProfile?> get({String? userId}) async {
+    final rows = await _database.query(
+      _table,
+      where: userId == null ? null : 'user_id = ?',
+      whereArgs: userId == null ? null : [userId],
+      limit: 1,
+    );
     if (rows.isEmpty) return null;
     return _fromRow(rows.first);
   }

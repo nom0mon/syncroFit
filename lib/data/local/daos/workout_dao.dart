@@ -65,6 +65,14 @@ class WorkoutDao {
     );
   }
 
+  Future<void> deleteGeneratedByUser(String userId) async {
+    await _database.delete(
+      _table,
+      where: 'user_id = ? AND is_generated = 1',
+      whereArgs: [userId],
+    );
+  }
+
   /// Converts a database row to a [Workout] model.
   Workout _fromRow(Map<String, dynamic> row) {
     // Exercises are stored as a JSON-encoded string in SQLite
