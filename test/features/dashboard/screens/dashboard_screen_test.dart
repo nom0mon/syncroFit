@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:synchrofit/features/dashboard/providers/dashboard_provider.dart';
 import 'package:synchrofit/features/dashboard/screens/dashboard_screen.dart';
 import 'package:synchrofit/features/dashboard/widgets/calendar_grid_widget.dart';
-import 'package:synchrofit/features/dashboard/widgets/completed_sessions_widget.dart';
 import 'package:synchrofit/features/dashboard/widgets/weekly_load_chart_widget.dart';
+import 'package:synchrofit/features/workout/providers/workout_scheduler_provider.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';
 import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/shared/widgets/edge_fade_gradient.dart';
@@ -23,6 +23,7 @@ void main() {
     return ProviderScope(
       overrides: [
         dashboardProvider.overrideWith(() => _FakeDashboardNotifier(state)),
+        scheduledWorkoutsProvider.overrideWithValue(const []),
       ],
       child: const MaterialApp(
         home: DashboardScreen(),
@@ -65,11 +66,11 @@ void main() {
       expect(find.byType(WeeklyLoadChartWidget), findsOneWidget);
     });
 
-    testWidgets('renders CompletedSessionsWidget', (tester) async {
+    testWidgets('renders the selected date exercise schedule', (tester) async {
       await tester.pumpWidget(buildTestWidget(state: testState));
       await tester.pumpAndSettle();
 
-      expect(find.byType(CompletedSessionsWidget), findsOneWidget);
+      expect(find.byKey(const Key('selected-date-schedule')), findsOneWidget);
     });
 
     testWidgets('renders two EdgeFadeGradient widgets (top and bottom)',

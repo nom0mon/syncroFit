@@ -309,8 +309,9 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 - Display a latest-first paginated home feed.
 - A post contains author identity, text content, timestamps, like count,
   comment count, and whether the current user liked it.
-- Version 1 posts are text-only unless image-post support is explicitly added
-  to this spec later.
+- A post may be text-only or contain up to four photos.
+- Supported photos are JPEG, PNG, and WebP, up to 8 MB each and 4096×4096.
+- Show selected-media previews and upload progress before publishing.
 - Users can create posts and delete their own posts with confirmation.
 - Users can like once, unlike, add comments, and delete their own comments.
 - Like actions must be idempotent and safe from rapid duplicate taps.
@@ -324,6 +325,13 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 
 - Add `posts`, `post_likes`, and `comments` tables with foreign keys, useful
   indexes, timestamps, and appropriate cascading/soft-delete behavior.
+- Add ordered `post_media` records containing post ownership, media type,
+  storage disk/key, MIME type, byte size, and optional dimensions/duration.
+- Store media objects through Laravel's filesystem abstraction. Use private
+  local storage in development and an S3-compatible object-storage bucket in
+  production; never store binary media in the relational database.
+- Return authorized temporary URLs (or an authenticated local-media response)
+  and delete media objects when their owning post is permanently purged.
 - Enforce one like per `(post_id, user_id)` with a unique database constraint.
 - Add authenticated paginated feed/create/show/delete post endpoints.
 - Add authenticated like/unlike and list/create/delete comment endpoints.
@@ -339,16 +347,20 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 - Users cannot delete content owned by someone else.
 - Feed pagination does not duplicate or omit posts during normal use.
 - No repost/share UI or API is present.
+- Valid photo posts upload, render in feed/detail, and remain bounded by the
+  documented count, type, size, and dimension limits.
 
 ### Tasks
 
 - [x] Audit and reconcile existing mock community models/screens.
 - [x] Define field limits, comment ordering, pagination, and delete semantics.
-- [ ] Add backend migrations, models, policies, endpoints, and tests.
-- [ ] Implement remote/cache repositories and replace mock wiring.
-- [ ] Build/complete post composer, feed, likes, detail, comments, and deletes.
-- [ ] Add optimistic update rollback and refresh behavior.
-- [ ] Add authorization, pagination, repository, provider, and responsive tests.
+- [x] Add backend migrations, models, policies, endpoints, and tests.
+- [x] Implement remote/cache repositories and replace mock wiring.
+- [x] Build/complete post composer, feed, likes, detail, comments, and deletes.
+- [x] Add optimistic update rollback and refresh behavior.
+- [x] Add authorization, pagination, repository, provider, and responsive tests.
+- [x] Add Community photo upload, storage metadata, previews, rendering,
+      cleanup, and validation tests.
 
 ---
 
@@ -406,6 +418,15 @@ No unresolved decisions currently block implementation.
 | 2026-09-05 | Detect captured progress-image formats from JPEG/PNG/WebP file signatures and normalize generated filenames. | Chrome webcam captures may use blob filenames without extensions or MIME metadata even though their encoded image bytes are valid. |
 | 2026-09-05 | Limit Community posts to 2,000 characters and comments to 500; paginate feeds by 15 and display comments oldest first. | These limits support substantial text while keeping mobile rendering and payloads bounded; chronological comments preserve conversational reading order. |
 | 2026-09-05 | Soft-delete Community posts and comments while cascading likes with their post. | Soft deletion supports moderation/audit readiness and deleted-content states without retaining meaningless like rows. |
+| 2026-09-06 | Limit Community media to four photos per post and remove video posting from scope. | The user chose a simpler photo-only experience that reduces storage, upload, playback, and moderation complexity. |
+| 2026-09-06 | Store Community media on a Laravel filesystem disk backed by private S3-compatible object storage in production, with only object keys and metadata in SQL. | Object storage scales independently from application servers, works with temporary URLs/CDNs, and avoids database bloat or data loss during stateless deployments. |
+| 2026-09-06 | Scope profile and workout cache freshness/data reads to the authenticated user and rebuild user-state providers when the user ID changes. | Global cache keys and persistent providers could serve stale empty or previous-account state after registration/login transitions. |
+| 2026-09-06 | Use one filled circle solely for the dashboard's selected calendar day; represent other completed dates with dots. | Separate completed, today, and selected rings made two dates appear selected and obscured tap feedback. |
+| 2026-09-06 | Send explicit photo MIME types in Community multipart uploads and surface field-specific validation messages. | Browser byte uploads may otherwise arrive as generic binary files, while a generic “Validation failed” message concealed the actionable server response. |
+| 2026-09-06 | Make dashboard calendar outlines represent recurring scheduled workout weekdays, and make the selected date reveal its workout card. | The calendar is for schedule discovery; completion remains a separate dot indicator and selection remains a single filled circle. |
+| 2026-09-06 | Encode Community images as repeated `photos[]` multipart file entries. | Laravel only validates the upload as an array when PHP receives array-style multipart field names. |
+| 2026-09-06 | Drive dashboard calendar outlines from `scheduledWorkoutsProvider`, the same mapped source used by the recommendations weekly plan. | Raw workout weekdays can differ from scheduler fallback assignments based on the user's availability. |
+| 2026-09-06 | Preserve Community photo contents with contained fitting and allocate a square gallery for three or four photos. | A fixed 16:9 gallery cropped portrait images and clipped the second row of a four-photo grid. |
 
 ## Progress summary
 
@@ -413,8 +434,8 @@ No unresolved decisions currently block implementation.
 |---|---|---:|---:|
 | BMI Calculator | Complete — approved | 5 | 5 |
 | Workout Customization | Complete — awaiting user review | 7 | 7 |
-| Progress Logging | Complete — awaiting user review | 6 | 6 |
-| Community | Not started | 0 | 7 |
+| Progress Logging | Complete — approved | 6 | 6 |
+| Community | Complete — photo extension awaiting user review | 8 | 8 |
 | Cross-feature verification | Not started | 0 | 10 |
 
 ## Update protocol for Codex

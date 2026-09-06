@@ -27,11 +27,12 @@ class CachingWorkoutRepository
   final CacheMetadataDao _cacheMetadataDao;
   final ConnectivityMonitor _connectivity;
   final Database _database;
+  final String _userId;
 
   /// Cache freshness threshold in minutes.
   static const int _cacheFreshnessMinutes = 15;
 
-  static const String _entityType = 'workout';
+  String get _entityType => 'workout_$_userId';
 
   CachingWorkoutRepository({
     required WorkoutRepository remote,
@@ -39,17 +40,19 @@ class CachingWorkoutRepository
     required CacheMetadataDao cacheMetadataDao,
     required ConnectivityMonitor connectivity,
     required Database database,
+    String userId = '',
   })  : _remote = remote,
         _dao = dao,
         _cacheMetadataDao = cacheMetadataDao,
         _connectivity = connectivity,
-        _database = database;
+        _database = database,
+        _userId = userId;
 
   @override
   Future<Result<List<Workout>, AppError>> getAll() async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       if (await _isCacheFresh()) {
-        final cached = await _dao.getAll();
+        final cached = await _cachedForUser();
         return Success(cached);
       }
 
@@ -65,7 +68,7 @@ class CachingWorkoutRepository
     }
 
     // Offline: serve from cache
-    final cached = await _dao.getAll();
+    final cached = await _cachedForUser();
     return Success(cached);
   }
 
@@ -74,7 +77,7 @@ class CachingWorkoutRepository
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       if (await _isCacheFresh()) {
         final cached = await _dao.getById(id);
-        if (cached != null) {
+        if (cached != null && (_userId.isEmpty || cached.userId == _userId)) {
           return Success(cached);
         }
       }
@@ -159,8 +162,12 @@ class CachingWorkoutRepository
     final today = DateTime.now().weekday; // 1 = Monday, 7 = Sunday
     final rows = await _database.query(
       'workouts',
-      where: 'day_of_week = ?',
-      whereArgs: [today.toString()],
+      where: _userId.isEmpty
+          ? 'day_of_week = ?'
+          : 'day_of_week = ? AND user_id = ?',
+      whereArgs: _userId.isEmpty
+          ? [today.toString()]
+          : [today.toString(), _userId],
     );
     if (rows.isEmpty) return null;
 
@@ -180,5 +187,11 @@ class CachingWorkoutRepository
       'created_at': rows.first['created_at'],
       'updated_at': rows.first['updated_at'],
     });
+  }
+
+  Future<List<Workout>> _cachedForUser() async {
+    final workouts = await _dao.getAll();
+    if (_userId.isEmpty) return workouts;
+    return workouts.where((workout) => workout.userId == _userId).toList();
   }
 }

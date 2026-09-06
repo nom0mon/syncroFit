@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_client.dart';
 import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/profile_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../auth/providers/auth_provider.dart';
 
 /// Provides the [ProfileRepository] instance used throughout the app.
 ///
@@ -33,12 +33,11 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   Future<UserProfile?> build() async {
     // Check if we have a token before making the request.
     // If not authenticated, return null silently — no need to hit the server.
-    final token = await ref.read(tokenStorageProvider).getToken();
-    if (token == null) {
-      return null;
-    }
+    final auth = ref.watch(authStateProvider);
+    final userId = auth.user?.id;
+    if (!auth.isAuthenticated || userId == null || userId.isEmpty) return null;
 
-    final result = await _repository.getProfile('');
+    final result = await _repository.getProfile(userId);
 
     return switch (result) {
       Success(value: final profile) => profile,
@@ -63,11 +62,8 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       // Token invalid — return null, router will redirect to login
       return null;
     }
-    // For network errors or other server errors, return null but log it.
-    // The profile might exist but we can't reach the server.
-    // The caching layer should have served from local cache if available.
     debugPrint('Profile load failed: ${error.message}');
-    return null;
+    throw error;
   }
 
   /// Saves a new user profile (initial profile setup).

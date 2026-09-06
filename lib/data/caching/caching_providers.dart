@@ -12,6 +12,7 @@ import 'caching_exercise_repository.dart';
 import 'caching_profile_repository.dart';
 import 'caching_workout_history_repository.dart';
 import 'caching_workout_repository.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 /// Provides a [CachingExerciseRepository] that wraps the remote repository
 /// with local SQLite caching and cache freshness logic.
@@ -40,6 +41,7 @@ final cachingExerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
 ///
 /// Falls back to remote-only if the local database is not available.
 final cachingWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
+  final userId = ref.watch(authStateProvider).user?.id ?? '';
   try {
     final db = ref.watch(localDatabaseProvider);
     final connectivity = ref.watch(connectivityMonitorProvider);
@@ -52,6 +54,7 @@ final cachingWorkoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
       cacheMetadataDao: db.cacheMetadataDao,
       connectivity: connectivity,
       database: dbImpl.database,
+      userId: userId,
     );
   } catch (e) {
     // Database not available — fall back to remote only.

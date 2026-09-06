@@ -352,7 +352,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 /// Provider for the [WorkoutNotifier] managing the active workout session.
 final workoutProvider =
     StateNotifierProvider<WorkoutNotifier, WorkoutSessionState>(
-  (ref) => WorkoutNotifier(ref),
+  (ref) {
+    ref.watch(authStateProvider.select((auth) => auth.user?.id));
+    return WorkoutNotifier(ref);
+  },
 );
 
 /// Provider that fetches a workout by ID (for the detail screen).

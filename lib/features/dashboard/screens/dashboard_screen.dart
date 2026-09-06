@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/models/scheduled_workout.dart';
 import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
@@ -12,9 +13,9 @@ import '../../../shared/widgets/safe_layout.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../workout/providers/workout_scheduler_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/calendar_grid_widget.dart';
-import '../widgets/completed_sessions_widget.dart';
 import '../widgets/weekly_load_chart_widget.dart';
 
 /// Dashboard screen with calendar, weekly load, and completed-session states.
@@ -24,6 +25,8 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(dashboardProvider);
+    final scheduledWorkouts = ref.watch(scheduledWorkoutsProvider);
+    final firstName = ref.watch(authStateProvider).user?.firstName.trim() ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +44,11 @@ class DashboardScreen extends ConsumerWidget {
           message: error.toString(),
           onRetry: () => ref.invalidate(dashboardProvider),
         ),
-        data: (state) => _DashboardContent(state: state),
+        data: (state) => _DashboardContent(
+          state: state,
+          firstName: firstName,
+          scheduledWorkouts: scheduledWorkouts,
+        ),
       ),
     );
   }
@@ -74,9 +81,15 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _DashboardContent extends StatefulWidget {
-  const _DashboardContent({required this.state});
+  const _DashboardContent({
+    required this.state,
+    required this.firstName,
+    required this.scheduledWorkouts,
+  });
 
   final DashboardState state;
+  final String firstName;
+  final List<ScheduledWorkout> scheduledWorkouts;
 
   @override
   State<_DashboardContent> createState() => _DashboardContentState();
@@ -95,7 +108,12 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionsForDate = widget.state.historyForDate(_selectedDate);
+    final scheduledForDate = widget.scheduledWorkouts
+        .where((workout) => workout.dayOfWeek.index + 1 == _selectedDate.weekday)
+        .toList();
+    final scheduledWeekdays = widget.scheduledWorkouts
+        .map((workout) => workout.dayOfWeek.index + 1)
+        .toSet();
 
     return SafeArea(
       top: false,
@@ -111,6 +129,17 @@ class _DashboardContentState extends State<_DashboardContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text(
+                    widget.firstName.isEmpty
+                        ? 'Hello!'
+                        : 'Hello, ${widget.firstName}!',
+                    key: const Key('dashboard-welcome-message'),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
                   const SectionHeader(title: 'Overview'),
                   const SizedBox(height: AppSpacing.sm),
                   AdaptiveGridList(
@@ -149,14 +178,15 @@ class _DashboardContentState extends State<_DashboardContent> {
                       CalendarGridWidget(
                         completedDates: widget.state.completedDates,
                         selectedDate: _selectedDate,
+                        scheduledWeekdays: scheduledWeekdays,
                         onDateSelected: _onDateSelected,
                       ),
                       WeeklyLoadChartWidget(sessions: widget.state.history),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  CompletedSessionsWidget(
-                    sessions: sessionsForDate,
+                  _SelectedDateSchedule(
+                    workouts: scheduledForDate,
                     selectedDate: _selectedDate,
                   ),
                 ],
@@ -182,6 +212,53 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   void _onDateSelected(DateTime date) {
     setState(() => _selectedDate = date);
+  }
+}
+
+class _SelectedDateSchedule extends StatelessWidget {
+  const _SelectedDateSchedule({
+    required this.workouts,
+    required this.selectedDate,
+  });
+
+  final List<ScheduledWorkout> workouts;
+  final DateTime selectedDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel =
+        '${selectedDate.month}/${selectedDate.day}/${selectedDate.year}';
+    return Column(
+      key: const Key('selected-date-schedule'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(title: 'EXERCISE SCHEDULE', trailingLabel: dateLabel),
+        const SizedBox(height: AppSpacing.sm),
+        if (workouts.isEmpty)
+          const ResponsiveCard(
+            margin: EdgeInsets.zero,
+            child: Text('No workout scheduled for this day.'),
+          )
+        else
+          for (final workout in workouts) ...[
+            ResponsiveCard(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.fitness_center),
+                title: Text(workout.workoutName),
+                subtitle: Text(
+                  '${workout.estimatedDurationMinutes} min scheduled workout',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    context.go('/dashboard/workout/${workout.workoutId}'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+      ],
+    );
   }
 }
 

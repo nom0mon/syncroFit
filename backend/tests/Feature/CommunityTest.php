@@ -7,6 +7,8 @@ use App\Models\Post;
 use App\Models\PostLike;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CommunityTest extends TestCase
@@ -34,9 +36,12 @@ class CommunityTest extends TestCase
         $created->assertCreated()->assertJsonPath('data.content', 'My update');
         $id = $created->json('data.id');
 
+        PostLike::query()->create(['post_id' => $id, 'user_id' => $user->id]);
+
         $this->getJson("/api/community/posts/{$id}")->assertOk();
         $this->deleteJson("/api/community/posts/{$id}")->assertOk();
         $this->assertSoftDeleted('posts', ['id' => $id]);
+        $this->assertDatabaseMissing('post_likes', ['post_id' => $id]);
         $this->getJson("/api/community/posts/{$id}")->assertNotFound();
     }
 
@@ -91,5 +96,55 @@ class CommunityTest extends TestCase
         $post = Post::query()->create(['user_id' => $user->id, 'content' => 'Post']);
         $this->postJson("/api/community/posts/{$post->id}/comments", ['content' => str_repeat('a', 501)])
             ->assertUnprocessable();
+    }
+
+    public function test_user_can_create_photo_post_and_media_requires_authentication(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post('/api/community/posts', [
+            'content' => 'Photo update',
+            'photos' => [
+                $this->png('one.png'),
+                $this->png('two.png'),
+            ],
+        ], ['Accept' => 'application/json']);
+
+        $response->assertCreated()->assertJsonCount(2, 'data.media');
+        $postId = $response->json('data.id');
+        $mediaId = $response->json('data.media.0.id');
+        $path = \App\Models\PostMedia::query()->firstOrFail()->path;
+        Storage::disk('local')->assertExists($path);
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson("/api/community/posts/{$postId}/media/{$mediaId}")->assertUnauthorized();
+        $this->actingAs($user)->get("/api/community/posts/{$postId}/media/{$mediaId}")->assertOk();
+    }
+
+    public function test_photo_validation_and_storage_cleanup_are_enforced(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $photos = collect(range(1, 5))->map(fn ($number) =>
+            $this->png("{$number}.png"))->all();
+        $this->actingAs($user)->post('/api/community/posts', ['photos' => $photos], ['Accept' => 'application/json'])
+            ->assertUnprocessable()->assertJsonValidationErrors('photos');
+
+        $created = $this->post('/api/community/posts', [
+            'photos' => [$this->png('valid.png')],
+        ], ['Accept' => 'application/json'])->assertCreated();
+        $postId = $created->json('data.id');
+        $path = \App\Models\PostMedia::query()->firstOrFail()->path;
+        $this->deleteJson("/api/community/posts/{$postId}")->assertOk();
+        Storage::disk('local')->assertMissing($path);
+        $this->assertDatabaseMissing('post_media', ['post_id' => $postId]);
+    }
+
+    private function png(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            $name,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+        );
     }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
@@ -10,6 +11,7 @@ import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/safe_layout.dart';
 import '../providers/community_provider.dart';
+import '../widgets/community_photo_gallery.dart';
 
 /// Displays a post, its comments, and a keyboard-safe comment form.
 class PostDetailScreen extends ConsumerStatefulWidget {
@@ -242,6 +244,10 @@ class _PostDetailBody extends StatelessWidget {
                   style: theme.textTheme.bodyLarge,
                   softWrap: true,
                 ),
+                if (post.media.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  CommunityPhotoGallery(photos: post.media),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [

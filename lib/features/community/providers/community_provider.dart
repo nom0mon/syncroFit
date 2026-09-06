@@ -1,12 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/remote/providers.dart';
+import '../../../data/caching/caching_community_repository.dart';
+import '../../../core/network/connectivity_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../data/repositories/community_repository.dart';
 import '../../../shared/models/models.dart';
 
 /// Provides the [CommunityRepository] instance used by the community module.
 final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
-  return ref.watch(remoteCommunityRepositoryProvider);
+  final userId = ref.watch(authStateProvider).user?.id ?? 'anonymous';
+  return CachingCommunityRepository(
+    remote: ref.watch(remoteCommunityRepositoryProvider),
+    connectivity: ref.watch(connectivityMonitorProvider),
+    userId: userId,
+  );
 });
 
 /// The state exposed by the community provider.
@@ -16,20 +24,32 @@ class CommunityState {
 
   /// Error message if something went wrong, null otherwise.
   final String? errorMessage;
+  final int currentPage;
+  final bool hasMore;
+  final bool isLoadingMore;
 
   const CommunityState({
     this.posts = const [],
     this.errorMessage,
+    this.currentPage = 1,
+    this.hasMore = false,
+    this.isLoadingMore = false,
   });
 
   /// Returns a copy of this state with optional overrides.
   CommunityState copyWith({
     List<Post>? posts,
     String? errorMessage,
+    int? currentPage,
+    bool? hasMore,
+    bool? isLoadingMore,
   }) {
     return CommunityState(
       posts: posts ?? this.posts,
       errorMessage: errorMessage,
+      currentPage: currentPage ?? this.currentPage,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
 }
@@ -49,7 +69,7 @@ class CommunityNotifier extends AsyncNotifier<CommunityState> {
   Future<CommunityState> build() async {
     final result = await _repo.getPosts();
     return switch (result) {
-      Success(value: final posts) => CommunityState(posts: posts),
+      Success(value: final page) => CommunityState(posts: page.posts, currentPage: page.currentPage, hasMore: page.hasMore),
       Failure(error: final error) =>
         CommunityState(errorMessage: error.message),
     };
@@ -136,24 +156,51 @@ class CommunityNotifier extends AsyncNotifier<CommunityState> {
 
     // Also persist to the repository in background
     final result = await _repo.addComment(postId, comment);
-    return switch (result) {
-      Success(value: final updated) => (_replacePost(updated), null).$2,
-      Failure(error: final error) => (state = AsyncValue.data(currentState), error.message).$2,
-    };
+    switch (result) {
+      case Success(value: final updated):
+        _replacePost(updated);
+        return null;
+      case Failure(error: final error):
+        state = AsyncValue.data(currentState);
+        return error.message;
+    }
   }
 
-  Future<String?> createPost(String content) async {
+  Future<void> loadMore() async {
+    final current = state.valueOrNull;
+    if (current == null || !current.hasMore || current.isLoadingMore) return;
+    state = AsyncValue.data(current.copyWith(isLoadingMore: true));
+    final result = await _repo.getPosts(page: current.currentPage + 1);
+    switch (result) {
+      case Success(value: final page):
+        final ids = current.posts.map((post) => post.id).toSet();
+        state = AsyncValue.data(current.copyWith(
+          posts: [...current.posts, ...page.posts.where((post) => ids.add(post.id))],
+          currentPage: page.currentPage, hasMore: page.hasMore, isLoadingMore: false,
+        ));
+      case Failure():
+        state = AsyncValue.data(current.copyWith(isLoadingMore: false));
+    }
+  }
+
+  Future<String?> createPost(String content, {List<CommunityPhotoUpload> photos = const [], void Function(int, int)? onProgress}) async {
     final trimmed = content.trim();
-    if (trimmed.isEmpty) return 'Post text is required';
+    if (trimmed.isEmpty && photos.isEmpty) return 'Write something or add a photo.';
     if (trimmed.length > 2000) return 'Posts can contain up to 2,000 characters.';
     final result = await _repo.createPost(Post(
       id: '', authorName: '', content: trimmed, timestamp: DateTime.now(),
       likeCount: 0, isLikedByCurrentUser: false, comments: const [],
-    ));
-    return switch (result) {
-      Success(value: final post) => (_prependPost(post), null).$2,
-      Failure(error: final error) => error.message,
-    };
+    ), photos: photos, onProgress: onProgress);
+    switch (result) {
+      case Success(value: final post):
+        _prependPost(post);
+        return null;
+      case Failure(error: final error):
+        if (error is ValidationError && error.fieldErrors.isNotEmpty) {
+          return error.fieldErrors.values.first;
+        }
+        return error.message;
+    }
   }
 
   Future<String?> deletePost(String postId) async {
@@ -203,9 +250,14 @@ class CommunityNotifier extends AsyncNotifier<CommunityState> {
 
   void _replacePost(Post updated) {
     final current = state.valueOrNull;
-    if (current != null) state = AsyncValue.data(current.copyWith(
-      posts: current.posts.map((post) => post.id == updated.id ? updated : post).toList(),
-    ));
+    if (current != null) {
+      final found = current.posts.any((post) => post.id == updated.id);
+      state = AsyncValue.data(current.copyWith(
+        posts: found
+            ? current.posts.map((post) => post.id == updated.id ? updated : post).toList()
+            : [updated, ...current.posts],
+      ));
+    }
   }
 
   /// Returns a post by its ID, or null if not found.

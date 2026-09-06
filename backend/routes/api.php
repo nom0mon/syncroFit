@@ -77,4 +77,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'comments']);
     Route::post('/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'comment']);
     Route::delete('/community/posts/{post}/comments/{comment}', [\App\Http\Controllers\CommunityController::class, 'destroyComment']);
+    Route::get('/community/posts/{post}/media/{media}', [\App\Http\Controllers\CommunityController::class, 'media']);
 });

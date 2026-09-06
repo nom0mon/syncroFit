@@ -27,7 +27,7 @@ class CachingProfileRepository implements ProfileRepository {
   final SyncQueueDao _syncQueueDao;
   final ConnectivityMonitor _connectivity;
 
-  static const _entityType = 'profile';
+  String _cacheEntityType(String userId) => 'profile_$userId';
   static const _cacheDuration = Duration(minutes: 15);
   static const _uuid = Uuid();
 
@@ -47,11 +47,11 @@ class CachingProfileRepository implements ProfileRepository {
   Future<Result<UserProfile, AppError>> getProfile(String userId) async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       // Check if cache is still fresh
-      final lastSynced = await _cacheMetadataDao.getLastSynced(_entityType);
+      final lastSynced = await _cacheMetadataDao.getLastSynced(_cacheEntityType(userId));
       if (lastSynced != null &&
           DateTime.now().difference(lastSynced) < _cacheDuration) {
         final cached = await _dao.get();
-        if (cached != null) {
+        if (cached != null && cached.userId == userId) {
           return Success(cached);
         }
       }
@@ -60,14 +60,14 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.getProfile(userId);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(userId), DateTime.now());
       }
       return result;
     }
 
     // Offline: serve from DAO
     final cached = await _dao.get();
-    if (cached != null) {
+    if (cached != null && cached.userId == userId) {
       return Success(cached);
     }
     return Failure(NetworkError());
@@ -79,7 +79,7 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.saveProfile(profile);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(profile.userId), DateTime.now());
       }
       return result;
     }
@@ -105,7 +105,7 @@ class CachingProfileRepository implements ProfileRepository {
 
     final mutation = SyncMutation(
       id: _uuid.v4(),
-      entityType: _entityType,
+      entityType: 'profile',
       entityId: profile.userId,
       operationType: 'create',
       payload: {
@@ -126,7 +126,7 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.updateProfile(profile);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_entityType, DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(profile.userId), DateTime.now());
       }
       return result;
     }
@@ -159,7 +159,7 @@ class CachingProfileRepository implements ProfileRepository {
 
     final mutation = SyncMutation(
       id: _uuid.v4(),
-      entityType: _entityType,
+      entityType: 'profile',
       entityId: profile.userId,
       operationType: 'update',
       payload: dirtyFields,

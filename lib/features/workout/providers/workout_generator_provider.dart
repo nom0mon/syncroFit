@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/remote/providers.dart';
 import '../../../shared/models/models.dart';
 import 'workout_scheduler_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
 /// The lifecycle status of the workout generator flow.
 enum WorkoutGeneratorStatus { idle, generating, generated, error }
@@ -144,5 +145,8 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
 /// Provider exposing the [WorkoutGeneratorNotifier] and its state.
 final workoutGeneratorProvider =
     StateNotifierProvider<WorkoutGeneratorNotifier, WorkoutGeneratorState>(
-  (ref) => WorkoutGeneratorNotifier(ref),
+  (ref) {
+    ref.watch(authStateProvider.select((auth) => auth.user?.id));
+    return WorkoutGeneratorNotifier(ref);
+  },
 );

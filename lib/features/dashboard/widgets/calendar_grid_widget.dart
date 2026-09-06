@@ -5,12 +5,13 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../utils/calendar_utils.dart';
 
-/// A monthly calendar grid widget that shows workout completion status per day.
+/// A monthly calendar grid widget that shows workout schedule and completion.
 ///
 /// Renders a section header ("CALENDAR GRID" / "[TAP A DAY]"), weekday headers,
 /// and a date grid with visual indicators:
-/// - White filled circle for completed dates
-/// - White outlined circle for today (no workout)
+/// - Outlined circle for dates whose weekday has a scheduled workout
+/// - Filled circle for the currently selected date
+/// - Small dot for completed dates
 /// - No decoration for other dates
 ///
 /// Emits selected date via [onDateSelected] callback.
@@ -21,6 +22,7 @@ class CalendarGridWidget extends StatelessWidget {
     required this.completedDates,
     required this.selectedDate,
     required this.onDateSelected,
+    this.scheduledWeekdays = const {},
     this.year,
     this.month,
   });
@@ -33,6 +35,9 @@ class CalendarGridWidget extends StatelessWidget {
 
   /// Callback when a date is tapped.
   final ValueChanged<DateTime> onDateSelected;
+
+  /// ISO weekdays (Monday = 1, Sunday = 7) that have a recurring workout.
+  final Set<int> scheduledWeekdays;
 
   /// Year to display. Defaults to current year if null.
   final int? year;
@@ -83,7 +88,12 @@ class CalendarGridWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDateGrid(List<int?> grid, int displayYear, int displayMonth, ThemeData theme) {
+  Widget _buildDateGrid(
+    List<int?> grid,
+    int displayYear,
+    int displayMonth,
+    ThemeData theme,
+  ) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -103,6 +113,7 @@ class CalendarGridWidget extends StatelessWidget {
         final status = getDayStatus(date, completedDates);
 
         final isSelected = _isSameDay(date, selectedDate);
+        final hasSchedule = scheduledWeekdays.contains(date.weekday);
         return Semantics(
           button: true,
           selected: isSelected,
@@ -111,7 +122,7 @@ class CalendarGridWidget extends StatelessWidget {
             onTap: () => onDateSelected(date),
             behavior: HitTestBehavior.opaque,
             child: Center(
-              child: _buildDayCell(day, status, isSelected, theme),
+              child: _buildDayCell(day, status, isSelected, hasSchedule, theme),
             ),
           ),
         );
@@ -123,79 +134,55 @@ class CalendarGridWidget extends StatelessWidget {
     int day,
     DayStatus status,
     bool isSelected,
+    bool hasSchedule,
     ThemeData theme,
   ) {
-    const cellSize = 32.0;
+    const cellSize = 36.0;
     final onSurface = theme.colorScheme.onSurface;
     final surface = theme.colorScheme.surface;
+    final completed = status == DayStatus.completed;
+    final today = status == DayStatus.today;
 
-    late final Widget content;
-    switch (status) {
-      case DayStatus.completed:
-        // Filled circle with inverted colors
-        content = Container(
-          width: cellSize,
-          height: cellSize,
-          decoration: BoxDecoration(
-            color: onSurface,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: Text(
+    return SizedBox.square(
+      dimension: cellSize,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (isSelected || hasSchedule)
+            Container(
+              key: ValueKey('calendar-indicator-$day'),
+              width: cellSize,
+              height: cellSize,
+              decoration: BoxDecoration(
+                color: isSelected ? onSurface : Colors.transparent,
+                shape: BoxShape.circle,
+                border: hasSchedule && !isSelected
+                    ? Border.all(color: onSurface, width: 1.5)
+                    : null,
+              ),
+            ),
+          Text(
             '$day',
             style: AppTextStyles.bodySmall.copyWith(
-              color: surface,
-              fontWeight: FontWeight.w600,
+              color: isSelected ? surface : onSurface,
+              fontWeight:
+                  today || isSelected ? FontWeight.w700 : FontWeight.normal,
             ),
           ),
-        );
-        break;
-      case DayStatus.today:
-        // Outlined circle
-        content = Container(
-          width: cellSize,
-          height: cellSize,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: onSurface,
-              width: 1.5,
+          if (completed && !isSelected)
+            Positioned(
+              bottom: 1,
+              child: Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: onSurface,
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            '$day',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: onSurface,
-            ),
-          ),
-        );
-        break;
-      case DayStatus.normal:
-        // No decoration
-        content = Text(
-          '$day',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: onSurface,
-          ),
-        );
-        break;
-    }
-
-    if (!isSelected) return content;
-
-    // Selection is separate from workout status: a completed day remains
-    // filled, while the outer ring confirms which day's sessions are shown.
-    return Container(
-      width: cellSize + 8,
-      height: cellSize + 8,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: onSurface, width: 1.5),
+        ],
       ),
-      alignment: Alignment.center,
-      child: content,
     );
   }
 

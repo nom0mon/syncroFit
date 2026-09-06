@@ -11,6 +11,9 @@ import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/community_provider.dart';
+import '../widgets/community_photo_gallery.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../data/repositories/community_repository.dart';
 
 /// Displays a responsive, constrained list of community posts.
 ///
@@ -57,7 +60,13 @@ class FeedScreen extends ConsumerWidget {
               return _EmptyFeed(composer: effectiveComposer);
             }
 
-            return _FeedList(posts: state.posts, composer: effectiveComposer);
+            return _FeedList(
+              posts: state.posts,
+              composer: effectiveComposer,
+              hasMore: state.hasMore,
+              isLoadingMore: state.isLoadingMore,
+              onLoadMore: () => ref.read(communityProvider.notifier).loadMore(),
+            );
           },
         ),
       ),
@@ -121,10 +130,16 @@ class _FeedList extends StatelessWidget {
   const _FeedList({
     required this.posts,
     this.composer,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onLoadMore,
   });
 
   final List<Post> posts;
   final Widget? composer;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +152,7 @@ class _FeedList extends StatelessWidget {
             top: AppSpacing.md,
             bottom: AppSpacing.xxl,
           ),
-          itemCount: posts.length + leadingItems,
+          itemCount: posts.length + leadingItems + (hasMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (composer != null && index == 0) {
               return ResponsiveConstrainedPage(
@@ -146,6 +161,20 @@ class _FeedList extends StatelessWidget {
                   child: KeyedSubtree(
                     key: const Key('community-composer-integration-point'),
                     child: composer!,
+                  ),
+                ),
+              );
+            }
+
+            if (hasMore && index == posts.length + leadingItems) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: FilledButton(
+                    onPressed: isLoadingMore ? null : onLoadMore,
+                    child: isLoadingMore
+                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Load more'),
                   ),
                 ),
               );
@@ -216,6 +245,10 @@ class _PostCard extends ConsumerWidget {
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (post.media.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                CommunityPhotoGallery(photos: post.media),
+              ],
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.md,
@@ -267,8 +300,11 @@ class _PostComposer extends ConsumerStatefulWidget {
 
 class _PostComposerState extends ConsumerState<_PostComposer> {
   final _controller = TextEditingController();
+  final _picker = ImagePicker();
+  final List<CommunityPhotoUpload> _photos = [];
   bool _submitting = false;
   String? _error;
+  double _uploadProgress = 0;
 
   @override
   void dispose() {
@@ -278,10 +314,63 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
 
   Future<void> _submit() async {
     setState(() { _submitting = true; _error = null; });
-    final error = await ref.read(communityProvider.notifier).createPost(_controller.text);
+    final error = await ref.read(communityProvider.notifier).createPost(
+      _controller.text,
+      photos: List.unmodifiable(_photos),
+      onProgress: (sent, total) {
+        if (mounted && total > 0) setState(() => _uploadProgress = sent / total);
+      },
+    );
     if (!mounted) return;
     setState(() { _submitting = false; _error = error; });
-    if (error == null) _controller.clear();
+    if (error == null) {
+      _controller.clear();
+      setState(() { _photos.clear(); _uploadProgress = 0; });
+    }
+  }
+
+  Future<void> _pickPhotos() async {
+    try {
+      final selected = await _picker.pickMultiImage(
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 90,
+      );
+      if (!mounted || selected.isEmpty) return;
+      if (selected.length > 4 - _photos.length) {
+        setState(() => _error = 'You can attach up to four photos.');
+        return;
+      }
+      final additions = <CommunityPhotoUpload>[];
+      for (final photo in selected) {
+        final extension = photo.name.split('.').last.toLowerCase();
+        final mime = photo.mimeType?.toLowerCase();
+        if (!const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension) &&
+            !const {'image/jpeg', 'image/png', 'image/webp'}.contains(mime)) {
+          setState(() => _error = 'Choose JPEG, PNG, or WebP photos.');
+          return;
+        }
+        final bytes = await photo.readAsBytes();
+        if (bytes.length > 8 * 1024 * 1024) {
+          setState(() => _error = 'Each photo must be smaller than 8 MB.');
+          return;
+        }
+        final normalizedExtension = const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)
+            ? extension
+            : mime == 'image/png'
+                ? 'png'
+                : mime == 'image/webp'
+                    ? 'webp'
+                    : 'jpg';
+        final filename = const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)
+            ? photo.name
+            : 'community-photo-${DateTime.now().microsecondsSinceEpoch}.$normalizedExtension';
+        additions.add(CommunityPhotoUpload(bytes: bytes, filename: filename));
+      }
+      setState(() { _photos.addAll(additions); _error = null; });
+    } catch (_) {
+      if (mounted) setState(() => _error = 'The photo picker could not open.');
+    }
   }
 
   @override
@@ -292,6 +381,33 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_photos.isNotEmpty) ...[
+                SizedBox(
+                  height: 104,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _photos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.xs),
+                    itemBuilder: (_, index) => Stack(children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(_photos[index].bytes, width: 104, height: 104, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: IconButton.filledTonal(
+                          tooltip: 'Remove photo',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _submitting ? null : () => setState(() => _photos.removeAt(index)),
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               TextField(
                 key: const Key('community-post-field'),
                 controller: _controller,
@@ -305,16 +421,25 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
+              if (_submitting && _photos.isNotEmpty)
+                LinearProgressIndicator(value: _uploadProgress == 0 ? null : _uploadProgress),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _submitting || _photos.length >= 4 ? null : _pickPhotos,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    label: Text(_photos.isEmpty ? 'Add photos' : '${_photos.length}/4 photos'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
                   key: const Key('community-submit-post'),
                   onPressed: _submitting ? null : _submit,
                   icon: _submitting
                       ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.send),
                   label: const Text('Post'),
-                ),
+                  ),
+                ],
               ),
             ],
           ),

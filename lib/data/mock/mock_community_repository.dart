@@ -8,9 +8,9 @@ class MockCommunityRepository implements CommunityRepository {
   final List<Post> _posts = List.of(MockData.posts);
 
   @override
-  Future<Result<List<Post>, AppError>> getPosts() async {
+  Future<Result<CommunityPage, AppError>> getPosts({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return Success(List.unmodifiable(_posts));
+    return Success(CommunityPage(posts: List.unmodifiable(_posts), currentPage: 1, lastPage: 1));
   }
 
   @override
@@ -25,7 +25,7 @@ class MockCommunityRepository implements CommunityRepository {
   }
 
   @override
-  Future<Result<Post, AppError>> createPost(Post post) async {
+  Future<Result<Post, AppError>> createPost(Post post, {List<CommunityPhotoUpload> photos = const [], void Function(int, int)? onProgress}) async {
     await Future.delayed(const Duration(milliseconds: 350));
 
     _posts.insert(0, post);

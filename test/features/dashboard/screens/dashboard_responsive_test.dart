@@ -9,8 +9,8 @@ import 'package:synchrofit/features/dashboard/providers/dashboard_provider.dart'
 import 'package:synchrofit/features/settings/providers/settings_provider.dart';
 import 'package:synchrofit/features/dashboard/screens/dashboard_screen.dart';
 import 'package:synchrofit/features/dashboard/widgets/calendar_grid_widget.dart';
-import 'package:synchrofit/features/dashboard/widgets/completed_sessions_widget.dart';
 import 'package:synchrofit/features/dashboard/widgets/weekly_load_chart_widget.dart';
+import 'package:synchrofit/features/workout/providers/workout_scheduler_provider.dart';
 import 'package:synchrofit/shared/widgets/error_display.dart';
 import 'package:synchrofit/shared/widgets/loading_indicator.dart';
 
@@ -32,6 +32,7 @@ void main() {
     return ProviderScope(
       overrides: [
         dashboardProvider.overrideWith(createNotifier),
+        scheduledWorkoutsProvider.overrideWithValue(const []),
         sharedPreferencesProvider.overrideWithValue(preferences),
       ],
       child: const DashboardScreen(),
@@ -57,7 +58,7 @@ void main() {
       final chart = tester.getRect(find.byType(WeeklyLoadChartWidget));
       expect(goalStat.top, greaterThanOrEqualTo(weeklyStat.bottom));
       expect(chart.top, greaterThanOrEqualTo(calendar.bottom));
-      expect(find.byType(CompletedSessionsWidget), findsOneWidget);
+      expect(find.byKey(const Key('selected-date-schedule')), findsOneWidget);
     });
 
     testWidgets('uses two readable panel columns on a tablet', (tester) async {
@@ -121,10 +122,7 @@ void main() {
       );
 
       expect(
-        find.text(
-          'No finished workouts landed on this day yet. '
-          'Pick another date or log a new session.',
-        ),
+        find.text('No workout scheduled for this day.'),
         findsOneWidget,
       );
     });
