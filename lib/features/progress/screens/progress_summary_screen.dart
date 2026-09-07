@@ -549,7 +549,7 @@ class _RecentWorkouts extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: history.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) =>
                 _WorkoutHistoryTile(record: history[index]),
           ),
@@ -568,45 +568,119 @@ class _WorkoutHistoryTile extends StatelessWidget {
     final theme = Theme.of(context);
     final exercises = record.exercises;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      title: Text(
-        record.workoutName,
-        style: theme.textTheme.titleSmall,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${formatDate(record.completedAt)} • '
-            '${formatDuration(record.totalDurationSeconds)} • '
-            '${record.exercisesCompleted.length} exercises',
-            style: theme.textTheme.bodySmall,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (exercises.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ...exercises.map(
-              (exercise) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Text(
-                  exercise.isDuration
-                      ? '• ${exercise.exerciseName} — ${exercise.setsCompleted} sets × ${exercise.repsOrDuration} sec'
-                      : '• ${exercise.exerciseName} — ${exercise.setsCompleted} sets × ${exercise.repsOrDuration} reps',
-                  style: theme.textTheme.bodySmall,
-                ),
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(record.workoutName, style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              formatDate(record.completedAt),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.xl,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _HistoryMetric(
+                  label: 'Duration',
+                  value: formatDuration(record.totalDurationSeconds),
+                ),
+                _HistoryMetric(label: 'Exercises', value: '${exercises.length}'),
+              ],
+            ),
+            if (exercises.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              const Divider(height: 1),
+              const SizedBox(height: AppSpacing.sm),
+              const _ExerciseTableRow(
+                name: 'Exercise',
+                sets: 'Sets',
+                amount: 'Reps / Time',
+                header: true,
+              ),
+              ...exercises.map((exercise) => _ExerciseTableRow(
+                    name: exercise.exerciseName,
+                    sets: '${exercise.setsCompleted}',
+                    amount: exercise.isDuration
+                        ? '${exercise.repsOrDuration} sec'
+                        : '${exercise.repsOrDuration} reps',
+                  )),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryMetric extends StatelessWidget {
+  const _HistoryMetric({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          Text(
+            value,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      );
+}
+
+class _ExerciseTableRow extends StatelessWidget {
+  const _ExerciseTableRow({
+    required this.name,
+    required this.sets,
+    required this.amount,
+    this.header = false,
+  });
+
+  final String name;
+  final String sets;
+  final String amount;
+  final bool header;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = header
+        ? theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          )
+        : theme.textTheme.bodySmall;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 5, child: Text(name, style: style)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            flex: 2,
+            child: Text(sets, textAlign: TextAlign.center, style: style),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            flex: 3,
+            child: Text(amount, textAlign: TextAlign.end, style: style),
+          ),
         ],
       ),
-      isThreeLine: true,
     );
   }
 }

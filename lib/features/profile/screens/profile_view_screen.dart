@@ -150,39 +150,38 @@ class _ProfileContent extends StatelessWidget {
               // Physical info section
               const _SectionHeader(title: 'Physical Information'),
               const SizedBox(height: AppSpacing.sm),
-              _InfoRow(label: 'Age', value: '${profile.age} years'),
-              _InfoRow(label: 'Height', value: '${profile.heightCm} cm'),
-              _InfoRow(label: 'Weight', value: '${profile.weightKg} kg'),
-              _InfoRow(label: 'Gender', value: profile.gender.label),
+              _InfoTable(rows: [
+                _InfoRow(label: 'Age', value: '${profile.age} years'),
+                _InfoRow(label: 'Height', value: '${profile.heightCm} cm'),
+                _InfoRow(label: 'Weight', value: '${profile.weightKg} kg'),
+                _InfoRow(label: 'Gender', value: profile.gender.label),
+              ]),
               const SizedBox(height: AppSpacing.lg),
 
               // Fitness info section
               const _SectionHeader(title: 'Fitness Settings'),
               const SizedBox(height: AppSpacing.sm),
-              _InfoRow(label: 'Goal', value: profile.fitnessGoal.label),
-              _InfoRow(label: 'Level', value: profile.fitnessLevel.label),
-              _InfoRow(
-                label: 'Preference',
-                value: profile.workoutPreference.label,
-              ),
+              _InfoTable(rows: [
+                _InfoRow(label: 'Goal', value: profile.fitnessGoal.label),
+                _InfoRow(label: 'Level', value: profile.fitnessLevel.label),
+                _InfoRow(
+                  label: 'Preference',
+                  value: profile.workoutPreference.label,
+                ),
+              ]),
               const SizedBox(height: AppSpacing.lg),
 
               // Availability section
               const _SectionHeader(title: 'Workout Availability'),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: profile.workoutAvailability.map((day) {
-                  return Chip(
-                    label: Text(day.fullLabel),
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    labelStyle: TextStyle(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  );
-                }).toList(),
-              ),
+              _InfoTable(rows: [
+                _InfoRow(
+                  label: 'Available Days',
+                  value: profile.workoutAvailability
+                      .map((day) => day.fullLabel)
+                      .join(', '),
+                ),
+              ]),
               const SizedBox(height: AppSpacing.xl),
             ],
           ),
@@ -208,55 +207,61 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
+class _InfoTable extends StatelessWidget {
+  const _InfoTable({required this.rows});
+
+  final List<_InfoRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(0.4),
+          1: FlexColumnWidth(0.6),
+        },
+        border: TableBorder(
+          horizontalInside: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+          ),
+        ),
+        children: rows.map((row) => row.buildTableRow(context)).toList(),
+      ),
+    );
+  }
+}
+
+class _InfoRow {
   const _InfoRow({required this.label, required this.value});
 
   final String label;
   final String value;
 
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final textScale = MediaQuery.textScalerOf(context).scale(1);
-        final stackValues =
-            ResponsiveStandards.widthClassFor(constraints.maxWidth) ==
-                    AppWidthClass.compact ||
-                textScale >= 1.5;
-        final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            );
-        final valueStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            );
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-          child: stackValues
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: labelStyle),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(value, style: valueStyle),
-                  ],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: Text(label, style: labelStyle)),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        value,
-                        textAlign: TextAlign.end,
-                        style: valueStyle,
-                      ),
-                    ),
-                  ],
-                ),
-        );
-      },
-    );
+  TableRow buildTableRow(BuildContext context) {
+    final theme = Theme.of(context);
+    return TableRow(children: [
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ]);
   }
 }
