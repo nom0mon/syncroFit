@@ -9,6 +9,7 @@ import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/workout_generator_provider.dart';
+import '../providers/workout_scheduler_provider.dart';
 
 /// Dedicated screen for the schedule-aware workout generator.
 ///
@@ -79,7 +80,7 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
                     ? null
                     : () => _onGeneratePressed(context, ref, notifier),
                 onAccept: hasDraft && !isAccepting
-                    ? () => _onAcceptPressed(context, notifier)
+                    ? () => _onAcceptPressed(context, ref, notifier)
                     : null,
               ),
             ),
@@ -109,11 +110,14 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
 
   Future<void> _onAcceptPressed(
     BuildContext context,
+    WidgetRef ref,
     WorkoutGeneratorNotifier notifier,
   ) async {
     final accepted = await notifier.acceptPlan();
     if (!context.mounted) return;
     if (accepted) {
+      await ref.read(workoutSchedulerProvider.notifier).refresh();
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Workout plan accepted and scheduled.')),
       );

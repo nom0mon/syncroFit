@@ -23,18 +23,14 @@ class EdgeFadeGradient extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-
-    // In light mode the fade overlay obscures content (white band over white
-    // background adds no value and hides text/charts). Only render in dark mode.
-    if (brightness == Brightness.light) {
-      return const SizedBox.shrink();
-    }
-
     final scaffoldColor = Theme.of(context).scaffoldBackgroundColor;
+    // Keep the scaffold RGB channels while reducing only opacity. Using
+    // Colors.transparent would interpolate through transparent black and
+    // creates a grey band on light backgrounds.
+    final transparentScaffold = scaffoldColor.withValues(alpha: 0);
     final colors = isTop
-        ? [scaffoldColor, Colors.transparent]
-        : [Colors.transparent, scaffoldColor];
+        ? [scaffoldColor, transparentScaffold]
+        : [transparentScaffold, scaffoldColor];
 
     return IgnorePointer(
       child: Container(

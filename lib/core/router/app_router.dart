@@ -19,7 +19,6 @@ import '../../features/profile/screens/profile_setup_screen.dart';
 import '../../features/profile/screens/profile_view_screen.dart';
 
 import '../../features/settings/screens/change_password_screen.dart';
-import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/settings_main_screen.dart';
 import '../../features/community/screens/post_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
@@ -104,11 +103,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.settings,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SettingsMainScreen(),
-      ),
-      GoRoute(
-        path: '/settings/notifications',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NotificationSettingsScreen(),
       ),
       GoRoute(
         path: '/settings/change-password',

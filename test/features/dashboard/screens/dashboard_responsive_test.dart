@@ -163,7 +163,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('My Profile'), findsOneWidget);
-      expect(find.text('Local Notification Preferences'), findsOneWidget);
+      expect(find.text('App Notifications'), findsOneWidget);
       expect(find.text('Change Password'), findsOneWidget);
       expect(find.text('Notifications have been removed.'), findsNothing);
       expect(find.text('Search'), findsNothing);

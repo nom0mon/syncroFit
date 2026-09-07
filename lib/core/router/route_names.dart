@@ -36,7 +36,6 @@ abstract final class RouteNames {
 
   // Settings
   static const String settings = '/settings';
-  static const String notificationSettings = '/settings/notifications';
   static const String changePassword = '/settings/change-password';
   static const String profileView = '/settings/profile';
   static const String editProfile = '/settings/edit-profile';

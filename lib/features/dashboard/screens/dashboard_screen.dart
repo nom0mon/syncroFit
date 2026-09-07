@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/platform/notification_settings_launcher.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/models/scheduled_workout.dart';
@@ -82,6 +83,15 @@ class DashboardScreen extends ConsumerWidget {
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
       ),
+    );
+  }
+}
+
+Future<void> _openSystemNotificationSettings(BuildContext context) async {
+  final opened = await NotificationSettingsLauncher.open();
+  if (!opened && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open phone settings.')),
     );
   }
 }
@@ -319,9 +329,7 @@ class _DashboardStatCard extends StatelessWidget {
 
 /// Full-screen settings menu exposed by the dashboard hamburger action.
 ///
-/// Every destination listed here has a real release route. Notification
-/// preferences are explicitly labeled as local so this menu does not imply the
-/// removed notification inbox or push-delivery feature is available.
+/// Every destination listed here has a real release route or system action.
 class _FullScreenSettingsMenu extends ConsumerWidget {
   const _FullScreenSettingsMenu();
 
@@ -370,9 +378,10 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.notifications_outlined),
-                title: const Text('Local Notification Preferences'),
-                onTap: () =>
-                    _openRoute(context, RouteNames.notificationSettings),
+                title: const Text('App Notifications'),
+                subtitle: const Text('Manage in phone settings'),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _openSystemNotificationSettings(context),
               ),
               ListTile(
                 leading: const Icon(Icons.lock_outline),

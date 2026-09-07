@@ -9,7 +9,6 @@ import 'package:synchrofit/features/profile/screens/profile_edit_screen.dart';
 import 'package:synchrofit/features/profile/screens/profile_view_screen.dart';
 import 'package:synchrofit/features/settings/providers/settings_provider.dart';
 import 'package:synchrofit/features/settings/screens/change_password_screen.dart';
-import 'package:synchrofit/features/settings/screens/notification_settings_screen.dart';
 import 'package:synchrofit/features/settings/screens/settings_main_screen.dart';
 import 'package:synchrofit/shared/models/models.dart';
 
@@ -76,28 +75,11 @@ void main() {
           settle: true,
         );
 
-        expect(find.text('Notification Settings'), findsOneWidget);
+        expect(find.text('App Notifications'), findsOneWidget);
         expect(find.text('Change Password'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('notification rows fit ${configuration.name}',
-          (tester) async {
-        await tester.pumpResponsiveWidget(
-          ProviderScope(
-            overrides: [
-              sharedPreferencesProvider.overrideWithValue(preferences),
-            ],
-            child: const NotificationSettingsScreen(),
-          ),
-          configuration: configuration,
-          settle: true,
-        );
-
-        expect(find.text('Workout Reminders'), findsOneWidget);
-        expect(find.text('Achievement Alerts'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
     }
   });
 
@@ -173,6 +155,8 @@ void main() {
       settle: true,
     );
 
+    await tester.ensureVisible(find.text('Sign Out'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign Out'));
     await tester.pumpAndSettle();
 

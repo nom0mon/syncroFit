@@ -27,6 +27,7 @@ class MainActivity : FlutterActivity() {
                     "checkCameraPermission" -> result.success(cameraPermissionStatus())
                     "requestCameraPermission" -> requestCameraPermission(result)
                     "openAppSettings" -> result.success(openAppSettings())
+                    "openNotificationSettings" -> result.success(openNotificationSettings())
                     else -> result.notImplemented()
                 }
             }
@@ -95,6 +96,18 @@ class MainActivity : FlutterActivity() {
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    private fun openNotificationSettings(): Boolean {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        }
+        return try {
+            startActivity(intent)
+            true
+        } catch (_: Exception) {
+            openAppSettings()
         }
     }
 }

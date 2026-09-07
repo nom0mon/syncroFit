@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/platform/notification_settings_launcher.dart';
+import '../../../core/notifications/workout_reminder_service.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/safe_layout.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -11,7 +13,7 @@ import '../providers/settings_provider.dart';
 ///
 /// Provides navigation to:
 /// - Edit Profile
-/// - Notification Settings
+/// - Android app notification controls
 /// - Change Password
 ///
 /// Also includes a dark mode toggle switch that persists via SharedPreferences.
@@ -39,9 +41,18 @@ class SettingsMainScreen extends ConsumerWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.notifications_outlined),
-                title: const Text('Notification Settings', softWrap: true),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/settings/notifications'),
+                title: const Text('App Notifications', softWrap: true),
+                subtitle: const Text(
+                  'Mute or manage notifications in your phone settings',
+                ),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _openNotificationSettings(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Send Test Workout Reminder'),
+                subtitle: const Text('Verify notifications on this phone'),
+                onTap: () => _sendTestReminder(context),
               ),
               ListTile(
                 leading: const Icon(Icons.lock_outline),
@@ -99,6 +110,29 @@ class SettingsMainScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNotificationSettings(BuildContext context) async {
+    final opened = await NotificationSettingsLauncher.open();
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open phone settings.')),
+      );
+    }
+  }
+
+  Future<void> _sendTestReminder(BuildContext context) async {
+    final sent = await WorkoutReminderService.instance.showTestReminder();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? 'Test workout reminder sent.'
+              : 'Allow SyncroFit notifications in phone settings, then try again.',
         ),
       ),
     );

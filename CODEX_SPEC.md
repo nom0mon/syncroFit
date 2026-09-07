@@ -394,6 +394,19 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 - [x] Android release build succeeds.
 - [ ] Manual smoke test completes on an emulator or device.
 
+### Scheduled workout notifications
+
+- [x] Replace the unused server-token notification stub with Android local
+      notifications focused only on accepted workout schedule days.
+- [x] Schedule a recurring reminder at 8:00 AM local time for each planned
+      weekday, using inexact delivery so no exact-alarm permission is needed.
+- [x] Restore reminders after reboot/app update and open the matching workout
+      when a reminder is tapped.
+- [x] Keep notification muting in Android system settings and remove
+      consultation-reminder preferences.
+- [~] Confirm the permission prompt, immediate test reminder, and notification
+      tap behavior on the physical Android test phone.
+
 ## Out of scope
 
 - Medical diagnosis or personalized medical advice based on BMI.
@@ -446,6 +459,7 @@ No unresolved decisions currently block implementation.
 | 2026-09-06 | Fall back to account-scoped SQLite profile/workout records whenever an optimistic cold-start request fails, and write generated plans through the caching repository. | Device testing showed authentication survived restart while profile and workout data disappeared because reachability detection completed after providers attempted remote reads. |
 | 2026-09-06 | Query cached profiles by authenticated user ID instead of returning the first SQLite row. | Direct device-database inspection showed multiple valid account profiles; returning Simon's first row caused Aquil's profile check to fail and prevented schedule construction offline. |
 | 2026-09-06 | Treat newly generated workout plans as server-side drafts until the user explicitly accepts them. | A visual-only confirmation would be misleading; preserving the active plan during review makes Regenerate and Accept Plan behavior unambiguous and recoverable. |
+| 2026-09-07 | Use local Android notifications for workout schedules only, recurring at 8:00 AM local time with inexact delivery. | This works offline and avoids Firebase/backend device-token deployment while keeping users in control through phone notification settings. |
 
 ## Progress summary
 

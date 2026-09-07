@@ -34,7 +34,7 @@ void main() {
     // ─── Bug 1: EdgeFadeGradient uses hardcoded black instead of theme color ───
 
     testWidgets(
-      'EdgeFadeGradient in light theme renders nothing (no visible overlay)',
+      'EdgeFadeGradient top in light theme fades from the scaffold color',
       (tester) async {
         // Render EdgeFadeGradient inside a light-theme MaterialApp
         await tester.pumpWidget(
@@ -46,24 +46,29 @@ void main() {
           ),
         );
 
-        // In light mode, the widget should render a SizedBox.shrink() — no
-        // Container with gradient decoration should exist.
+        // The light theme renders the same edge treatment using its own
+        // scaffold color.
         final containerFinder = find.descendant(
           of: find.byType(EdgeFadeGradient),
           matching: find.byType(Container),
         );
+        expect(containerFinder, findsOneWidget);
+        final container = tester.widget<Container>(containerFinder);
+        final gradient =
+            (container.decoration as BoxDecoration).gradient as LinearGradient;
         expect(
-          containerFinder,
-          findsNothing,
-          reason:
-              'EdgeFadeGradient should render nothing in light mode to avoid '
-              'obscuring content with a white overlay band',
+          gradient.colors.first,
+          AppTheme.lightTheme.scaffoldBackgroundColor,
+        );
+        expect(
+          gradient.colors.last,
+          AppTheme.lightTheme.scaffoldBackgroundColor.withValues(alpha: 0),
         );
       },
     );
 
     testWidgets(
-      'EdgeFadeGradient bottom in light theme renders nothing (no visible overlay)',
+      'EdgeFadeGradient bottom in light theme fades into the scaffold color',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -74,20 +79,35 @@ void main() {
           ),
         );
 
-        // In light mode, the widget should render a SizedBox.shrink()
+        // The bottom overlay fades content into the light scaffold.
         final containerFinder = find.descendant(
           of: find.byType(EdgeFadeGradient),
           matching: find.byType(Container),
         );
+        expect(containerFinder, findsOneWidget);
+        final container = tester.widget<Container>(containerFinder);
+        final gradient =
+            (container.decoration as BoxDecoration).gradient as LinearGradient;
         expect(
-          containerFinder,
-          findsNothing,
-          reason:
-              'EdgeFadeGradient (bottom) should render nothing in light mode to avoid '
-              'obscuring content with a white overlay band',
+          gradient.colors.first,
+          AppTheme.lightTheme.scaffoldBackgroundColor.withValues(alpha: 0),
+        );
+        expect(
+          gradient.colors.last,
+          AppTheme.lightTheme.scaffoldBackgroundColor,
         );
       },
     );
+
+    test('light AppBar title and icons use visible on-surface color', () {
+      final appBarTheme = AppTheme.lightTheme.appBarTheme;
+      final expected = AppTheme.lightTheme.colorScheme.onSurface;
+
+      expect(appBarTheme.foregroundColor, expected);
+      expect(appBarTheme.titleTextStyle?.color, expected);
+      expect(appBarTheme.iconTheme?.color, expected);
+      expect(appBarTheme.actionsIconTheme?.color, expected);
+    });
 
     // ─── Bug 2: ProgressSummaryScreen missing EdgeFadeGradient overlays ────────
 
@@ -147,77 +167,6 @@ void main() {
     );
 
     // ─── Bug 4: Settings sub-screen navigation uses go() instead of push() ─────
-
-    testWidgets(
-      'SettingsMainScreen navigates to /settings/notifications with push (allows pop back)',
-      (tester) async {
-        SharedPreferences.setMockInitialValues({'theme_mode': 2});
-        final prefs = await SharedPreferences.getInstance();
-
-        // Track whether push or go was used by examining the GoRouter's
-        // ability to pop after navigation
-        final router = GoRouter(
-          initialLocation: '/settings',
-          routes: [
-            GoRoute(
-              path: '/settings',
-              builder: (context, state) => const SettingsMainScreen(),
-            ),
-            GoRoute(
-              path: '/settings/notifications',
-              builder: (context, state) => Scaffold(
-                appBar: AppBar(title: const Text('Notification Settings')),
-                body: const Text('Notification Settings Page'),
-              ),
-            ),
-            GoRoute(
-              path: '/settings/edit-profile',
-              builder: (context, state) => const Scaffold(
-                body: Text('Edit Profile Page'),
-              ),
-            ),
-            GoRoute(
-              path: '/settings/change-password',
-              builder: (context, state) => const Scaffold(
-                body: Text('Change Password Page'),
-              ),
-            ),
-          ],
-        );
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              sharedPreferencesProvider.overrideWithValue(prefs),
-            ],
-            child: MaterialApp.router(
-              theme: AppTheme.darkTheme,
-              routerConfig: router,
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        // Tap on "Notification Settings" in the settings screen
-        await tester.tap(find.text('Notification Settings'));
-        await tester.pumpAndSettle();
-
-        // Verify we navigated to the notifications page
-        expect(find.text('Notification Settings Page'), findsOneWidget);
-
-        // The bug: context.go() replaces the stack, so canPop() is false.
-        // Expected (correct) behavior: context.push() preserves the stack,
-        // so canPop() should be true.
-        expect(
-          router.canPop(),
-          isTrue,
-          reason:
-              'After navigating to /settings/notifications, the router should be '
-              'able to pop back to /settings. Using context.go() replaces the stack, '
-              'making back navigation impossible.',
-        );
-      },
-    );
 
     testWidgets(
       'SettingsMainScreen navigates to /settings/change-password with push (allows pop back)',

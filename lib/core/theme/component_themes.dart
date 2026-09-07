@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
+import 'app_text_styles.dart';
 
 /// Reusable component theme definitions matching the Figma monochrome design.
 ///
@@ -100,6 +101,12 @@ abstract final class ComponentThemes {
     return AppBarTheme(
       backgroundColor: Colors.transparent,
       foregroundColor: colorScheme.onSurface,
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+      actionsIconTheme: IconThemeData(color: colorScheme.onSurface),
+      titleTextStyle: AppTextStyles.titleLarge.copyWith(
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w700,
+      ),
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
