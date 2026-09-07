@@ -2,11 +2,11 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// Base URL for the API. Override it in tester/production builds with:
-  /// --dart-define=API_BASE_URL=https://your-api.example.com
+  /// Production API URL. Local backend development must override it with:
+  /// --dart-define=API_BASE_URL=http://127.0.0.1:8000
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8000',
+    defaultValue: 'https://syncrofit-api.onrender.com',
   );
 
   /// Request timeout duration.

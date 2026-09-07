@@ -47,7 +47,7 @@ Automated backend tests use in-memory SQLite and do not require the MySQL servic
 
 ## Start the local API
 
-The checked-in Android client currently uses `http://127.0.0.1:8000` in `lib/core/network/api_config.dart`. Start Laravel on that port:
+The Android client defaults to the deployed Render API. To use local Laravel, start it on port 8000:
 
 ```powershell
 Set-Location backend
@@ -80,7 +80,7 @@ After the emulator has finished booting:
 
 ```powershell
 adb reverse tcp:8000 tcp:8000
-flutter run -d <android-device-id>
+flutter run -d <android-device-id> --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
 Use the explicit device ID reported by `flutter devices`; do not rely on host-device auto-selection. Android Studio can configure additional cutout, navigation, orientation, resolution, and font-scale variants required by the QA matrix.
@@ -101,7 +101,7 @@ The device must appear as `device`, not `unauthorized` or `offline`. Then run:
 
 ```powershell
 adb reverse tcp:8000 tcp:8000
-flutter run -d <android-device-id>
+flutter run -d <android-device-id> --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
 Physical-device testing is required for camera/media providers, sharing, real network transitions, process restart, hardware decoding, display cutouts, and gesture-navigation insets. Wireless debugging may be used after initial pairing, but the same explicit device selection and API reachability checks apply.
@@ -118,7 +118,7 @@ Run the app only against an Android target:
 
 ```powershell
 flutter devices
-flutter run -d <android-device-id>
+flutter run -d <android-device-id> --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
 Run validation and local QA builds from the repository root:

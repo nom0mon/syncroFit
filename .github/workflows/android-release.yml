@@ -148,7 +148,9 @@ jobs:
           chmod 600 "$keystore_path" "$properties_path"
 
       - name: Build signed Android release bundle
-        run: flutter build appbundle --release
+        run: >-
+          flutter build appbundle --release
+          --dart-define=API_BASE_URL=https://syncrofit-api.onrender.com
 
       - name: Verify signing and version artifact
         id: artifact

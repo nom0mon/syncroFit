@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'api_config.dart';
 import 'connectivity_monitor.dart';
@@ -55,7 +56,14 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
       return response.statusCode != null &&
           response.statusCode! >= 200 &&
           response.statusCode! < 300;
-    } catch (_) {
+    } on DioException catch (error) {
+      debugPrint(
+        'Backend reachability failed: ${error.type} '
+        '${error.requestOptions.uri} status=${error.response?.statusCode}',
+      );
+      return false;
+    } catch (error) {
+      debugPrint('Backend reachability failed: $error');
       return false;
     }
   }

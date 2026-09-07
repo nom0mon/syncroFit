@@ -92,7 +92,7 @@ flutter devices
 flutter run -d <android-device-id>
 ```
 
-The app currently uses `http://127.0.0.1:8000` from `lib/core/network/api_config.dart`; `adb reverse` maps that device endpoint to the local Laravel server. Use an approved HTTPS development endpoint instead when reverse port forwarding is unavailable. Do not enable cleartext traffic in release configuration.
+Production builds default to `https://syncrofit-api.onrender.com`. For local Laravel testing, build or run with `--dart-define=API_BASE_URL=http://127.0.0.1:8000`; `adb reverse` maps that device endpoint to the local server. Do not enable general cleartext traffic in release configuration.
 
 Complete emulator, physical-device, networking, NDK, and troubleshooting instructions are in [`docs/android-development.md`](docs/android-development.md).
 
