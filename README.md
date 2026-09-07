@@ -1,3 +1,6 @@
+Download the _installer_ here:
+> SyncroFit v1.1 - **https://drive.google.com/file/d/1lrJBO8gl8hLuClwEKhNddalqdza6stGR/view?usp=sharing**
+
 # SyncroFit
 
 SyncroFit is an **Android-only** fitness application built with Flutter and a Laravel REST API backend. Android is the only supported client runtime and release target. The supported product covers Android 7.0 (API 24) through Android 15 (API 35) on phones, tablets, and single-window foldable layouts from 320–1,280 dp.
