@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -221,7 +223,12 @@ class ApiClient {
 
         // Handle 401 — clear token and navigate to login
         if (statusCode == 401) {
-          _handleUnauthorized();
+          developer.log(
+            'HTTP 401 ${e.requestOptions.method} ${e.requestOptions.path}; '
+            'bearerAttached=${e.requestOptions.headers.containsKey('Authorization')}',
+            name: 'SyncroFit.Network',
+          );
+          _handleUnauthorized(e.requestOptions);
           final message = _extractMessage(responseData) ?? 'Unauthorized';
           return AuthError(reason: message);
         }
@@ -275,11 +282,20 @@ class ApiClient {
     return null;
   }
 
-  /// Clears token and navigates to login screen on 401.
-  void _handleUnauthorized() {
+  /// Clears the session only when the server rejected the token attached to
+  /// this exact request. A late 401 from an older or unauthenticated request
+  /// must never erase a token saved by a newer login.
+  Future<void> _handleUnauthorized(RequestOptions requestOptions) async {
     final storage = _ref.read(tokenStorageProvider);
-    storage.clearToken();
-    storage.clearUser();
+    final authorization = requestOptions.headers['Authorization']?.toString();
+    if (authorization == null || !authorization.startsWith('Bearer ')) return;
+
+    final rejectedToken = authorization.substring('Bearer '.length);
+    final currentToken = await storage.getToken();
+    if (currentToken == null || currentToken != rejectedToken) return;
+
+    await storage.clearToken();
+    await storage.clearUser();
     _ref.read(authSessionInvalidationProvider.notifier).state++;
 
     // Navigate to login using the router

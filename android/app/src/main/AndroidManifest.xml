@@ -12,7 +12,7 @@
          storage or media-library access, so none is declared here. -->
 
     <application
-        android:label="synchrofit"
+        android:label="SyncroFit"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

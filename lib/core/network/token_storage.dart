@@ -11,21 +11,26 @@ class TokenStorage {
       : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
+  String? _memoryToken;
+  User? _memoryUser;
 
   static const _tokenKey = 'auth_token';
   static const _userKey = 'auth_user';
 
   /// Returns the stored authentication token, or null if none exists.
   Future<String?> getToken() async {
+    if (_memoryToken != null) return _memoryToken;
     try {
-      return await _storage.read(key: _tokenKey);
+      _memoryToken = await _storage.read(key: _tokenKey);
+      return _memoryToken;
     } catch (_) {
-      return null;
+      return _memoryToken;
     }
   }
 
   /// Persists the given [token] to secure storage.
   Future<void> saveToken(String token) async {
+    _memoryToken = token;
     try {
       await _storage.write(key: _tokenKey, value: token);
     } catch (_) {
@@ -35,6 +40,7 @@ class TokenStorage {
 
   /// Persists the authenticated user's identity for offline session restore.
   Future<void> saveUser(User user) async {
+    _memoryUser = user;
     try {
       await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
     } catch (_) {
@@ -44,17 +50,20 @@ class TokenStorage {
 
   /// Returns the last authenticated user without contacting the backend.
   Future<User?> getUser() async {
+    if (_memoryUser != null) return _memoryUser;
     try {
       final encoded = await _storage.read(key: _userKey);
       if (encoded == null) return null;
-      return User.fromJson(jsonDecode(encoded) as Map<String, dynamic>);
+      _memoryUser = User.fromJson(jsonDecode(encoded) as Map<String, dynamic>);
+      return _memoryUser;
     } catch (_) {
-      return null;
+      return _memoryUser;
     }
   }
 
   /// Removes the stored token from secure storage.
   Future<void> clearToken() async {
+    _memoryToken = null;
     try {
       await _storage.delete(key: _tokenKey);
     } catch (_) {
@@ -64,6 +73,7 @@ class TokenStorage {
 
   /// Removes the cached identity when the user explicitly signs out.
   Future<void> clearUser() async {
+    _memoryUser = null;
     try {
       await _storage.delete(key: _userKey);
     } catch (_) {

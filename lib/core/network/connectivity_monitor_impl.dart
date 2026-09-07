@@ -19,8 +19,9 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
         _dio = dio ??
             Dio(BaseOptions(
               baseUrl: ApiConfig.baseUrl,
-              connectTimeout: const Duration(seconds: 5),
-              receiveTimeout: const Duration(seconds: 5),
+              // Free hosting can need extra time to wake from an idle state.
+              connectTimeout: ApiConfig.timeout,
+              receiveTimeout: ApiConfig.timeout,
             )) {
     _initialize();
   }
@@ -34,9 +35,12 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _debounceTimer;
+  Timer? _retryTimer;
+  bool _isChecking = false;
 
   /// Debounce duration to avoid flapping between states.
   static const Duration _debounceDuration = Duration(seconds: 2);
+  static const Duration _offlineRetryDuration = Duration(seconds: 10);
 
   @override
   Stream<ConnectivityStatus> get statusStream => _statusController.stream;
@@ -59,6 +63,7 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _retryTimer?.cancel();
     _connectivitySubscription?.cancel();
     _statusController.close();
   }
@@ -83,6 +88,10 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
   }
 
   Future<void> _performReachabilityCheck() async {
+    if (_isChecking) return;
+    _isChecking = true;
+
+    try {
     final hasNoInterface = await _hasNoNetworkInterface();
     if (hasNoInterface) {
       _updateStatus(ConnectivityStatus.offline);
@@ -93,6 +102,9 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
     _updateStatus(
       reachable ? ConnectivityStatus.online : ConnectivityStatus.offline,
     );
+    } finally {
+      _isChecking = false;
+    }
   }
 
   /// Quick check whether the device reports no network interfaces at all.
@@ -109,6 +121,12 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
     if (_currentStatus != newStatus) {
       _currentStatus = newStatus;
       _statusController.add(newStatus);
+    }
+
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    if (newStatus == ConnectivityStatus.offline) {
+      _retryTimer = Timer(_offlineRetryDuration, _performReachabilityCheck);
     }
   }
 }

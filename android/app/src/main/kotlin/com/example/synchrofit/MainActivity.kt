@@ -1,4 +1,4 @@
-package com.example.synchrofit
+package com.nom0mon.synchrofit
 
 import android.Manifest
 import android.content.Intent
