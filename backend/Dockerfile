@@ -15,6 +15,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoload
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/apache-ports.conf /etc/apache2/ports.conf
 COPY docker/start-render.sh /usr/local/bin/start-render
 RUN chmod +x /usr/local/bin/start-render
 
