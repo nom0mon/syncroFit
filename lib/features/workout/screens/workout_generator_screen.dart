@@ -27,7 +27,7 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
     final exerciseNames = <int, String>{};
     for (final exercise in exerciseState.allExercises) {
       final id = int.tryParse(exercise.id);
-      if (id != null) exerciseNames[id] = exercise.name;
+      if (id != null) exerciseNames[id] = exercise.displayName;
     }
 
     final isGenerating = state.status == WorkoutGeneratorStatus.generating;
@@ -256,8 +256,8 @@ class _ExerciseSelectionSheetState extends State<_ExerciseSelectionSheet> {
             contentPadding: EdgeInsets.zero,
             value: int.tryParse(exercise.id) != null &&
                 _selectedIds.contains(int.parse(exercise.id)),
-            title: Text(exercise.name),
-            subtitle: Text(exercise.muscleGroup),
+            title: Text(exercise.displayName),
+            subtitle: Text(exercise.displayMuscleGroup),
             controlAffinity: ListTileControlAffinity.trailing,
             onChanged: int.tryParse(exercise.id) == null
                 ? null

@@ -37,7 +37,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          exercise.name,
+          exercise.displayName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -67,7 +67,7 @@ class _ExerciseDetailContent extends StatelessWidget {
             children: [
               ExerciseMedia(
                 videoPath: exercise.videoPath,
-                exerciseName: exercise.name,
+                exerciseName: exercise.displayName,
               ),
               _ExerciseInformation(exercise: exercise),
             ],
@@ -92,7 +92,7 @@ class _ExerciseInformation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          exercise.name,
+          exercise.displayName,
           style: theme.textTheme.headlineSmall,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -113,7 +113,7 @@ class _ExerciseInformation extends StatelessWidget {
                     ),
                   ),
                   const WidgetSpan(child: SizedBox(width: AppSpacing.xs)),
-                  TextSpan(text: exercise.muscleGroup),
+                  TextSpan(text: exercise.displayMuscleGroup),
                 ],
               ),
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -124,7 +124,7 @@ class _ExerciseInformation extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        _EquipmentSection(equipment: exercise.equipment),
+        _EquipmentSection(equipment: exercise.displayEquipment),
         const SizedBox(height: AppSpacing.lg),
         _InstructionsSection(instructions: exercise.instructions),
       ],

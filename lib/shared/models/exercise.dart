@@ -25,6 +25,14 @@ class Exercise {
     this.videoPath,
   });
 
+  /// User-facing labels normalized without changing API/cache values.
+  String get displayName => _formatLabel(name);
+  String get displayMuscleGroup => _formatLabel(muscleGroup);
+  String? get displayEquipment {
+    final value = equipment?.trim();
+    return value == null || value.isEmpty ? null : _formatLabel(value);
+  }
+
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
       id: json['id'].toString(),
@@ -66,5 +74,27 @@ class Exercise {
       default:
         return DifficultyLevel.beginner;
     }
+  }
+
+  static String _formatLabel(String value) {
+    final normalized = value.trim().replaceAll('_', ' ').replaceAll(
+          RegExp(r'\s+'),
+          ' ',
+        );
+    if (normalized.isEmpty) {
+      return normalized;
+    }
+    final hasIntentionalMixedCase = normalized != normalized.toLowerCase() &&
+        normalized != normalized.toUpperCase();
+    if (hasIntentionalMixedCase) return normalized;
+    return normalized
+        .split(' ')
+        .map((word) => word
+            .split('-')
+            .map((part) => part.isEmpty
+                ? part
+                : '${part[0].toUpperCase()}${part.substring(1)}')
+            .join('-'))
+        .join(' ');
   }
 }

@@ -64,7 +64,7 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     final map = <int, String>{};
     for (final exercise in exercises) {
       final id = int.tryParse(exercise.id);
-      if (id != null) map[id] = exercise.name;
+      if (id != null) map[id] = exercise.displayName;
     }
     notifier.setExerciseNames(map);
   }

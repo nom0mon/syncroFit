@@ -37,7 +37,7 @@ class ExerciseRow extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '${exercise.name}, $subtitle',
+      label: '${exercise.displayName}, $subtitle',
       child: InkWell(
         onTap: onTap ?? () => context.go('/exercises/${exercise.id}'),
         splashColor: AppColors.pressedOverlay,
@@ -65,7 +65,7 @@ class ExerciseRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      exercise.name,
+                      exercise.displayName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
@@ -98,10 +98,10 @@ class ExerciseRow extends StatelessWidget {
   /// Builds the subtitle string as "{muscleGroup} · {equipment}".
   /// If equipment is null or empty, shows muscle group alone.
   String _buildSubtitle() {
-    final equipment = exercise.equipment;
+    final equipment = exercise.displayEquipment;
     if (equipment == null || equipment.isEmpty) {
-      return exercise.muscleGroup;
+      return exercise.displayMuscleGroup;
     }
-    return '${exercise.muscleGroup} · $equipment';
+    return '${exercise.displayMuscleGroup} · $equipment';
   }
 }

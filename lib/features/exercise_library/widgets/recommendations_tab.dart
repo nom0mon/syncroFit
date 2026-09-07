@@ -186,7 +186,15 @@ class _WorkoutDayCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
-        leading: Icon(statusIcon, color: iconColor),
+        onTap: () => context.go('/dashboard/workout/${workout.workoutId}'),
+        leading: status == WorkoutDayStatus.active
+            ? IconButton(
+                tooltip: 'Open today\'s workout',
+                onPressed: () =>
+                    context.go('/dashboard/workout/${workout.workoutId}'),
+                icon: Icon(statusIcon, color: iconColor),
+              )
+            : Icon(statusIcon, color: iconColor),
         title: Row(
           children: [
             Flexible(child: Text(workout.workoutName)),

@@ -155,7 +155,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     final exercises = ref.read(exerciseProvider).allExercises;
     for (final exercise in exercises) {
       if (int.tryParse(exercise.id) == nextExercise.exerciseId) {
-        return exercise.name;
+        return exercise.displayName;
       }
     }
     return 'Exercise ${nextExercise.exerciseId}';

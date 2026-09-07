@@ -196,7 +196,12 @@ class _FilterControls extends ConsumerWidget {
     final muscleChips = muscleGroups.map((group) {
       final isSelected = selectedMuscleGroups.contains(group);
       return FilterChip(
-        label: Text(group, overflow: TextOverflow.ellipsis),
+        label: Text(
+          allExercises
+              .firstWhere((exercise) => exercise.muscleGroup == group)
+              .displayMuscleGroup,
+          overflow: TextOverflow.ellipsis,
+        ),
         selected: isSelected,
         onSelected: (_) {
           ref.read(exerciseProvider.notifier).toggleMuscleGroupFilter(group);

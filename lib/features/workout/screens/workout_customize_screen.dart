@@ -68,7 +68,8 @@ class _WorkoutCustomizeScreenState
                     child: ListTile(
                       leading: const Icon(Icons.drag_handle),
                       title: Text(exercise?.name ?? 'Exercise $id'),
-                      subtitle: Text(exercise?.muscleGroup ?? 'Unavailable'),
+                      subtitle:
+                          Text(exercise?.displayMuscleGroup ?? 'Unavailable'),
                       trailing: IconButton(
                         tooltip: 'Remove exercise',
                         onPressed: _ids!.length == 1
@@ -127,7 +128,7 @@ class _WorkoutCustomizeScreenState
                   itemCount: available.length,
                   itemBuilder: (context, index) => ListTile(
                     title: Text(available[index].name),
-                    subtitle: Text(available[index].muscleGroup),
+                    subtitle: Text(available[index].displayMuscleGroup),
                     onTap: () =>
                         Navigator.pop(context, int.parse(available[index].id)),
                   ),
