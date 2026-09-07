@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   Database? _database;
 
@@ -78,13 +78,29 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion >= 2 && oldVersion < 3) {
-      await db.execute(
-          "ALTER TABLE user_profile ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");
-      await db.execute(
-          "ALTER TABLE user_profile ADD COLUMN last_name TEXT NOT NULL DEFAULT ''");
-      await db.execute(
-          "ALTER TABLE user_profile ADD COLUMN username TEXT NOT NULL DEFAULT ''");
+    if (oldVersion == 3) {
+      // Version 3 accidentally put the profile identity columns on the
+      // exercises table in fresh installs, while upgraded installs had them
+      // only on user_profile. Rebuild the cache table and make the profile
+      // migration tolerant of either schema variant.
+      await db.execute('DROP TABLE IF EXISTS exercises');
+      await _createExercisesTable(db);
+
+      final profileColumns = (await db.rawQuery('PRAGMA table_info(user_profile)'))
+          .map((row) => row['name'] as String)
+          .toSet();
+      if (!profileColumns.contains('first_name')) {
+        await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");
+      }
+      if (!profileColumns.contains('last_name')) {
+        await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN last_name TEXT NOT NULL DEFAULT ''");
+      }
+      if (!profileColumns.contains('username')) {
+        await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN username TEXT NOT NULL DEFAULT ''");
+      }
       return;
     }
 
@@ -100,23 +116,7 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE exercises (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        username TEXT NOT NULL DEFAULT '',
-        muscle_group TEXT NOT NULL,
-        difficulty TEXT NOT NULL,
-        instructions TEXT NOT NULL,
-        equipment TEXT,
-        default_duration_seconds INTEGER NOT NULL,
-        default_sets INTEGER NOT NULL,
-        default_reps INTEGER NOT NULL,
-        video_path TEXT
-      )
-    ''');
+    await _createExercisesTable(db);
 
     await db.execute('''
       CREATE TABLE workouts (
@@ -149,6 +149,9 @@ class LocalDatabaseImpl implements LocalDatabase {
       CREATE TABLE user_profile (
         user_id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        first_name TEXT NOT NULL DEFAULT '',
+        last_name TEXT NOT NULL DEFAULT '',
+        username TEXT NOT NULL DEFAULT '',
         age INTEGER NOT NULL,
         height_cm REAL NOT NULL,
         weight_kg REAL NOT NULL,
@@ -178,6 +181,23 @@ class LocalDatabaseImpl implements LocalDatabase {
       CREATE TABLE cache_metadata (
         entity_type TEXT PRIMARY KEY,
         last_synced_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createExercisesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE exercises (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        muscle_group TEXT NOT NULL,
+        difficulty TEXT NOT NULL,
+        instructions TEXT NOT NULL,
+        equipment TEXT,
+        default_duration_seconds INTEGER NOT NULL,
+        default_sets INTEGER NOT NULL,
+        default_reps INTEGER NOT NULL,
+        video_path TEXT
       )
     ''');
   }

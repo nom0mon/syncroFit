@@ -2,7 +2,7 @@
 
 return [
     'default' => env('FILESYSTEM_DISK', 'local'),
-    'community_media_disk' => env('COMMUNITY_MEDIA_DISK', 'local'),
+    'community_media_disk' => env('COMMUNITY_MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
     'progress_media_disk' => env('PROGRESS_MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
 
     'disks' => [

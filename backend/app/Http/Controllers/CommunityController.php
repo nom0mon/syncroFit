@@ -119,12 +119,17 @@ class CommunityController extends Controller
     public function media(Post $post, \App\Models\PostMedia $media)
     {
         abort_unless($media->post_id === $post->id, 404);
-        abort_unless(Storage::disk($media->disk)->exists($media->path), 404);
-        if ($media->disk !== 'local') {
-            return redirect()->away(Storage::disk($media->disk)->temporaryUrl($media->path, now()->addMinutes(10)));
-        }
-        return Storage::disk($media->disk)->response($media->path, null, [
+        $storage = Storage::disk($media->disk);
+        abort_unless($storage->exists($media->path), 404);
+
+        return response()->stream(function () use ($storage, $media): void {
+            $stream = $storage->readStream($media->path);
+            abort_if($stream === false, 404);
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
             'Content-Type' => $media->mime_type,
+            'Content-Length' => (string) $media->size_bytes,
             'Cache-Control' => 'private, max-age=3600',
         ]);
     }
@@ -153,7 +158,7 @@ class CommunityController extends Controller
             'is_owned_by_current_user' => $post->user_id === $request->user()->id,
             'media' => $post->media->map(fn ($media) => [
                 'id' => (string) $media->id,
-                'url' => url("/api/community/posts/{$post->id}/media/{$media->id}"),
+                'url' => rtrim((string) config('app.url'), '/')."/api/community/posts/{$post->id}/media/{$media->id}",
                 'mime_type' => $media->mime_type,
                 'width' => $media->width,
                 'height' => $media->height,

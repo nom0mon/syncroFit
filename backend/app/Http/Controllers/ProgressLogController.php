@@ -51,14 +51,19 @@ class ProgressLogController extends Controller
     {
         $this->owned($request, $progressLog);
         $disk = $images->disk();
-        abort_unless(Storage::disk($disk)->exists($progressLog->display_image_path), 404);
-        if ($disk !== 'local') {
-            return redirect()->away(
-                Storage::disk($disk)->temporaryUrl($progressLog->display_image_path, now()->addMinutes(10))
-            );
-        }
+        $storage = Storage::disk($disk);
+        abort_unless($storage->exists($progressLog->display_image_path), 404);
 
-        return response()->file(Storage::disk($disk)->path($progressLog->display_image_path));
+        return response()->stream(function () use ($storage, $progressLog): void {
+            $stream = $storage->readStream($progressLog->display_image_path);
+            abort_if($stream === false, 404);
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $storage->mimeType($progressLog->display_image_path) ?: 'image/jpeg',
+            'Content-Length' => (string) $storage->size($progressLog->display_image_path),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     public function destroy(Request $request, ProgressLog $progressLog, ProgressImageStorage $images): JsonResponse

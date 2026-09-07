@@ -22,6 +22,6 @@ class ProgressLog extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return url("/api/progress-logs/{$this->id}/image");
+        return rtrim((string) config('app.url'), '/')."/api/progress-logs/{$this->id}/image";
     }
 }
