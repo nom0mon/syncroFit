@@ -229,9 +229,8 @@ class CachingWorkoutRepository
       where: _userId.isEmpty
           ? 'day_of_week = ?'
           : 'day_of_week = ? AND user_id = ?',
-      whereArgs: _userId.isEmpty
-          ? [today.toString()]
-          : [today.toString(), _userId],
+      whereArgs:
+          _userId.isEmpty ? [today.toString()] : [today.toString(), _userId],
     );
     if (rows.isEmpty) return null;
 

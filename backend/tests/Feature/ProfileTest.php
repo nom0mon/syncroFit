@@ -157,6 +157,31 @@ class ProfileTest extends TestCase
             ->assertJsonPath('data.bmi', '22.86');
     }
 
+    public function test_user_can_customize_a_unique_username_with_profile(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create(['username' => 'already.used']);
+        Sanctum::actingAs($user);
+        $user->profile()->create(array_merge($this->validProfileData(), ['bmi' => 22.86]));
+
+        $this->putJson('/api/profile', [
+            'first_name' => str_repeat('N', 80),
+            'last_name' => str_repeat('L', 80),
+            'username' => 'My.Unique_Name',
+        ])->assertOk()
+            ->assertJsonPath('data.username', 'my.unique_name');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'username' => 'my.unique_name',
+            'first_name' => str_repeat('N', 80),
+        ]);
+
+        $this->putJson('/api/profile', ['username' => $other->username])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['username']);
+    }
+
     public function test_update_recomputes_bmi_when_weight_changes(): void
     {
         $user = User::factory()->create();

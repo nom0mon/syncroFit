@@ -180,9 +180,6 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
         if (name == null || name.trim().isEmpty) {
           return 'First name is required';
         }
-        if (name.trim().length > 50) {
-          return 'First name must be 50 characters or fewer';
-        }
         return null;
 
       case 'last_name':
@@ -190,8 +187,18 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
         if (name == null || name.trim().isEmpty) {
           return 'Last name is required';
         }
-        if (name.trim().length > 50) {
-          return 'Last name must be 50 characters or fewer';
+        return null;
+
+      case 'username':
+        final username = value as String?;
+        if (username == null || username.trim().isEmpty) {
+          return 'Username is required';
+        }
+        if (username.trim().length < 3 || username.trim().length > 30) {
+          return 'Username must be 3 to 30 characters';
+        }
+        if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username.trim())) {
+          return 'Use only letters, numbers, periods, and underscores';
         }
         return null;
 
@@ -238,6 +245,8 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
         return _originalProfile.firstName;
       case 'last_name':
         return _originalProfile.lastName;
+      case 'username':
+        return _originalProfile.username;
       case 'age':
         return _originalProfile.age;
       case 'height_cm':
@@ -271,6 +280,9 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       lastName: dirty.containsKey('last_name')
           ? dirty['last_name'] as String
           : _originalProfile.lastName,
+      username: dirty.containsKey('username')
+          ? (dirty['username'] as String).toLowerCase()
+          : _originalProfile.username,
       age: dirty.containsKey('age')
           ? (dirty['age'] is int
               ? dirty['age'] as int

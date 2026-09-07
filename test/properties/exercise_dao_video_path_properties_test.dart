@@ -79,7 +79,8 @@ void main() {
     Glados3(
       glados.any.intInRange(0, 99), // unique id suffix
       glados.any.intInRange(0, _muscleGroups.length - 1), // muscle group index
-      glados.any.intInRange(0, DifficultyLevel.values.length - 1), // difficulty index
+      glados.any
+          .intInRange(0, DifficultyLevel.values.length - 1), // difficulty index
     ).test(
       'inserting Exercise with non-null videoPath and reading back by ID preserves videoPath',
       (idSuffix, muscleGroupIndex, difficultyIndex) async {
@@ -108,7 +109,8 @@ void main() {
         final retrieved = await exerciseDao.getById('ex-$idSuffix');
 
         expect(retrieved, isNotNull,
-            reason: 'Exercise with id "ex-$idSuffix" should exist after insert');
+            reason:
+                'Exercise with id "ex-$idSuffix" should exist after insert');
         expect(retrieved!.videoPath, equals(videoPath),
             reason:
                 'videoPath mismatch: expected "$videoPath", got "${retrieved.videoPath}"');
@@ -141,7 +143,8 @@ void main() {
         );
 
         await exerciseDao.upsert(exercise);
-        final retrieved = await exerciseDao.getById('ex-multi-$idSuffix-$wordCount');
+        final retrieved =
+            await exerciseDao.getById('ex-multi-$idSuffix-$wordCount');
 
         expect(retrieved, isNotNull);
         expect(retrieved!.videoPath, equals(videoPath),
@@ -161,7 +164,8 @@ void main() {
             id: 'ex-batch-$i',
             name: name,
             muscleGroup: _muscleGroups[i % _muscleGroups.length],
-            difficulty: DifficultyLevel.values[i % DifficultyLevel.values.length],
+            difficulty:
+                DifficultyLevel.values[i % DifficultyLevel.values.length],
             instructions: ['Do it'],
             equipment: i.isEven ? 'Barbell' : null,
             defaultDurationSeconds: 30 + i * 10,
@@ -180,8 +184,7 @@ void main() {
           expect(retrieved, isNotNull,
               reason: 'Exercise "${original.id}" should exist after upsertAll');
           expect(retrieved!.videoPath, equals(original.videoPath),
-              reason:
-                  'videoPath mismatch for "${original.id}": '
+              reason: 'videoPath mismatch for "${original.id}": '
                   'expected "${original.videoPath}", got "${retrieved.videoPath}"');
         }
       },
@@ -230,8 +233,7 @@ void main() {
         final retrieved = await exerciseDao.getById('ex-update-$idSuffix');
         expect(retrieved, isNotNull);
         expect(retrieved!.videoPath, equals(updatedVideoPath),
-            reason:
-                'After update, videoPath should be "$updatedVideoPath", '
+            reason: 'After update, videoPath should be "$updatedVideoPath", '
                 'got "${retrieved.videoPath}"');
       },
     );

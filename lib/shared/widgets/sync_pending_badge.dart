@@ -71,8 +71,7 @@ class SyncStatusListener extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<SyncStatusListener> createState() =>
-      _SyncStatusListenerState();
+  ConsumerState<SyncStatusListener> createState() => _SyncStatusListenerState();
 }
 
 class _SyncStatusListenerState extends ConsumerState<SyncStatusListener> {

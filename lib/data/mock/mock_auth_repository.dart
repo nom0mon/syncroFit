@@ -19,8 +19,7 @@ class MockAuthRepository implements AuthRepository {
 
   @override
   Future<Result<User, AppError>> register(
-    String firstName,
-    String lastName,
+    String username,
     String email,
     String password,
   ) async {
@@ -29,8 +28,9 @@ class MockAuthRepository implements AuthRepository {
     // Registration always succeeds — returns a new user
     final newUser = User(
       id: 'user-${DateTime.now().millisecondsSinceEpoch}',
-      firstName: firstName,
-      lastName: lastName,
+      firstName: '',
+      lastName: '',
+      username: username,
       email: email,
       createdAt: DateTime.now(),
     );

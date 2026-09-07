@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glados/glados.dart' hide expect, group, setUpAll, setUp, tearDown;
+import 'package:glados/glados.dart'
+    hide expect, group, setUpAll, setUp, tearDown;
+import 'package:synchrofit/core/network/api_client.dart';
+import 'package:synchrofit/core/network/token_storage.dart';
 import 'package:synchrofit/core/theme/app_colors.dart';
 import 'package:synchrofit/core/theme/app_theme.dart';
 import 'package:synchrofit/features/auth/screens/login_screen.dart';
 import 'package:synchrofit/features/auth/screens/register_screen.dart';
 import 'package:synchrofit/shared/widgets/floating_pill_nav_bar.dart';
+import 'package:synchrofit/shared/models/user.dart';
+
+class _EmptyTokenStorage extends TokenStorage {
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<User?> getUser() async => null;
+}
 
 /// **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
 ///
@@ -30,6 +42,9 @@ void main() {
     /// matching the real app's behavior when dark mode is active.
     Widget buildAuthScreenWithDarkTheme(Widget screen) {
       return ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
+        ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
           home: screen,
@@ -40,7 +55,8 @@ void main() {
     testWidgets(
       'LoginScreen TextFormField hint text color equals AppColors.grey500',
       (tester) async {
-        await tester.pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
+        await tester
+            .pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
         await tester.pumpAndSettle();
 
         // Find the first TextFormField and check its effective InputDecoration
@@ -59,8 +75,7 @@ void main() {
         expect(
           hintStyle?.color,
           equals(AppColors.grey500),
-          reason:
-              'Hint text color should be AppColors.grey500 (visible grey) '
+          reason: 'Hint text color should be AppColors.grey500 (visible grey) '
               'but got ${hintStyle?.color} — invisible on white background',
         );
       },
@@ -69,7 +84,8 @@ void main() {
     testWidgets(
       'LoginScreen TextFormField enabled border color equals AppColors.grey300',
       (tester) async {
-        await tester.pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
+        await tester
+            .pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
         await tester.pumpAndSettle();
 
         final textFormFields = find.byType(TextFormField);
@@ -88,8 +104,7 @@ void main() {
         expect(
           borderSide.color,
           equals(AppColors.grey300),
-          reason:
-              'Enabled border color should be AppColors.grey300 '
+          reason: 'Enabled border color should be AppColors.grey300 '
               'but got ${borderSide.color}',
         );
       },
@@ -98,7 +113,8 @@ void main() {
     testWidgets(
       'LoginScreen TextFormField focused border color equals AppColors.grey900',
       (tester) async {
-        await tester.pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
+        await tester
+            .pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
         await tester.pumpAndSettle();
 
         final textFormFields = find.byType(TextFormField);
@@ -117,8 +133,7 @@ void main() {
         expect(
           borderSide.color,
           equals(AppColors.grey900),
-          reason:
-              'Focused border color should be AppColors.grey900 '
+          reason: 'Focused border color should be AppColors.grey900 '
               'but got ${borderSide.color}',
         );
       },
@@ -127,7 +142,8 @@ void main() {
     testWidgets(
       'RegisterScreen TextFormField hint text color equals AppColors.grey500',
       (tester) async {
-        await tester.pumpWidget(buildAuthScreenWithDarkTheme(const RegisterScreen()));
+        await tester
+            .pumpWidget(buildAuthScreenWithDarkTheme(const RegisterScreen()));
         await tester.pumpAndSettle();
 
         final textFormFields = find.byType(TextFormField);
@@ -144,8 +160,7 @@ void main() {
         expect(
           hintStyle?.color,
           equals(AppColors.grey500),
-          reason:
-              'Hint text color should be AppColors.grey500 (visible grey) '
+          reason: 'Hint text color should be AppColors.grey500 (visible grey) '
               'but got ${hintStyle?.color} — invisible on white background',
         );
       },
@@ -263,8 +278,7 @@ void main() {
         expect(
           icons,
           findsNWidgets(4),
-          reason:
-              'Nav bar should have exactly 4 destinations '
+          reason: 'Nav bar should have exactly 4 destinations '
               'but found ${tester.widgetList(icons).length} '
               '(Search tab should not exist)',
         );
@@ -299,8 +313,7 @@ void main() {
         expect(
           hasSearchIcon,
           isFalse,
-          reason:
-              'Nav bar should not contain Icons.search but it does — '
+          reason: 'Nav bar should not contain Icons.search but it does — '
               'Search tab should be completely removed',
         );
       },
@@ -334,7 +347,8 @@ void main() {
         // we assert the documented behavior from the widget's doc comment.
         // The widget doc says "five icon destinations" — this should be "four".
         // This property asserts the expectation that only 4 destinations exist.
-        expect(4, equals(4)); // Placeholder — real assertion is in widget tests above
+        expect(4,
+            equals(4)); // Placeholder — real assertion is in widget tests above
       },
     );
   });

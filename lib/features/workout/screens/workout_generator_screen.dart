@@ -31,6 +31,9 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
     }
 
     final isGenerating = state.status == WorkoutGeneratorStatus.generating;
+    final isAccepting = state.status == WorkoutGeneratorStatus.accepting;
+    final hasDraft = state.status == WorkoutGeneratorStatus.generated ||
+        state.status == WorkoutGeneratorStatus.accepting;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -68,12 +71,16 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
             ),
             SafeBottomActionBar(
               avoidKeyboard: false,
-              child: _GenerateButton(
+              child: _GeneratorActions(
                 isGenerating: isGenerating,
-                isGenerated: state.status == WorkoutGeneratorStatus.generated,
-                onPressed: isGenerating
+                isAccepting: isAccepting,
+                hasDraft: hasDraft,
+                onGenerate: isGenerating || isAccepting
                     ? null
                     : () => _onGeneratePressed(context, ref, notifier),
+                onAccept: hasDraft && !isAccepting
+                    ? () => _onAcceptPressed(context, notifier)
+                    : null,
               ),
             ),
           ],
@@ -98,6 +105,20 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
       return;
     }
     notifier.generate();
+  }
+
+  Future<void> _onAcceptPressed(
+    BuildContext context,
+    WorkoutGeneratorNotifier notifier,
+  ) async {
+    final accepted = await notifier.acceptPlan();
+    if (!context.mounted) return;
+    if (accepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Workout plan accepted and scheduled.')),
+      );
+      context.go('/exercises');
+    }
   }
 }
 
@@ -292,6 +313,8 @@ class _ContentArea extends StatelessWidget {
           ),
         );
       case WorkoutGeneratorStatus.generated:
+      case WorkoutGeneratorStatus.accepting:
+      case WorkoutGeneratorStatus.accepted:
         if (state.generatedWorkouts.isEmpty) {
           return const _CenteredHint(
             icon: Icons.info_outline,
@@ -495,26 +518,58 @@ class _ExerciseCard extends StatelessWidget {
   }
 }
 
-class _GenerateButton extends StatelessWidget {
-  const _GenerateButton({
+class _GeneratorActions extends StatelessWidget {
+  const _GeneratorActions({
     required this.isGenerating,
-    required this.isGenerated,
-    required this.onPressed,
+    required this.isAccepting,
+    required this.hasDraft,
+    required this.onGenerate,
+    required this.onAccept,
   });
 
   final bool isGenerating;
-  final bool isGenerated;
-  final VoidCallback? onPressed;
+  final bool isAccepting;
+  final bool hasDraft;
+  final VoidCallback? onGenerate;
+  final VoidCallback? onAccept;
 
   @override
   Widget build(BuildContext context) {
-    final label = isGenerated ? 'Regenerate Workout' : 'Generate Workout';
+    if (hasDraft) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              key: const Key('generate-workout-action'),
+              onPressed: onGenerate,
+              child: const Text('Regenerate'),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: FilledButton.icon(
+              key: const Key('accept-workout-plan-action'),
+              onPressed: onAccept,
+              icon: isAccepting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check),
+              label: Text(isAccepting ? 'Accepting…' : 'Accept Plan'),
+            ),
+          ),
+        ],
+      );
+    }
+
+    const label = 'Generate Workout';
 
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
         key: const Key('generate-workout-action'),
-        onPressed: onPressed,
+        onPressed: onGenerate,
         child: Text(isGenerating ? 'Generating…' : label),
       ),
     );

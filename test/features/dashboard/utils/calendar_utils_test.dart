@@ -11,7 +11,8 @@ void main() {
       expect(grid.last, 31);
     });
 
-    test('February 2024 (leap year) starts on Thursday — 3 leading empties', () {
+    test('February 2024 (leap year) starts on Thursday — 3 leading empties',
+        () {
       // Feb 1, 2024 is a Thursday (weekday = 4), leading empties = 3
       final grid = generateCalendarGrid(2024, 2);
       expect(grid.where((d) => d == null).length, 3);

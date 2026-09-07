@@ -56,18 +56,18 @@ class DashboardState {
   });
 
   /// Derives a set of dates (year/month/day only) with completed workouts.
-  Set<DateTime> get completedDates => history
-      .map((h) =>
-          DateTime(h.completedAt.year, h.completedAt.month, h.completedAt.day))
-      .toSet();
+  Set<DateTime> get completedDates => history.map((h) {
+        final local = h.effectiveCompletedAt;
+        return DateTime(local.year, local.month, local.day);
+      }).toSet();
 
   /// Returns history records completed on the given [date].
-  List<WorkoutHistory> historyForDate(DateTime date) => history
-      .where((h) =>
-          h.completedAt.year == date.year &&
-          h.completedAt.month == date.month &&
-          h.completedAt.day == date.day)
-      .toList();
+  List<WorkoutHistory> historyForDate(DateTime date) => history.where((h) {
+        final local = h.effectiveCompletedAt;
+        return local.year == date.year &&
+            local.month == date.month &&
+            local.day == date.day;
+      }).toList();
 }
 
 /// Provides the dashboard data as an async value, managed by [DashboardNotifier].
@@ -95,12 +95,13 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     // Fetch data concurrently for efficiency
     final results = await Future.wait([
       _workoutRepo.getTodaysWorkout(),
+      _workoutRepo.getAll(),
       _historyRepo.getAll(userId ?? ''),
     ]);
 
     final workoutResult = results[0] as Result<Workout?, AppError>;
-    final historyResult =
-        results[1] as Result<List<WorkoutHistory>, AppError>;
+    final workoutsResult = results[1] as Result<List<Workout>, AppError>;
+    final historyResult = results[2] as Result<List<WorkoutHistory>, AppError>;
 
     // Extract today's workout
     final todaysWorkout = switch (workoutResult) {
@@ -113,8 +114,16 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
       Success(value: final h) => h,
       Failure() => <WorkoutHistory>[],
     };
+    final scheduledWorkouts = switch (workoutsResult) {
+      Success(value: final workouts) => workouts,
+      Failure() => <Workout>[],
+    };
 
-    final weeklyProgress = _calculateWeeklyProgress(history);
+    final weeklyProgress = calculateWeeklyProgress(
+      history: history,
+      workouts: scheduledWorkouts,
+      now: DateTime.now(),
+    );
 
     // Calculate goal percentage based on workouts completed.
     final goalPercentage = _calculateGoalPercentage(history.length);
@@ -129,29 +138,6 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
       goalPercentage: goalPercentage,
       streak: streak,
       history: history,
-    );
-  }
-
-  /// Calculates how many days were completed this week and how many were planned.
-  _WeeklyProgress _calculateWeeklyProgress(List<WorkoutHistory> history) {
-    final now = DateTime.now();
-    // Find the start of the current week (Monday)
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final weekStartDate =
-        DateTime(weekStart.year, weekStart.month, weekStart.day);
-
-    // Count records completed this week
-    final completedThisWeek = history.where((record) {
-      return record.completedAt.isAfter(weekStartDate) ||
-          _isSameDay(record.completedAt, weekStartDate);
-    }).length;
-
-    // Planned days based on user profile workout availability (default 3 days/week)
-    const plannedDaysPerWeek = 3;
-
-    return _WeeklyProgress(
-      completed: completedThisWeek,
-      planned: plannedDaysPerWeek,
     );
   }
 
@@ -170,8 +156,10 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
 
     // Get unique dates sorted descending
     final dates = history
-        .map((h) =>
-            DateTime(h.completedAt.year, h.completedAt.month, h.completedAt.day))
+        .map((h) {
+          final local = h.effectiveCompletedAt;
+          return DateTime(local.year, local.month, local.day);
+        })
         .toSet()
         .toList()
       ..sort((a, b) => b.compareTo(a));
@@ -189,16 +177,71 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     }
     return streak;
   }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
 }
 
-/// Internal helper class for weekly progress calculation.
-class _WeeklyProgress {
+class WeeklyProgress {
   final int completed;
   final int planned;
 
-  const _WeeklyProgress({required this.completed, required this.planned});
+  const WeeklyProgress({required this.completed, required this.planned});
+}
+
+/// Calculates progress only for days represented by the accepted schedule.
+/// Multiple completed sessions on one day count as one completed workout day.
+WeeklyProgress calculateWeeklyProgress({
+  required List<WorkoutHistory> history,
+  required List<Workout> workouts,
+  required DateTime now,
+}) {
+  final scheduledWeekdays = workouts
+      .where((workout) => workout.isAccepted)
+      .map((workout) => _parseScheduledWeekday(workout.dayOfWeek))
+      .whereType<int>()
+      .toSet();
+  final planned = scheduledWeekdays.length;
+  if (planned == 0) return const WeeklyProgress(completed: 0, planned: 0);
+
+  final weekStartValue = now.subtract(Duration(days: now.weekday - 1));
+  final weekStart = DateTime(
+    weekStartValue.year,
+    weekStartValue.month,
+    weekStartValue.day,
+  );
+  final nextWeek = weekStart.add(const Duration(days: 7));
+  final completedDates = history
+      .where((record) {
+        final completedAt = record.effectiveCompletedAt;
+        return !completedAt.isBefore(weekStart) &&
+            completedAt.isBefore(nextWeek) &&
+            scheduledWeekdays.contains(completedAt.weekday);
+      })
+      .map((record) => DateTime(
+            record.effectiveCompletedAt.year,
+            record.effectiveCompletedAt.month,
+            record.effectiveCompletedAt.day,
+          ))
+      .toSet();
+
+  return WeeklyProgress(
+    completed: completedDates.length.clamp(0, planned),
+    planned: planned,
+  );
+}
+
+int? _parseScheduledWeekday(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  final normalized = value.trim().toLowerCase();
+  final numeric = int.tryParse(normalized);
+  if (numeric != null && numeric >= 1 && numeric <= 7) return numeric;
+  const names = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ];
+  final index = names.indexOf(normalized);
+  return index < 0 ? null : index + 1;
 }

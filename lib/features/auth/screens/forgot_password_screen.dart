@@ -39,7 +39,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password reset instructions have been sent to your email.'),
+          content:
+              Text('Password reset instructions have been sent to your email.'),
         ),
       );
     }

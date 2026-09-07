@@ -20,7 +20,8 @@ void main() {
     ]);
 
     expect(groups.keys.toList(), ['2026-09', '2026-08']);
-    expect(groups['2026-09']!.map((item) => item.id).toList(), ['sep-new', 'sep-old']);
+    expect(groups['2026-09']!.map((item) => item.id).toList(),
+        ['sep-new', 'sep-old']);
   });
 
   test('progress log serializes without losing timestamp or weight', () {

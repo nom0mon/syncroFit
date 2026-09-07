@@ -58,7 +58,10 @@ DayStatus getDayStatus(DateTime date, Set<DateTime> completedDates) {
 
   // Check if this date is in the completed set (compare date-only)
   final isCompleted = completedDates.any(
-    (d) => d.year == dateOnly.year && d.month == dateOnly.month && d.day == dateOnly.day,
+    (d) =>
+        d.year == dateOnly.year &&
+        d.month == dateOnly.month &&
+        d.day == dateOnly.day,
   );
 
   if (isCompleted) {

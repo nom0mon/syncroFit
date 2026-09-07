@@ -37,7 +37,7 @@ void main() {
   });
 
   setUpAll(() {
-    registerFallbackValue(UserProfile(
+    registerFallbackValue(const UserProfile(
       userId: 'fallback',
       firstName: 'Fallback',
       lastName: '',

@@ -2,11 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:synchrofit/core/network/api_client.dart';
+import 'package:synchrofit/core/network/token_storage.dart';
 import 'package:synchrofit/features/auth/screens/login_screen.dart';
 import 'package:synchrofit/features/auth/screens/register_screen.dart';
+import 'package:synchrofit/shared/models/user.dart';
 import 'package:synchrofit/shared/widgets/safe_layout.dart';
 
 import '../../support/responsive_test_harness.dart';
+
+class _EmptyTokenStorage extends TokenStorage {
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<User?> getUser() async => null;
+}
+
+ProviderScope _authTestScope(Widget child) => ProviderScope(
+      overrides: [
+        tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
+      ],
+      child: child,
+    );
 
 void main() {
   setUpAll(() {
@@ -26,7 +44,7 @@ void main() {
           const action = Key('login-submit');
 
           await tester.pumpResponsiveWidget(
-            const ProviderScope(child: LoginScreen()),
+            _authTestScope(const LoginScreen()),
             configuration: configuration,
             settle: true,
           );
@@ -51,7 +69,7 @@ void main() {
           const action = Key('register-submit');
 
           await tester.pumpResponsiveWidget(
-            const ProviderScope(child: RegisterScreen()),
+            _authTestScope(const RegisterScreen()),
             configuration: configuration,
             settle: true,
           );
@@ -82,8 +100,8 @@ void main() {
         const action = Key('register-submit');
 
         await tester.pumpResponsiveWidget(
-          ProviderScope(
-            child: Builder(
+          _authTestScope(
+            Builder(
               builder: (context) {
                 final mediaQuery = MediaQuery.of(context);
                 return MediaQuery(

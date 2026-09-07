@@ -106,7 +106,8 @@ class _TrainerProfileContent extends StatelessWidget {
               _StatCard(
                 icon: Icons.calendar_today_outlined,
                 label: 'Slots',
-                value: '${trainer.availableSlots.where((s) => !s.isBooked).length}',
+                value:
+                    '${trainer.availableSlots.where((s) => !s.isBooked).length}',
               ),
             ],
           ),

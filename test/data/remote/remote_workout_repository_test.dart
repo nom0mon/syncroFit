@@ -18,9 +18,10 @@ void main() {
   group('RemoteWorkoutRepository - getAll', () {
     test('calls workouts endpoint', () async {
       when(() => mockApiClient.get<List<Workout>>(
-            '/api/workouts',
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+                '/api/workouts',
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
 
       await repository.getAll();
 
@@ -34,10 +35,11 @@ void main() {
   group('RemoteWorkoutRepository - generateRecommendation', () {
     test('calls correct endpoint', () async {
       when(() => mockApiClient.post<List<Workout>>(
-            '/api/workouts/generate',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+                '/api/workouts/generate',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
 
       await repository.generateRecommendation();
 
@@ -52,9 +54,10 @@ void main() {
   group('RemoteWorkoutRepository - getGenerated', () {
     test('calls correct endpoint', () async {
       when(() => mockApiClient.get<List<Workout>>(
-            '/api/workouts/generated',
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+                '/api/workouts/generated',
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
 
       await repository.getGenerated();
 
@@ -66,7 +69,8 @@ void main() {
   });
 
   group('RemoteWorkoutRepository - customizeExercises', () {
-    test('sends only ordered exercise IDs to the customization endpoint', () async {
+    test('sends only ordered exercise IDs to the customization endpoint',
+        () async {
       const workout = Workout(
         id: '7',
         name: 'Upper A',
@@ -76,7 +80,9 @@ void main() {
       );
       when(() => mockApiClient.put<Workout>(
             '/api/workouts/7/exercises',
-            body: {'exercise_ids': [4, 2]},
+            body: {
+              'exercise_ids': [4, 2]
+            },
             fromJson: any(named: 'fromJson'),
           )).thenAnswer((_) async => const Success<Workout, AppError>(workout));
 
@@ -85,7 +91,9 @@ void main() {
       expect(result, isA<Success<Workout, AppError>>());
       verify(() => mockApiClient.put<Workout>(
             '/api/workouts/7/exercises',
-            body: {'exercise_ids': [4, 2]},
+            body: {
+              'exercise_ids': [4, 2]
+            },
             fromJson: any(named: 'fromJson'),
           )).called(1);
     });

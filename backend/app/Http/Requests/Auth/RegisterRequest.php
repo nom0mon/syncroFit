@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -22,10 +23,20 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'min:1', 'max:50'],
-            'last_name' => ['required', 'string', 'min:1', 'max:50'],
+            'username' => [
+                'required', 'string', 'min:3', 'max:30',
+                'regex:/^[a-z0-9._]+$/',
+                Rule::unique('users', 'username'),
+            ],
             'email' => ['required', 'string', 'email', 'max:254', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'max:128'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('username')) {
+            $this->merge(['username' => strtolower(trim((string) $this->input('username')))]);
+        }
     }
 }

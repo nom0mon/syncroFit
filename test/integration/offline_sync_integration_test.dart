@@ -95,6 +95,9 @@ Future<Database> _createInMemoryDatabase() async {
           CREATE TABLE user_profile (
             user_id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
+            first_name TEXT NOT NULL DEFAULT '',
+            last_name TEXT NOT NULL DEFAULT '',
+            username TEXT NOT NULL DEFAULT '',
             age INTEGER NOT NULL,
             height_cm REAL NOT NULL,
             weight_kg REAL NOT NULL,
@@ -305,7 +308,7 @@ void main() {
             statusCode: 201,
             data: {'data': {}},
           ));
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(
@@ -442,7 +445,7 @@ void main() {
       // The server has a newer updated_at timestamp (server wins)
       final serverUpdatedAt = DateTime.now().add(const Duration(hours: 1));
 
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(
@@ -491,7 +494,7 @@ void main() {
 
       // Step 3: Server responds with 409 but with a much older timestamp
       // (local wins because mutation.createdAt > serverUpdatedAt)
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(
@@ -527,7 +530,7 @@ void main() {
           .updateProfile(_testProfile(firstName: 'Conflict'));
 
       // Mock 409 response
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(
@@ -1186,7 +1189,7 @@ void main() {
 
       // Step 2: Server has a newer timestamp (server wins)
       final newerServerTime = DateTime.now().add(const Duration(hours: 2));
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(
@@ -1250,7 +1253,7 @@ void main() {
       });
 
       final newerServerTime = DateTime.now().add(const Duration(days: 1));
-      when(() => mockDio.patch(
+      when(() => mockDio.put(
             any(),
             data: any(named: 'data'),
           )).thenAnswer((_) async => Response(

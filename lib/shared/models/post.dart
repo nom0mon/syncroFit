@@ -1,7 +1,13 @@
 import 'comment.dart';
 
 class CommunityPhoto {
-  const CommunityPhoto({required this.id, required this.url, required this.mimeType, required this.position, this.width, this.height});
+  const CommunityPhoto(
+      {required this.id,
+      required this.url,
+      required this.mimeType,
+      required this.position,
+      this.width,
+      this.height});
   final String id;
   final String url;
   final String mimeType;
@@ -10,11 +16,21 @@ class CommunityPhoto {
   final int? height;
 
   factory CommunityPhoto.fromJson(Map<String, dynamic> json) => CommunityPhoto(
-        id: json['id'].toString(), url: json['url'] as String,
-        mimeType: json['mime_type'] as String, position: (json['position'] as num).toInt(),
-        width: (json['width'] as num?)?.toInt(), height: (json['height'] as num?)?.toInt(),
+        id: json['id'].toString(),
+        url: json['url'] as String,
+        mimeType: json['mime_type'] as String,
+        position: (json['position'] as num).toInt(),
+        width: (json['width'] as num?)?.toInt(),
+        height: (json['height'] as num?)?.toInt(),
       );
-  Map<String, dynamic> toJson() => {'id': id, 'url': url, 'mime_type': mimeType, 'position': position, 'width': width, 'height': height};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'url': url,
+        'mime_type': mimeType,
+        'position': position,
+        'width': width,
+        'height': height
+      };
 }
 
 class Post {
@@ -52,27 +68,45 @@ class Post {
         timestamp: DateTime.parse(json['created_at'] as String),
         likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
         commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
-        isLikedByCurrentUser: json['is_liked_by_current_user'] as bool? ?? false,
-        isOwnedByCurrentUser: json['is_owned_by_current_user'] as bool? ?? false,
+        isLikedByCurrentUser:
+            json['is_liked_by_current_user'] as bool? ?? false,
+        isOwnedByCurrentUser:
+            json['is_owned_by_current_user'] as bool? ?? false,
         comments: (json['comments'] as List<dynamic>? ?? const [])
-            .map((item) => Comment.fromJson(item as Map<String, dynamic>)).toList(),
+            .map((item) => Comment.fromJson(item as Map<String, dynamic>))
+            .toList(),
         media: (json['media'] as List<dynamic>? ?? const [])
-            .map((item) => CommunityPhoto.fromJson(item as Map<String, dynamic>)).toList(),
+            .map(
+                (item) => CommunityPhoto.fromJson(item as Map<String, dynamic>))
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id, 'author_id': authorId, 'author_name': authorName,
-        'content': content, 'created_at': timestamp.toIso8601String(),
-        'like_count': likeCount, 'comment_count': commentCount,
+        'id': id,
+        'author_id': authorId,
+        'author_name': authorName,
+        'content': content,
+        'created_at': timestamp.toIso8601String(),
+        'like_count': likeCount,
+        'comment_count': commentCount,
         'is_liked_by_current_user': isLikedByCurrentUser,
         'is_owned_by_current_user': isOwnedByCurrentUser,
         'comments': comments.map((item) => item.toJson()).toList(),
         'media': media.map((item) => item.toJson()).toList(),
       };
 
-  Post copyWith({int? likeCount, bool? isLikedByCurrentUser, List<Comment>? comments, int? commentCount}) => Post(
-        id: id, authorId: authorId, authorName: authorName, content: content,
-        timestamp: timestamp, likeCount: likeCount ?? this.likeCount,
+  Post copyWith(
+          {int? likeCount,
+          bool? isLikedByCurrentUser,
+          List<Comment>? comments,
+          int? commentCount}) =>
+      Post(
+        id: id,
+        authorId: authorId,
+        authorName: authorName,
+        content: content,
+        timestamp: timestamp,
+        likeCount: likeCount ?? this.likeCount,
         isLikedByCurrentUser: isLikedByCurrentUser ?? this.isLikedByCurrentUser,
         comments: comments ?? this.comments,
         commentCount: commentCount ?? this.commentCount,

@@ -36,8 +36,7 @@ class RemoteExerciseRepository implements ExerciseRepository {
     switch (all) {
       case Success(value: final exercises):
         final filtered = exercises
-            .where(
-                (e) => e.name.toLowerCase().contains(query.toLowerCase()))
+            .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
         return Success(filtered);
       case Failure(error: final error):
@@ -50,7 +49,8 @@ class RemoteExerciseRepository implements ExerciseRepository {
     List<String> groups,
   ) async {
     // Use the first group for the API call (API accepts one at a time)
-    return _fetchExercises(muscleGroup: groups.isNotEmpty ? groups.first : null);
+    return _fetchExercises(
+        muscleGroup: groups.isNotEmpty ? groups.first : null);
   }
 
   @override

@@ -278,8 +278,7 @@ void main() {
         expect(
           router.canPop(),
           isTrue,
-          reason:
-              'After navigating to /settings/profile via context.push, '
+          reason: 'After navigating to /settings/profile via context.push, '
               'the router should be able to pop back to /settings',
         );
 
@@ -393,7 +392,7 @@ void main() {
 
 /// Fake exercise notifier that returns pre-loaded exercises.
 class _FakeExerciseNotifier extends ExerciseNotifier {
-  _FakeExerciseNotifier(Ref ref) : super(ref) {
+  _FakeExerciseNotifier(super.ref) {
     state = ExerciseState(
       allExercises: _fakeExercises,
       filteredExercises: _fakeExercises,

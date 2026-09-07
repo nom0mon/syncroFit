@@ -173,7 +173,9 @@ class _FeedList extends StatelessWidget {
                   child: FilledButton(
                     onPressed: isLoadingMore ? null : onLoadMore,
                     child: isLoadingMore
-                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('Load more'),
                   ),
                 ),
@@ -256,13 +258,18 @@ class _PostCard extends ConsumerWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Semantics(
-                    label: post.isLikedByCurrentUser ? 'Unlike post' : 'Like post',
+                    label:
+                        post.isLikedByCurrentUser ? 'Unlike post' : 'Like post',
                     button: true,
                     child: IconButton(
                       visualDensity: VisualDensity.compact,
-                      onPressed: () => ref.read(communityProvider.notifier).toggleLike(post.id),
+                      onPressed: () => ref
+                          .read(communityProvider.notifier)
+                          .toggleLike(post.id),
                       icon: Icon(
-                        post.isLikedByCurrentUser ? Icons.favorite : Icons.favorite_border,
+                        post.isLikedByCurrentUser
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         color: post.isLikedByCurrentUser
                             ? theme.colorScheme.error
                             : theme.colorScheme.onSurfaceVariant,
@@ -313,19 +320,30 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
   }
 
   Future<void> _submit() async {
-    setState(() { _submitting = true; _error = null; });
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     final error = await ref.read(communityProvider.notifier).createPost(
       _controller.text,
       photos: List.unmodifiable(_photos),
       onProgress: (sent, total) {
-        if (mounted && total > 0) setState(() => _uploadProgress = sent / total);
+        if (mounted && total > 0) {
+          setState(() => _uploadProgress = sent / total);
+        }
       },
     );
     if (!mounted) return;
-    setState(() { _submitting = false; _error = error; });
+    setState(() {
+      _submitting = false;
+      _error = error;
+    });
     if (error == null) {
       _controller.clear();
-      setState(() { _photos.clear(); _uploadProgress = 0; });
+      setState(() {
+        _photos.clear();
+        _uploadProgress = 0;
+      });
     }
   }
 
@@ -355,19 +373,24 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
           setState(() => _error = 'Each photo must be smaller than 8 MB.');
           return;
         }
-        final normalizedExtension = const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)
-            ? extension
-            : mime == 'image/png'
-                ? 'png'
-                : mime == 'image/webp'
-                    ? 'webp'
-                    : 'jpg';
-        final filename = const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)
+        final normalizedExtension =
+            const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)
+                ? extension
+                : mime == 'image/png'
+                    ? 'png'
+                    : mime == 'image/webp'
+                        ? 'webp'
+                        : 'jpg';
+        final filename = const {'jpg', 'jpeg', 'png', 'webp'}
+                .contains(extension)
             ? photo.name
             : 'community-photo-${DateTime.now().microsecondsSinceEpoch}.$normalizedExtension';
         additions.add(CommunityPhotoUpload(bytes: bytes, filename: filename));
       }
-      setState(() { _photos.addAll(additions); _error = null; });
+      setState(() {
+        _photos.addAll(additions);
+        _error = null;
+      });
     } catch (_) {
       if (mounted) setState(() => _error = 'The photo picker could not open.');
     }
@@ -387,11 +410,13 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _photos.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.xs),
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.xs),
                     itemBuilder: (_, index) => Stack(children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.memory(_photos[index].bytes, width: 104, height: 104, fit: BoxFit.cover),
+                        child: Image.memory(_photos[index].bytes,
+                            width: 104, height: 104, fit: BoxFit.cover),
                       ),
                       Positioned(
                         top: 2,
@@ -399,7 +424,9 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                         child: IconButton.filledTonal(
                           tooltip: 'Remove photo',
                           visualDensity: VisualDensity.compact,
-                          onPressed: _submitting ? null : () => setState(() => _photos.removeAt(index)),
+                          onPressed: _submitting
+                              ? null
+                              : () => setState(() => _photos.removeAt(index)),
                           icon: const Icon(Icons.close, size: 18),
                         ),
                       ),
@@ -422,22 +449,28 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                 ),
               ),
               if (_submitting && _photos.isNotEmpty)
-                LinearProgressIndicator(value: _uploadProgress == 0 ? null : _uploadProgress),
+                LinearProgressIndicator(
+                    value: _uploadProgress == 0 ? null : _uploadProgress),
               Row(
                 children: [
                   OutlinedButton.icon(
-                    onPressed: _submitting || _photos.length >= 4 ? null : _pickPhotos,
+                    onPressed:
+                        _submitting || _photos.length >= 4 ? null : _pickPhotos,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
-                    label: Text(_photos.isEmpty ? 'Add photos' : '${_photos.length}/4 photos'),
+                    label: Text(_photos.isEmpty
+                        ? 'Add photos'
+                        : '${_photos.length}/4 photos'),
                   ),
                   const Spacer(),
                   FilledButton.icon(
-                  key: const Key('community-submit-post'),
-                  onPressed: _submitting ? null : _submit,
-                  icon: _submitting
-                      ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.send),
-                  label: const Text('Post'),
+                    key: const Key('community-submit-post'),
+                    onPressed: _submitting ? null : _submit,
+                    icon: _submitting
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.send),
+                    label: const Text('Post'),
                   ),
                 ],
               ),

@@ -11,6 +11,12 @@ class ExerciseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Render may restart the service, so production startup seeding must be
+        // safe to repeat without duplicating the exercise library.
+        if (DB::table('exercises')->exists()) {
+            return;
+        }
+
         $exercises = [
             // ===== CHEST =====
             [

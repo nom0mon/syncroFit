@@ -16,10 +16,12 @@ class WorkoutCustomizeScreen extends ConsumerStatefulWidget {
   final String workoutId;
 
   @override
-  ConsumerState<WorkoutCustomizeScreen> createState() => _WorkoutCustomizeScreenState();
+  ConsumerState<WorkoutCustomizeScreen> createState() =>
+      _WorkoutCustomizeScreenState();
 }
 
-class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen> {
+class _WorkoutCustomizeScreenState
+    extends ConsumerState<WorkoutCustomizeScreen> {
   List<int>? _ids;
   bool _saving = false;
 
@@ -33,7 +35,9 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
         loading: () => const LoadingIndicator(),
         error: (_, __) => const Center(child: Text('Unable to load workout.')),
         data: (workout) {
-          if (workout == null) return const Center(child: Text('Workout not found.'));
+          if (workout == null) {
+            return const Center(child: Text('Workout not found.'));
+          }
           _ids ??= workout.exercises.map((item) => item.exerciseId).toList();
           final byId = <int, Exercise>{
             for (final exercise in library.allExercises)
@@ -41,8 +45,11 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
           };
           return Column(children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-              child: Text('Add, remove, or drag exercises into order. Sets, reps, and rest are assigned automatically.', style: Theme.of(context).textTheme.bodyMedium),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              child: Text(
+                  'Add, remove, or drag exercises into order. Sets, reps, and rest are assigned automatically.',
+                  style: Theme.of(context).textTheme.bodyMedium),
             ),
             Expanded(
               child: ReorderableListView.builder(
@@ -64,7 +71,9 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
                       subtitle: Text(exercise?.muscleGroup ?? 'Unavailable'),
                       trailing: IconButton(
                         tooltip: 'Remove exercise',
-                        onPressed: _ids!.length == 1 ? null : () => setState(() => _ids!.remove(id)),
+                        onPressed: _ids!.length == 1
+                            ? null
+                            : () => setState(() => _ids!.remove(id)),
                         icon: const Icon(Icons.remove_circle_outline),
                       ),
                     ),
@@ -75,21 +84,27 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
             SafeArea(
               top: false,
               minimum: const EdgeInsets.all(AppSpacing.md),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                OutlinedButton.icon(
-                  onPressed: library.isLoading ? null : () => _pick(library.allExercises),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Exercise'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.check),
-                  label: Text(_saving ? 'Saving...' : 'Save Changes'),
-                ),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: library.isLoading
+                          ? null
+                          : () => _pick(library.allExercises),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Exercise'),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: _saving
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.check),
+                      label: Text(_saving ? 'Saving...' : 'Save Changes'),
+                    ),
+                  ]),
             ),
           ]);
         },
@@ -98,7 +113,8 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
   }
 
   Future<void> _pick(List<Exercise> exercises) async {
-    final available = exercises.where((e) => !_ids!.contains(int.tryParse(e.id))).toList();
+    final available =
+        exercises.where((e) => !_ids!.contains(int.tryParse(e.id))).toList();
     final selected = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -112,7 +128,8 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
                   itemBuilder: (context, index) => ListTile(
                     title: Text(available[index].name),
                     subtitle: Text(available[index].muscleGroup),
-                    onTap: () => Navigator.pop(context, int.parse(available[index].id)),
+                    onTap: () =>
+                        Navigator.pop(context, int.parse(available[index].id)),
                   ),
                 ),
         ),
@@ -140,9 +157,10 @@ class _WorkoutCustomizeScreenState extends ConsumerState<WorkoutCustomizeScreen>
         final message = error is NetworkError
             ? 'Workout customization requires a connection. Your existing workout was not changed.'
             : error is ValidationError && error.fieldErrors.isNotEmpty
-            ? error.fieldErrors.values.first
-            : error.message;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                ? error.fieldErrors.values.first
+                : error.message;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 }

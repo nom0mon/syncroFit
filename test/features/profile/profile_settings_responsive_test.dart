@@ -212,8 +212,7 @@ class _SuccessfulAuthRepository implements AuthRepository {
 
   @override
   Future<Result<User, AppError>> register(
-    String firstName,
-    String lastName,
+    String username,
     String email,
     String password,
   ) =>

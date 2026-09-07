@@ -13,15 +13,16 @@ import 'package:synchrofit/data/sync/conflict_resolver.dart';
 void main() {
   final resolver = ConflictResolver();
 
-  group(
-      'Property 4: Conflict resolution is deterministic — last-write-wins', () {
+  group('Property 4: Conflict resolution is deterministic — last-write-wins',
+      () {
     Glados2(any.int, any.int).test(
       'shouldApplyLocal returns true iff localTimestamp.isAfter(serverTimestamp)',
       (localOffsetMs, serverOffsetMs) {
         // Generate two arbitrary DateTime values using offsets from a base epoch
         final base = DateTime(2020, 1, 1);
         final localTimestamp = base.add(Duration(milliseconds: localOffsetMs));
-        final serverTimestamp = base.add(Duration(milliseconds: serverOffsetMs));
+        final serverTimestamp =
+            base.add(Duration(milliseconds: serverOffsetMs));
 
         final result = resolver.shouldApplyLocal(
           localMutationTimestamp: localTimestamp,
@@ -79,8 +80,7 @@ void main() {
         expect(
           result,
           isTrue,
-          reason:
-              'Local ($localTimestamp) is after server ($serverTimestamp), '
+          reason: 'Local ($localTimestamp) is after server ($serverTimestamp), '
               'should return true but got $result',
         );
       },
@@ -104,8 +104,7 @@ void main() {
         expect(
           result,
           isFalse,
-          reason:
-              'Server ($serverTimestamp) is after local ($localTimestamp), '
+          reason: 'Server ($serverTimestamp) is after local ($localTimestamp), '
               'should return false but got $result',
         );
       },

@@ -15,14 +15,21 @@ void main() {
       'is_owned_by_current_user': false,
       'media': [
         {
-          'id': '21', 'url': 'http://localhost/media/21',
-          'mime_type': 'image/png', 'position': 0, 'width': 800, 'height': 600,
+          'id': '21',
+          'url': 'http://localhost/media/21',
+          'mime_type': 'image/png',
+          'position': 0,
+          'width': 800,
+          'height': 600,
         }
       ],
       'comments': [
         {
-          'id': '8', 'post_id': '12', 'author_id': '3',
-          'author_name': 'Taylor Smith', 'content': 'First',
+          'id': '8',
+          'post_id': '12',
+          'author_id': '3',
+          'author_name': 'Taylor Smith',
+          'content': 'First',
           'created_at': '2026-09-06T10:01:00.000Z',
           'is_owned_by_current_user': false,
         }

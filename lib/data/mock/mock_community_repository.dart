@@ -10,7 +10,8 @@ class MockCommunityRepository implements CommunityRepository {
   @override
   Future<Result<CommunityPage, AppError>> getPosts({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return Success(CommunityPage(posts: List.unmodifiable(_posts), currentPage: 1, lastPage: 1));
+    return Success(CommunityPage(
+        posts: List.unmodifiable(_posts), currentPage: 1, lastPage: 1));
   }
 
   @override
@@ -25,7 +26,9 @@ class MockCommunityRepository implements CommunityRepository {
   }
 
   @override
-  Future<Result<Post, AppError>> createPost(Post post, {List<CommunityPhotoUpload> photos = const [], void Function(int, int)? onProgress}) async {
+  Future<Result<Post, AppError>> createPost(Post post,
+      {List<CommunityPhotoUpload> photos = const [],
+      void Function(int, int)? onProgress}) async {
     await Future.delayed(const Duration(milliseconds: 350));
 
     _posts.insert(0, post);
@@ -48,9 +51,7 @@ class MockCommunityRepository implements CommunityRepository {
       content: post.content,
       timestamp: post.timestamp,
       likeCount:
-          post.isLikedByCurrentUser
-              ? post.likeCount - 1
-              : post.likeCount + 1,
+          post.isLikedByCurrentUser ? post.likeCount - 1 : post.likeCount + 1,
       isLikedByCurrentUser: !post.isLikedByCurrentUser,
       comments: post.comments,
     );
@@ -103,12 +104,17 @@ class MockCommunityRepository implements CommunityRepository {
   }
 
   @override
-  Future<Result<void, AppError>> deleteComment(String postId, String commentId) async {
+  Future<Result<void, AppError>> deleteComment(
+      String postId, String commentId) async {
     final index = _posts.indexWhere((post) => post.id == postId);
-    if (index < 0) return Failure(NotFoundError(entityType: 'Post', id: postId));
+    if (index < 0) {
+      return Failure(NotFoundError(entityType: 'Post', id: postId));
+    }
     final post = _posts[index];
-    final comments = post.comments.where((item) => item.id != commentId).toList();
-    _posts[index] = post.copyWith(comments: comments, commentCount: comments.length);
+    final comments =
+        post.comments.where((item) => item.id != commentId).toList();
+    _posts[index] =
+        post.copyWith(comments: comments, commentCount: comments.length);
     return const Success(null);
   }
 }

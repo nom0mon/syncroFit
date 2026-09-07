@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   Database? _database;
 
@@ -77,11 +77,18 @@ class LocalDatabaseImpl implements LocalDatabase {
     );
   }
 
-  /// Destructive migration: drops all old tables and recreates with v2 schema.
-  ///
-  /// The local cache is ephemeral and will be repopulated from the API,
-  /// so a destructive migration is acceptable.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 3) {
+      await db.execute(
+          "ALTER TABLE user_profile ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");
+      await db.execute(
+          "ALTER TABLE user_profile ADD COLUMN last_name TEXT NOT NULL DEFAULT ''");
+      await db.execute(
+          "ALTER TABLE user_profile ADD COLUMN username TEXT NOT NULL DEFAULT ''");
+      return;
+    }
+
+    // Pre-v2 schemas are incompatible and contain cache-only data.
     await db.execute('DROP TABLE IF EXISTS exercises');
     await db.execute('DROP TABLE IF EXISTS workouts');
     await db.execute('DROP TABLE IF EXISTS workout_sessions');
@@ -97,6 +104,9 @@ class LocalDatabaseImpl implements LocalDatabase {
       CREATE TABLE exercises (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        username TEXT NOT NULL DEFAULT '',
         muscle_group TEXT NOT NULL,
         difficulty TEXT NOT NULL,
         instructions TEXT NOT NULL,

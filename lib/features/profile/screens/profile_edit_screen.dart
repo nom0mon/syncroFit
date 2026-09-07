@@ -15,6 +15,7 @@ import '../widgets/profile_form.dart'
         FitnessLevelLabel,
         WorkoutPreferenceLabel,
         DayOfWeekLabel;
+import '../../auth/providers/auth_provider.dart';
 
 /// Screen for editing an existing user profile using dirty-field tracking.
 ///
@@ -70,6 +71,7 @@ class _ProfileEditContent extends ConsumerStatefulWidget {
 class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
+  late TextEditingController _usernameController;
   late TextEditingController _ageController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
@@ -80,6 +82,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _usernameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -92,6 +95,7 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
 
     _firstNameController = TextEditingController(text: profile.firstName);
     _lastNameController = TextEditingController(text: profile.lastName);
+    _usernameController = TextEditingController(text: profile.username);
     _ageController = TextEditingController(text: profile.age.toString());
     _heightController =
         TextEditingController(text: profile.heightCm.toString());
@@ -108,6 +112,12 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
       ref
           .read(profileEditNotifierProvider.notifier)
           .updateField('last_name', _lastNameController.text.trim());
+    });
+    _usernameController.addListener(() {
+      ref.read(profileEditNotifierProvider.notifier).updateField(
+            'username',
+            _usernameController.text.trim().toLowerCase(),
+          );
     });
     _ageController.addListener(() {
       final text = _ageController.text.trim();
@@ -152,6 +162,11 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
         // throughout the app immediately.
         ref.invalidate(profileProvider);
         ref.invalidate(workoutSchedulerProvider);
+        ref.read(authStateProvider.notifier).updateCachedIdentity(
+              firstName: _firstNameController.text.trim(),
+              lastName: _lastNameController.text.trim(),
+              username: _usernameController.text.trim().toLowerCase(),
+            );
         Navigator.of(context).pop();
       }
     });
@@ -180,214 +195,228 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                   // keyboard, so it must not consume the inset a second time.
                   includeKeyboardInset: false,
                   child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // First Name field
-                TextField(
-                  controller: _firstNameController,
-                  decoration: InputDecoration(
-                    labelText: 'First Name',
-                    hintText: 'Enter your first name',
-                    errorText: state.fieldErrors['first_name'],
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Last Name field
-                TextField(
-                  controller: _lastNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Last Name',
-                    hintText: 'Enter your last name',
-                    errorText: state.fieldErrors['last_name'],
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Age field
-                TextField(
-                  controller: _ageController,
-                  decoration: InputDecoration(
-                    labelText: 'Age',
-                    hintText: 'Enter your age',
-                    errorText: state.fieldErrors['age'],
-                  ),
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Height field
-                TextField(
-                  controller: _heightController,
-                  decoration: InputDecoration(
-                    labelText: 'Height (cm)',
-                    hintText: 'Enter your height in cm',
-                    errorText: state.fieldErrors['height_cm'],
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Weight field
-                TextField(
-                  controller: _weightController,
-                  decoration: InputDecoration(
-                    labelText: 'Weight (kg)',
-                    hintText: 'Enter your weight in kg',
-                    errorText: state.fieldErrors['weight_kg'],
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.done,
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Gender dropdown
-                DropdownButtonFormField<Gender>(
-                  value: _currentGender(state, profile),
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Gender',
-                    errorText: state.fieldErrors['gender'],
-                  ),
-                  items: Gender.values
-                      .map((g) =>
-                          DropdownMenuItem(value: g, child: Text(g.label)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      notifier.updateField('gender', value);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Fitness Goal dropdown
-                DropdownButtonFormField<FitnessGoal>(
-                  value: _currentFitnessGoal(state, profile),
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Fitness Goal',
-                    errorText: state.fieldErrors['fitness_goal'],
-                  ),
-                  items: FitnessGoal.values
-                      .map((g) =>
-                          DropdownMenuItem(value: g, child: Text(g.label)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      notifier.updateField('fitness_goal', value);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Fitness Level dropdown
-                DropdownButtonFormField<FitnessLevel>(
-                  value: _currentFitnessLevel(state, profile),
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Fitness Level',
-                    errorText: state.fieldErrors['fitness_level'],
-                  ),
-                  items: FitnessLevel.values
-                      .map((l) =>
-                          DropdownMenuItem(value: l, child: Text(l.label)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      notifier.updateField('fitness_level', value);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Workout Preference dropdown
-                DropdownButtonFormField<WorkoutPreference>(
-                  value: _currentWorkoutPreference(state, profile),
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Workout Preference',
-                    errorText: state.fieldErrors['workout_preference'],
-                  ),
-                  items: WorkoutPreference.values
-                      .map((p) =>
-                          DropdownMenuItem(value: p, child: Text(p.label)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      notifier.updateField('workout_preference', value);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Availability Days multi-select chips
-                Text(
-                  'Workout Availability',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: DayOfWeek.values.map((day) {
-                    final selectedDays =
-                        _currentAvailabilityDays(state, profile);
-                    final isSelected = selectedDays.contains(day);
-                    return FilterChip(
-                      label: Text(day.label),
-                      selected: isSelected,
-                      onSelected: !isSelected || selectedDays.length > 1
-                          ? (selected) {
-                              final updated =
-                                  List<DayOfWeek>.from(selectedDays);
-                              if (selected) {
-                                updated.add(day);
-                              } else {
-                                updated.remove(day);
-                              }
-                              // Sort to maintain consistent order.
-                              updated.sort(
-                                (a, b) => a.index.compareTo(b.index),
-                              );
-                              notifier.updateField(
-                                'availability_days',
-                                updated,
-                              );
-                            }
-                          : null,
-                    );
-                  }).toList(),
-                ),
-                if (state.fieldErrors['availability_days'] != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    state.fieldErrors['availability_days']!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // First Name field
+                      TextField(
+                        controller: _firstNameController,
+                        decoration: InputDecoration(
+                          labelText: 'First Name',
+                          hintText: 'Enter your first name',
+                          errorText: state.fieldErrors['first_name'],
                         ),
-                  ),
-                ],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
 
-                // Save error message
-                if (state.saveError != null) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    state.saveError!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
+                      // Last Name field
+                      TextField(
+                        controller: _lastNameController,
+                        decoration: InputDecoration(
+                          labelText: 'Last Name',
+                          hintText: 'Enter your last name',
+                          errorText: state.fieldErrors['last_name'],
                         ),
-                  ),
-                ],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
 
-                const SizedBox(height: AppSpacing.xl),
-              ],
+                      TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: 'Username',
+                          hintText: 'Choose a unique username',
+                          errorText: state.fieldErrors['username'],
+                        ),
+                        textInputAction: TextInputAction.next,
+                        maxLength: 30,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Age field
+                      TextField(
+                        controller: _ageController,
+                        decoration: InputDecoration(
+                          labelText: 'Age',
+                          hintText: 'Enter your age',
+                          errorText: state.fieldErrors['age'],
+                        ),
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Height field
+                      TextField(
+                        controller: _heightController,
+                        decoration: InputDecoration(
+                          labelText: 'Height (cm)',
+                          hintText: 'Enter your height in cm',
+                          errorText: state.fieldErrors['height_cm'],
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Weight field
+                      TextField(
+                        controller: _weightController,
+                        decoration: InputDecoration(
+                          labelText: 'Weight (kg)',
+                          hintText: 'Enter your weight in kg',
+                          errorText: state.fieldErrors['weight_kg'],
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        textInputAction: TextInputAction.done,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Gender dropdown
+                      DropdownButtonFormField<Gender>(
+                        initialValue: _currentGender(state, profile),
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Gender',
+                          errorText: state.fieldErrors['gender'],
+                        ),
+                        items: Gender.values
+                            .map((g) => DropdownMenuItem(
+                                value: g, child: Text(g.label)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            notifier.updateField('gender', value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Fitness Goal dropdown
+                      DropdownButtonFormField<FitnessGoal>(
+                        initialValue: _currentFitnessGoal(state, profile),
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Fitness Goal',
+                          errorText: state.fieldErrors['fitness_goal'],
+                        ),
+                        items: FitnessGoal.values
+                            .map((g) => DropdownMenuItem(
+                                value: g, child: Text(g.label)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            notifier.updateField('fitness_goal', value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Fitness Level dropdown
+                      DropdownButtonFormField<FitnessLevel>(
+                        initialValue: _currentFitnessLevel(state, profile),
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Fitness Level',
+                          errorText: state.fieldErrors['fitness_level'],
+                        ),
+                        items: FitnessLevel.values
+                            .map((l) => DropdownMenuItem(
+                                value: l, child: Text(l.label)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            notifier.updateField('fitness_level', value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Workout Preference dropdown
+                      DropdownButtonFormField<WorkoutPreference>(
+                        initialValue: _currentWorkoutPreference(state, profile),
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Workout Preference',
+                          errorText: state.fieldErrors['workout_preference'],
+                        ),
+                        items: WorkoutPreference.values
+                            .map((p) => DropdownMenuItem(
+                                value: p, child: Text(p.label)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            notifier.updateField('workout_preference', value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Availability Days multi-select chips
+                      Text(
+                        'Workout Availability',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: DayOfWeek.values.map((day) {
+                          final selectedDays =
+                              _currentAvailabilityDays(state, profile);
+                          final isSelected = selectedDays.contains(day);
+                          return FilterChip(
+                            label: Text(day.label),
+                            selected: isSelected,
+                            onSelected: !isSelected || selectedDays.length > 1
+                                ? (selected) {
+                                    final updated =
+                                        List<DayOfWeek>.from(selectedDays);
+                                    if (selected) {
+                                      updated.add(day);
+                                    } else {
+                                      updated.remove(day);
+                                    }
+                                    // Sort to maintain consistent order.
+                                    updated.sort(
+                                      (a, b) => a.index.compareTo(b.index),
+                                    );
+                                    notifier.updateField(
+                                      'availability_days',
+                                      updated,
+                                    );
+                                  }
+                                : null,
+                          );
+                        }).toList(),
+                      ),
+                      if (state.fieldErrors['availability_days'] != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          state.fieldErrors['availability_days']!,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                        ),
+                      ],
+
+                      // Save error message
+                      if (state.saveError != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          state.saveError!,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                        ),
+                      ],
+
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
                   ),
                 ),
 

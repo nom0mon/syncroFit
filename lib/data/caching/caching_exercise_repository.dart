@@ -84,8 +84,7 @@ class CachingExerciseRepository implements ExerciseRepository {
     switch (allResult) {
       case Success(value: final exercises):
         final filtered = exercises
-            .where(
-                (e) => e.name.toLowerCase().contains(query.toLowerCase()))
+            .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
         return Success(filtered);
       case Failure(error: final error):
@@ -100,11 +99,9 @@ class CachingExerciseRepository implements ExerciseRepository {
     final allResult = await _getAllWithCacheStrategy();
     switch (allResult) {
       case Success(value: final exercises):
-        final lowerGroups =
-            groups.map((g) => g.toLowerCase()).toList();
+        final lowerGroups = groups.map((g) => g.toLowerCase()).toList();
         final filtered = exercises
-            .where((e) =>
-                lowerGroups.contains(e.muscleGroup.toLowerCase()))
+            .where((e) => lowerGroups.contains(e.muscleGroup.toLowerCase()))
             .toList();
         return Success(filtered);
       case Failure(error: final error):

@@ -16,7 +16,8 @@ class WeekRange {
 /// W4's Sunday is the Sunday of or before the reference date's week.
 List<WeekRange> computeWeekRanges(DateTime referenceDate) {
   // Normalize to date-only (strip time)
-  final ref = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
+  final ref =
+      DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
 
   // Find the Sunday of or before the reference date's week.
   // DateTime.weekday: Monday=1 ... Sunday=7
@@ -54,6 +55,7 @@ List<WeekRange> computeWeekRanges(DateTime referenceDate) {
 /// Returns true if [date] falls within the week starting at [weekStart]
 /// (Monday 00:00:00) through Sunday 23:59:59.
 bool isInWeek(DateTime date, DateTime weekStart) {
+  final localDate = date.toLocal();
   final weekEnd = DateTime(
     weekStart.year,
     weekStart.month,
@@ -62,7 +64,7 @@ bool isInWeek(DateTime date, DateTime weekStart) {
     59,
     59,
   );
-  return !date.isBefore(weekStart) && !date.isAfter(weekEnd);
+  return !localDate.isBefore(weekStart) && !localDate.isAfter(weekEnd);
 }
 
 /// Calculates the total training volume for a given week.
@@ -73,7 +75,7 @@ bool isInWeek(DateTime date, DateTime weekStart) {
 /// in seconds does not inflate the rep-based total.
 int calculateWeeklyVolume(List<WorkoutHistory> sessions, DateTime weekStart) {
   return sessions
-      .where((s) => isInWeek(s.completedAt, weekStart))
+      .where((s) => isInWeek(s.effectiveCompletedAt, weekStart))
       .expand((s) => s.exercises)
       .fold(0, (sum, e) => sum + e.repVolume);
 }
@@ -92,7 +94,5 @@ List<double> computeBarHeights(List<int> volumes, double maxChartHeight) {
     return List.filled(volumes.length, 4.0);
   }
 
-  return volumes
-      .map((v) => (v / maxVolume) * maxChartHeight)
-      .toList();
+  return volumes.map((v) => (v / maxVolume) * maxChartHeight).toList();
 }

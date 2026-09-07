@@ -1,6 +1,5 @@
 import 'package:uuid/uuid.dart';
 
-import '../../core/models/workout_history.dart';
 import '../../core/network/connectivity_monitor.dart';
 import '../../shared/models/models.dart';
 import '../local/daos/cache_metadata_dao.dart';

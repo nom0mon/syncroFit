@@ -34,6 +34,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       userId: userId,
       firstName: data.firstName,
       lastName: data.lastName,
+      username: data.username,
       age: data.age,
       heightCm: data.heightCm,
       weightKg: data.weightKg,
@@ -67,6 +68,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       );
       return;
     }
+
+    await ref.read(authStateProvider.notifier).updateCachedIdentity(
+          firstName: data.firstName,
+          lastName: data.lastName,
+          username: data.username,
+        );
+    if (!mounted) return;
 
     context.go('/assessment/1');
   }
@@ -109,6 +117,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Widget _buildSetupForm() {
+    final user = ref.read(authStateProvider).user;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -130,6 +139,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ),
       body: SafeScrollableForm(
         child: ProfileForm(
+          initialFirstName: user?.firstName ?? '',
+          initialLastName: user?.lastName ?? '',
+          initialUsername: user?.username ?? '',
           onSubmit: _handleSubmit,
           submitLabel: 'Save Profile',
           isLoading: _isSaving,

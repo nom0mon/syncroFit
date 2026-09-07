@@ -16,8 +16,7 @@ class RemoteCommunityRepository implements CommunityRepository {
           final map = json as Map<String, dynamic>;
           return CommunityPage(
             posts: (map['data'] as List)
-                .map((item) =>
-                    Post.fromJson(item as Map<String, dynamic>))
+                .map((item) => Post.fromJson(item as Map<String, dynamic>))
                 .toList(),
             currentPage: (map['current_page'] as num).toInt(),
             lastPage: (map['last_page'] as num).toInt(),
@@ -88,9 +87,11 @@ class RemoteCommunityRepository implements CommunityRepository {
   }
 
   @override
-  Future<Result<Post, AppError>> addComment(String postId, Comment comment) async {
+  Future<Result<Post, AppError>> addComment(
+      String postId, Comment comment) async {
     final added = await _api.post<Comment>(
-      '/api/community/posts/$postId/comments', body: {'content': comment.text},
+      '/api/community/posts/$postId/comments',
+      body: {'content': comment.text},
       fromJson: (json) => Comment.fromJson(json as Map<String, dynamic>),
     );
     if (added case Failure(error: final error)) return Failure(error);
@@ -102,6 +103,7 @@ class RemoteCommunityRepository implements CommunityRepository {
       _api.delete('/api/community/posts/$postId');
 
   @override
-  Future<Result<void, AppError>> deleteComment(String postId, String commentId) =>
+  Future<Result<void, AppError>> deleteComment(
+          String postId, String commentId) =>
       _api.delete('/api/community/posts/$postId/comments/$commentId');
 }

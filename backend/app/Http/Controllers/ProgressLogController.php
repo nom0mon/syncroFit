@@ -7,7 +7,7 @@ use App\Services\ProgressImageStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProgressLogController extends Controller
 {
@@ -47,11 +47,18 @@ class ProgressLogController extends Controller
         return response()->json(['success' => true, 'data' => $progressLog]);
     }
 
-    public function image(Request $request, ProgressLog $progressLog): BinaryFileResponse
+    public function image(Request $request, ProgressLog $progressLog, ProgressImageStorage $images): Response
     {
         $this->owned($request, $progressLog);
-        abort_unless(Storage::disk('local')->exists($progressLog->display_image_path), 404);
-        return response()->file(Storage::disk('local')->path($progressLog->display_image_path));
+        $disk = $images->disk();
+        abort_unless(Storage::disk($disk)->exists($progressLog->display_image_path), 404);
+        if ($disk !== 'local') {
+            return redirect()->away(
+                Storage::disk($disk)->temporaryUrl($progressLog->display_image_path, now()->addMinutes(10))
+            );
+        }
+
+        return response()->file(Storage::disk($disk)->path($progressLog->display_image_path));
     }
 
     public function destroy(Request $request, ProgressLog $progressLog, ProgressImageStorage $images): JsonResponse

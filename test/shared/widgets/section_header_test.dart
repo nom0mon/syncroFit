@@ -73,8 +73,7 @@ void main() {
       expect(opacityWidget.opacity, 0.5);
     });
 
-    testWidgets('uses Wrap with WrapAlignment.spaceBetween',
-        (tester) async {
+    testWidgets('uses Wrap with WrapAlignment.spaceBetween', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

@@ -9,7 +9,7 @@ class CommunityMediaStorage
 {
     public function disk(): string
     {
-        return (string) env('COMMUNITY_MEDIA_DISK', 'local');
+        return (string) config('filesystems.community_media_disk', 'local');
     }
 
     public function store(UploadedFile $photo, int $userId): array

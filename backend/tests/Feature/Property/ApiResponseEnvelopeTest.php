@@ -141,8 +141,7 @@ class ApiResponseEnvelopeTest extends TestCase
     private function hitRegisterValid()
     {
         $payload = [
-            'first_name' => 'User' . Str::random(5),
-            'last_name' => 'Test' . Str::random(5),
+            'username' => strtolower('user.'.Str::random(10)),
             'email' => Str::random(10) . '@example.com',
             'password' => 'ValidPass' . Str::random(8),
         ];
@@ -156,8 +155,8 @@ class ApiResponseEnvelopeTest extends TestCase
         $strategy = mt_rand(0, 2);
 
         $payload = match ($strategy) {
-            0 => ['first_name' => '', 'last_name' => '', 'email' => 'bad', 'password' => 'short'],  // all invalid
-            1 => ['first_name' => Str::random(60), 'last_name' => 'Doe', 'email' => 'valid@test.com', 'password' => 'ValidPass1'], // first_name too long
+            0 => ['username' => '', 'email' => 'bad', 'password' => 'short'],
+            1 => ['username' => 'invalid username', 'email' => 'valid@test.com', 'password' => 'ValidPass1'],
             2 => ['email' => 'a@b.com'],  // missing fields
         };
 

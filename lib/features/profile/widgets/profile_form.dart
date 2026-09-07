@@ -67,6 +67,9 @@ class ProfileForm extends StatefulWidget {
   const ProfileForm({
     super.key,
     this.initialProfile,
+    this.initialFirstName = '',
+    this.initialLastName = '',
+    this.initialUsername = '',
     required this.onSubmit,
     required this.submitLabel,
     this.isLoading = false,
@@ -74,6 +77,9 @@ class ProfileForm extends StatefulWidget {
 
   /// Pre-existing profile data to populate the form fields (for edit mode).
   final UserProfile? initialProfile;
+  final String initialFirstName;
+  final String initialLastName;
+  final String initialUsername;
 
   /// Called with the form data when validation passes.
   final void Function(ProfileFormData data) onSubmit;
@@ -93,6 +99,7 @@ class ProfileFormData {
   const ProfileFormData({
     required this.firstName,
     required this.lastName,
+    required this.username,
     required this.age,
     required this.heightCm,
     required this.weightKg,
@@ -105,6 +112,7 @@ class ProfileFormData {
 
   final String firstName;
   final String lastName;
+  final String username;
   final int age;
   final double heightCm;
   final double weightKg;
@@ -120,6 +128,7 @@ class _ProfileFormState extends State<ProfileForm> {
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _usernameController;
   late final TextEditingController _ageController;
   late final TextEditingController _heightController;
   late final TextEditingController _weightController;
@@ -137,9 +146,14 @@ class _ProfileFormState extends State<ProfileForm> {
     super.initState();
     final profile = widget.initialProfile;
 
-    _firstNameController =
-        TextEditingController(text: profile?.firstName ?? '');
-    _lastNameController = TextEditingController(text: profile?.lastName ?? '');
+    _firstNameController = TextEditingController(
+        text: profile?.firstName ?? widget.initialFirstName);
+    _lastNameController = TextEditingController(
+        text: profile?.lastName ?? widget.initialLastName);
+    _usernameController = TextEditingController(
+        text: profile?.username.isNotEmpty == true
+            ? profile!.username
+            : widget.initialUsername);
     _ageController = TextEditingController(
       text: profile != null ? profile.age.toString() : '',
     );
@@ -164,6 +178,7 @@ class _ProfileFormState extends State<ProfileForm> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _usernameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -185,6 +200,7 @@ class _ProfileFormState extends State<ProfileForm> {
       ProfileFormData(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
+        username: _usernameController.text.trim().toLowerCase(),
         age: int.parse(_ageController.text.trim()),
         heightCm: double.parse(_heightController.text.trim()),
         weightKg: double.parse(_weightController.text.trim()),
@@ -214,7 +230,6 @@ class _ProfileFormState extends State<ProfileForm> {
             ),
             validator: validateName,
             textInputAction: TextInputAction.next,
-            maxLength: 50,
           ),
           const SizedBox(height: AppSpacing.md),
 
@@ -227,7 +242,18 @@ class _ProfileFormState extends State<ProfileForm> {
             ),
             validator: validateName,
             textInputAction: TextInputAction.next,
-            maxLength: 50,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          TextFormField(
+            controller: _usernameController,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              hintText: 'Choose a unique username',
+            ),
+            validator: validateUsername,
+            textInputAction: TextInputAction.next,
+            maxLength: 30,
           ),
           const SizedBox(height: AppSpacing.md),
 

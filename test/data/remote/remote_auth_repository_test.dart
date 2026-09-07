@@ -8,6 +8,7 @@ import 'package:synchrofit/shared/models/models.dart';
 class MockApiClient extends Mock implements ApiClient {}
 
 class MockTokenStorage extends Mock implements TokenStorage {}
+
 class FakeUser extends Fake implements User {}
 
 void main() {
@@ -28,18 +29,20 @@ void main() {
   group('RemoteAuthRepository - login', () {
     test('sends correct path and body', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/login',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 1,
-              'name': 'Test User',
-              'email': 'test@test.com',
-              'created_at': '2024-01-01T00:00:00.000Z',
-            },
-            'token': 'test_token_123',
-          }));
+                '/api/login',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 1,
+                      'name': 'Test User',
+                      'email': 'test@test.com',
+                      'created_at': '2024-01-01T00:00:00.000Z',
+                    },
+                    'token': 'test_token_123',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       await repository.login('test@test.com', 'password123');
@@ -53,18 +56,20 @@ void main() {
 
     test('stores token on success', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/login',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 1,
-              'name': 'Test User',
-              'email': 'test@test.com',
-              'created_at': '2024-01-01T00:00:00.000Z',
-            },
-            'token': 'auth_token_abc',
-          }));
+                '/api/login',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 1,
+                      'name': 'Test User',
+                      'email': 'test@test.com',
+                      'created_at': '2024-01-01T00:00:00.000Z',
+                    },
+                    'token': 'auth_token_abc',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       await repository.login('test@test.com', 'password123');
@@ -74,18 +79,20 @@ void main() {
 
     test('returns user on success', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/login',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 42,
-              'name': 'Jane Doe',
-              'email': 'jane@example.com',
-              'created_at': '2024-06-15T10:30:00.000Z',
-            },
-            'token': 'some_token',
-          }));
+                '/api/login',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 42,
+                      'name': 'Jane Doe',
+                      'email': 'jane@example.com',
+                      'created_at': '2024-06-15T10:30:00.000Z',
+                    },
+                    'token': 'some_token',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       final result = await repository.login('jane@example.com', 'secure_pass');
@@ -121,27 +128,28 @@ void main() {
   group('RemoteAuthRepository - register', () {
     test('sends correct path and body', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/register',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 5,
-              'name': 'New User',
-              'email': 'new@test.com',
-              'created_at': '2024-03-01T00:00:00.000Z',
-            },
-            'token': 'new_token',
-          }));
+                '/api/register',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 5,
+                      'name': 'New User',
+                      'email': 'new@test.com',
+                      'created_at': '2024-03-01T00:00:00.000Z',
+                    },
+                    'token': 'new_token',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
-      await repository.register('New', 'User', 'new@test.com', 'password123');
+      await repository.register('new.user', 'new@test.com', 'password123');
 
       verify(() => mockApiClient.post<Map<String, dynamic>>(
             '/api/register',
             body: {
-              'first_name': 'New',
-              'last_name': 'User',
+              'username': 'new.user',
               'email': 'new@test.com',
               'password': 'password123',
             },
@@ -151,44 +159,47 @@ void main() {
 
     test('stores token on success', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/register',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 7,
-              'name': 'Registered User',
-              'email': 'reg@test.com',
-              'created_at': '2024-04-01T00:00:00.000Z',
-            },
-            'token': 'register_token_xyz',
-          }));
+                '/api/register',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 7,
+                      'name': 'Registered User',
+                      'email': 'reg@test.com',
+                      'created_at': '2024-04-01T00:00:00.000Z',
+                    },
+                    'token': 'register_token_xyz',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
-      await repository.register(
-          'Registered', 'User', 'reg@test.com', 'pass1234');
+      await repository.register('registered.user', 'reg@test.com', 'pass1234');
 
       verify(() => mockTokenStorage.saveToken('register_token_xyz')).called(1);
     });
 
     test('returns user on success', () async {
       when(() => mockApiClient.post<Map<String, dynamic>>(
-            '/api/register',
-            body: any(named: 'body'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Map<String, dynamic>, AppError>({
-            'user': {
-              'id': 99,
-              'name': 'Alice Smith',
-              'email': 'alice@example.com',
-              'created_at': '2024-08-20T15:00:00.000Z',
-            },
-            'token': 'alice_token',
-          }));
+                '/api/register',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => const Success<Map<String, dynamic>, AppError>({
+                    'user': {
+                      'id': 99,
+                      'name': 'Alice Smith',
+                      'email': 'alice@example.com',
+                      'created_at': '2024-08-20T15:00:00.000Z',
+                    },
+                    'token': 'alice_token',
+                  }));
       when(() => mockTokenStorage.saveToken(any())).thenAnswer((_) async => {});
 
       final result = await repository.register(
-          'Alice', 'Smith', 'alice@example.com', 'pw123456');
+          'alice.smith', 'alice@example.com', 'pw123456');
 
       expect(result, isA<Success<User, AppError>>());
       final user = (result as Success<User, AppError>).value;
@@ -209,8 +220,8 @@ void main() {
                 fieldErrors: {'email': 'The email has already been taken.'}),
           ));
 
-      final result = await repository.register(
-          'Test', 'User', 'taken@test.com', 'password');
+      final result =
+          await repository.register('test.user', 'taken@test.com', 'password');
 
       expect(result, isA<Failure<User, AppError>>());
       final error = (result as Failure<User, AppError>).error;

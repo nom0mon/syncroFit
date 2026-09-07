@@ -57,6 +57,9 @@ void main() {
             CREATE TABLE user_profile (
               user_id TEXT PRIMARY KEY,
               name TEXT NOT NULL,
+              first_name TEXT NOT NULL DEFAULT '',
+              last_name TEXT NOT NULL DEFAULT '',
+              username TEXT NOT NULL DEFAULT '',
               age INTEGER NOT NULL,
               height_cm REAL NOT NULL,
               weight_kg REAL NOT NULL,

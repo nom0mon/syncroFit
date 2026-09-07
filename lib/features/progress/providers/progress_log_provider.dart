@@ -17,12 +17,14 @@ final progressLogRepositoryProvider = Provider<ProgressLogRepository>((ref) {
   );
 });
 
-final progressLogsProvider = AsyncNotifierProvider<ProgressLogsNotifier, List<ProgressLog>>(
+final progressLogsProvider =
+    AsyncNotifierProvider<ProgressLogsNotifier, List<ProgressLog>>(
   ProgressLogsNotifier.new,
 );
 
 class ProgressLogsNotifier extends AsyncNotifier<List<ProgressLog>> {
-  ProgressLogRepository get _repository => ref.read(progressLogRepositoryProvider);
+  ProgressLogRepository get _repository =>
+      ref.read(progressLogRepositoryProvider);
 
   @override
   Future<List<ProgressLog>> build() async {
@@ -30,7 +32,8 @@ class ProgressLogsNotifier extends AsyncNotifier<List<ProgressLog>> {
     if (!auth.isAuthenticated || auth.user == null) return const [];
     final result = await _repository.getAll();
     return switch (result) {
-      Success(value: final logs) => logs..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+      Success(value: final logs) => logs
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
       Failure(error: final error) => throw error,
     };
   }
@@ -63,7 +66,9 @@ class ProgressLogsNotifier extends AsyncNotifier<List<ProgressLog>> {
   Future<AppError?> delete(String id) async {
     final result = await _repository.delete(id);
     if (result is Success<void, AppError>) {
-      state = AsyncData((state.valueOrNull ?? const []).where((log) => log.id != id).toList());
+      state = AsyncData((state.valueOrNull ?? const [])
+          .where((log) => log.id != id)
+          .toList());
       return null;
     }
     return (result as Failure<void, AppError>).error;

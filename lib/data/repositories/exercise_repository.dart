@@ -17,5 +17,6 @@ abstract class ExerciseRepository {
   );
 
   /// Filters exercises by difficulty level.
-  Future<Result<List<Exercise>, AppError>> filterByDifficulty(String difficulty);
+  Future<Result<List<Exercise>, AppError>> filterByDifficulty(
+      String difficulty);
 }

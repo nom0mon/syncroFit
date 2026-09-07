@@ -30,14 +30,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'store']);
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
 
-    // User name update
+    // Legacy user identity update
     Route::put('/user/name', function (\Illuminate\Http\Request $request) {
-        $request->validate([
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
+        $request->merge(['username' => strtolower(trim((string) $request->input('username', auth()->user()->username)))]);
+        $validated = $request->validate([
+            'first_name' => ['required', 'string'],
+            'last_name' => ['required', 'string'],
+            'username' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-z0-9._]+$/', \Illuminate\Validation\Rule::unique('users', 'username')->ignore(auth()->id())],
         ]);
         $user = auth()->user();
-        $user->update($request->only(['first_name', 'last_name']));
+        $user->update($validated);
         return response()->json(['success' => true, 'data' => $user]);
     });
 

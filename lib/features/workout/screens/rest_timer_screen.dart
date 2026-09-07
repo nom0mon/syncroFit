@@ -86,33 +86,33 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                      Text(
-                        'Rest Time',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _RestTimerCircle(
-                        remainingSeconds: visibleRemainingSeconds,
-                      ),
-                      if (sessionState.currentExercise != null) ...[
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          'Up Next',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          _getNextActivity(sessionState),
-                          style: theme.textTheme.titleLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                            Text(
+                              'Rest Time',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            _RestTimerCircle(
+                              remainingSeconds: visibleRemainingSeconds,
+                            ),
+                            if (sessionState.currentExercise != null) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              Text(
+                                'Up Next',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                _getNextActivity(sessionState),
+                                style: theme.textTheme.titleLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ],
                         ),
                       ),

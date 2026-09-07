@@ -22,6 +22,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 /// Screens can watch this to display loading indicators.
 final isLoadingProvider = StateProvider<bool>((ref) => false);
 
+/// Incremented whenever the current credentials are no longer valid.
+/// Auth state listens to this signal so a 401 cannot leave an authenticated
+/// user (and their user-scoped providers) alive in memory.
+final authSessionInvalidationProvider = StateProvider<int>((ref) => 0);
+
 /// Centralized HTTP client that handles:
 /// - Bearer token attachment on every request
 /// - Standard response envelope parsing into Result types
@@ -138,7 +143,8 @@ class ApiClient {
   Future<Result<T, AppError>> deleteData<T>(
     String path, {
     T Function(dynamic json)? fromJson,
-  }) => _request<T>(() => _dio.delete(path), fromJson: fromJson);
+  }) =>
+      _request<T>(() => _dio.delete(path), fromJson: fromJson);
 
   /// Core request handler that wraps all HTTP calls with:
   /// - Response envelope parsing
@@ -271,7 +277,10 @@ class ApiClient {
 
   /// Clears token and navigates to login screen on 401.
   void _handleUnauthorized() {
-    _ref.read(tokenStorageProvider).clearToken();
+    final storage = _ref.read(tokenStorageProvider);
+    storage.clearToken();
+    storage.clearUser();
+    _ref.read(authSessionInvalidationProvider.notifier).state++;
 
     // Navigate to login using the router
     try {

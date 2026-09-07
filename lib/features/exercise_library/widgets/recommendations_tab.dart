@@ -122,8 +122,7 @@ class _ScheduleContent extends StatelessWidget {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () =>
-                      context.push('/dashboard/workout-generator'),
+                  onPressed: () => context.push('/dashboard/workout-generator'),
                   icon: const Icon(Icons.tune, size: 18),
                   label: const Text('Regenerate'),
                 ),

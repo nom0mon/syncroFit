@@ -13,6 +13,7 @@ import '../../../shared/widgets/safe_layout.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../workout/providers/workout_scheduler_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/calendar_grid_widget.dart';
@@ -26,7 +27,12 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(dashboardProvider);
     final scheduledWorkouts = ref.watch(scheduledWorkoutsProvider);
-    final firstName = ref.watch(authStateProvider).user?.firstName.trim() ?? '';
+    final sessionUsername =
+        ref.watch(authStateProvider).user?.username.trim() ?? '';
+    final profileUsername =
+        ref.watch(profileProvider).valueOrNull?.username.trim() ?? '';
+    final username =
+        sessionUsername.isNotEmpty ? sessionUsername : profileUsername;
 
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +52,7 @@ class DashboardScreen extends ConsumerWidget {
         ),
         data: (state) => _DashboardContent(
           state: state,
-          firstName: firstName,
+          username: username,
           scheduledWorkouts: scheduledWorkouts,
         ),
       ),
@@ -83,12 +89,12 @@ class DashboardScreen extends ConsumerWidget {
 class _DashboardContent extends StatefulWidget {
   const _DashboardContent({
     required this.state,
-    required this.firstName,
+    required this.username,
     required this.scheduledWorkouts,
   });
 
   final DashboardState state;
-  final String firstName;
+  final String username;
   final List<ScheduledWorkout> scheduledWorkouts;
 
   @override
@@ -109,7 +115,8 @@ class _DashboardContentState extends State<_DashboardContent> {
   @override
   Widget build(BuildContext context) {
     final scheduledForDate = widget.scheduledWorkouts
-        .where((workout) => workout.dayOfWeek.index + 1 == _selectedDate.weekday)
+        .where(
+            (workout) => workout.dayOfWeek.index + 1 == _selectedDate.weekday)
         .toList();
     final scheduledWeekdays = widget.scheduledWorkouts
         .map((workout) => workout.dayOfWeek.index + 1)
@@ -130,9 +137,9 @@ class _DashboardContentState extends State<_DashboardContent> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    widget.firstName.isEmpty
+                    widget.username.isEmpty
                         ? 'Hello!'
-                        : 'Hello, ${widget.firstName}!',
+                        : 'Hello, ${widget.username}!',
                     key: const Key('dashboard-welcome-message'),
                     style: Theme.of(context)
                         .textTheme

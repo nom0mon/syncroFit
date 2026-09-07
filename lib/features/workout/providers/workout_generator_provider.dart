@@ -65,8 +65,7 @@ class WorkoutGeneratorState {
 class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
   final Ref _ref;
 
-  WorkoutGeneratorNotifier(this._ref)
-      : super(const WorkoutGeneratorState());
+  WorkoutGeneratorNotifier(this._ref) : super(const WorkoutGeneratorState());
 
   /// Toggles an exercise in the included set.
   ///
@@ -131,9 +130,9 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     }
     final generationRepository = repository as WorkoutGenerationRepository;
     final result = await generationRepository.generateRecommendation(
-              includedExercises: [...state.includedExerciseIds],
-              excludedExercises: [...state.excludedExerciseIds],
-            );
+      includedExercises: [...state.includedExerciseIds],
+      excludedExercises: [...state.excludedExerciseIds],
+    );
 
     switch (result) {
       case Success(value: final workouts):

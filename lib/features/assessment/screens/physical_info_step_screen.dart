@@ -152,7 +152,8 @@ class _PhysicalInfoStepScreenState
                                   child: Text(_genderLabel(g)),
                                 ))
                             .toList(),
-                        onChanged: (value) => setState(() => _selectedGender = value),
+                        onChanged: (value) =>
+                            setState(() => _selectedGender = value),
                         validator: (value) =>
                             value == null ? 'Please select a gender' : null,
                       ),
@@ -173,8 +174,9 @@ class _PhysicalInfoStepScreenState
                             .toList(),
                         onChanged: (value) =>
                             setState(() => _selectedActivityLevel = value),
-                        validator: (value) =>
-                            value == null ? 'Please select an activity level' : null,
+                        validator: (value) => value == null
+                            ? 'Please select an activity level'
+                            : null,
                       ),
                       if (_selectedActivityLevel != null) ...[
                         const SizedBox(height: AppSpacing.sm),

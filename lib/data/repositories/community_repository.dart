@@ -16,7 +16,9 @@ abstract class CommunityRepository {
   Future<Result<Post, AppError>> getPostById(String id);
 
   /// Creates a new community post.
-  Future<Result<Post, AppError>> createPost(Post post, {List<CommunityPhotoUpload> photos = const [], void Function(int, int)? onProgress});
+  Future<Result<Post, AppError>> createPost(Post post,
+      {List<CommunityPhotoUpload> photos = const [],
+      void Function(int, int)? onProgress});
 
   /// Toggles the like state for a post.
   Future<Result<Post, AppError>> toggleLike(String postId);
@@ -29,7 +31,8 @@ abstract class CommunityRepository {
 }
 
 class CommunityPage {
-  const CommunityPage({required this.posts, required this.currentPage, required this.lastPage});
+  const CommunityPage(
+      {required this.posts, required this.currentPage, required this.lastPage});
   final List<Post> posts;
   final int currentPage;
   final int lastPage;

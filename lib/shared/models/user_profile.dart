@@ -4,6 +4,7 @@ class UserProfile {
   final String userId;
   final String firstName;
   final String lastName;
+  final String username;
   final int age;
   final double heightCm;
   final double weightKg;
@@ -18,6 +19,7 @@ class UserProfile {
     required this.userId,
     required this.firstName,
     required this.lastName,
+    this.username = '',
     required this.age,
     required this.heightCm,
     required this.weightKg,
@@ -46,7 +48,10 @@ class UserProfile {
       userId: json['user_id'].toString(),
       firstName: firstName,
       lastName: lastName,
-      age: json['age'] is int ? json['age'] as int : int.parse(json['age'].toString()),
+      username: json['username'] as String? ?? '',
+      age: json['age'] is int
+          ? json['age'] as int
+          : int.parse(json['age'].toString()),
       heightCm: json['height_cm'] is num
           ? (json['height_cm'] as num).toDouble()
           : double.parse(json['height_cm'].toString()),
@@ -73,6 +78,7 @@ class UserProfile {
         'user_id': userId,
         'first_name': firstName,
         'last_name': lastName,
+        if (username.isNotEmpty) 'username': username,
         'age': age,
         'height_cm': heightCm,
         'weight_kg': weightKg,
@@ -85,9 +91,11 @@ class UserProfile {
       };
 
   /// Serializes only the fields the backend API expects for the profile.
-  /// Excludes user_id (set from auth token), name fields (on user model),
-  /// and updated_at (managed by Laravel timestamps).
+  /// Excludes user_id (set from auth token) and updated_at (managed by Laravel).
   Map<String, dynamic> toApiJson() => {
+        'first_name': firstName,
+        'last_name': lastName,
+        if (username.isNotEmpty) 'username': username,
         'age': age,
         'height_cm': heightCm,
         'weight_kg': weightKg,

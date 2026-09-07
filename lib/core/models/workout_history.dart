@@ -23,19 +23,36 @@ class WorkoutHistory {
     this.updatedAt,
   });
 
+  /// Completion time used for calendar aggregation.
+  ///
+  /// Older mobile builds sent a timezone-less local completion value which
+  /// Laravel interpreted as UTC. Immediate online saves can be recognized by
+  /// the resulting 7-9 hour difference from the server creation timestamp.
+  DateTime get effectiveCompletedAt {
+    final created = createdAt;
+    if (created == null) return completedAt.toLocal();
+    final difference = completedAt.difference(created).abs();
+    if (difference >= const Duration(hours: 7) &&
+        difference <= const Duration(hours: 9)) {
+      return created.toLocal();
+    }
+    return completedAt.toLocal();
+  }
+
   factory WorkoutHistory.fromJson(Map<String, dynamic> json) {
     return WorkoutHistory(
       id: json['id'].toString(),
       userId: json['user_id'].toString(),
       workoutName: json['workout_name'] as String,
-      completedAt: DateTime.parse(json['completed_at'] as String),
+      // API timestamps are UTC; dashboard calendar/week boundaries are local.
+      completedAt: DateTime.parse(json['completed_at'] as String).toLocal(),
       totalDurationSeconds: json['total_duration_seconds'] as int,
       exercisesCompleted: _parseExercisesCompleted(json['exercises_completed']),
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.parse(json['created_at'] as String).toLocal()
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.parse(json['updated_at'] as String).toLocal()
           : null,
     );
   }
@@ -115,13 +132,18 @@ class WorkoutHistory {
       );
 
   /// Returns the number of exercises completed.
-  int get exercisesCompletedCount => exercisesCompleted.length;
+  int get exercisesCompletedCount => exercises.length;
 
   /// Returns a list of [CompletedExercise] objects parsed from
   /// the [exercisesCompleted] maps.
-  List<CompletedExercise> get exercises => exercisesCompleted
-      .map((e) => CompletedExercise.fromJson(e))
-      .toList();
+  List<CompletedExercise> get exercises {
+    final unique = <String, CompletedExercise>{};
+    for (final json in exercisesCompleted) {
+      final exercise = CompletedExercise.fromJson(json);
+      unique.putIfAbsent(exercise.exerciseId, () => exercise);
+    }
+    return unique.values.toList();
+  }
 
   @override
   String toString() =>

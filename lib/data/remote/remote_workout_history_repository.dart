@@ -1,4 +1,3 @@
-import '../../core/models/workout_history.dart';
 import '../../core/network/api_client.dart';
 import '../../shared/models/models.dart';
 import '../repositories/workout_history_repository.dart';
@@ -43,13 +42,15 @@ class RemoteWorkoutHistoryRepository implements WorkoutHistoryRepository {
     return _apiClient.post<WorkoutHistory>(
       '/api/workout-history',
       body: {
+        'client_mutation_id': record.id,
         'workout_name': record.workoutName,
-        'completed_at': record.completedAt.toIso8601String(),
+        // Include an explicit UTC marker so Laravel cannot interpret the
+        // phone's local wall-clock time as UTC.
+        'completed_at': record.completedAt.toUtc().toIso8601String(),
         'total_duration_seconds': record.totalDurationSeconds,
         'exercises_completed': record.exercisesCompleted,
       },
-      fromJson: (json) =>
-          WorkoutHistory.fromJson(json as Map<String, dynamic>),
+      fromJson: (json) => WorkoutHistory.fromJson(json as Map<String, dynamic>),
     );
   }
 
@@ -57,8 +58,7 @@ class RemoteWorkoutHistoryRepository implements WorkoutHistoryRepository {
   List<WorkoutHistory> _parseWorkoutHistoryList(dynamic json) {
     if (json is List) {
       return json
-          .map((item) =>
-              WorkoutHistory.fromJson(item as Map<String, dynamic>))
+          .map((item) => WorkoutHistory.fromJson(item as Map<String, dynamic>))
           .toList();
     }
     return [];

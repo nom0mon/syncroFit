@@ -36,7 +36,8 @@ void main() {
           };
         });
 
-        final completedAt = DateTime(2024, 1, 1).add(Duration(days: daysOffset));
+        final completedAt =
+            DateTime(2024, 1, 1).add(Duration(days: daysOffset));
 
         final original = WorkoutHistory(
           id: 'wh-test-$exerciseCount-$duration',
@@ -93,8 +94,7 @@ void main() {
         expect(
           restored.totalDurationSeconds,
           equals(original.totalDurationSeconds),
-          reason:
-              'totalDurationSeconds mismatch: expected $duration, '
+          reason: 'totalDurationSeconds mismatch: expected $duration, '
               'got ${restored.totalDurationSeconds}',
         );
       },
@@ -135,8 +135,7 @@ void main() {
         expect(
           restored.completedAt,
           equals(original.completedAt),
-          reason:
-              'completedAt mismatch: expected ${original.completedAt}, '
+          reason: 'completedAt mismatch: expected ${original.completedAt}, '
               'got ${restored.completedAt}',
         );
       },
@@ -150,8 +149,10 @@ void main() {
       (nullCase) {
         // nullCase: 0 = both null, 1 = createdAt only, 2 = updatedAt only, 3 = both present
         final baseDate = DateTime(2024, 3, 20, 14, 0);
-        final DateTime? createdAt = (nullCase == 0 || nullCase == 2) ? null : baseDate;
-        final DateTime? updatedAt = (nullCase == 0 || nullCase == 1) ? null : baseDate;
+        final DateTime? createdAt =
+            (nullCase == 0 || nullCase == 2) ? null : baseDate;
+        final DateTime? updatedAt =
+            (nullCase == 0 || nullCase == 1) ? null : baseDate;
 
         final original = WorkoutHistory(
           id: 'wh-nullable-$nullCase',
@@ -170,8 +171,7 @@ void main() {
         expect(
           restored,
           equals(original),
-          reason:
-              'Round-trip failed for nullCase=$nullCase '
+          reason: 'Round-trip failed for nullCase=$nullCase '
               '(createdAt=${createdAt == null ? "null" : "set"}, '
               'updatedAt=${updatedAt == null ? "null" : "set"})',
         );
@@ -217,8 +217,7 @@ void main() {
         expect(
           restored.exercisesCompleted,
           equals(original.exercisesCompleted),
-          reason:
-              'exercisesCompleted mismatch for sets=$sets, reps=$reps, '
+          reason: 'exercisesCompleted mismatch for sets=$sets, reps=$reps, '
               'skipped=$skipped',
         );
       },

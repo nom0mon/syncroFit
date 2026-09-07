@@ -76,16 +76,14 @@ class _BookingFormScreenState extends ConsumerState<BookingFormScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final success =
-        await ref.read(consultationProvider.notifier).submitBooking(
-              trainerId: widget.trainerId,
-              date: _selectedDate!,
-              timeSlot: _selectedTimeSlot!.time,
-              consultationType: _consultationType,
-              notes: _notesController.text.isNotEmpty
-                  ? _notesController.text
-                  : null,
-            );
+    final success = await ref.read(consultationProvider.notifier).submitBooking(
+          trainerId: widget.trainerId,
+          date: _selectedDate!,
+          timeSlot: _selectedTimeSlot!.time,
+          consultationType: _consultationType,
+          notes:
+              _notesController.text.isNotEmpty ? _notesController.text : null,
+        );
 
     if (!mounted) return;
 

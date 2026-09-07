@@ -66,7 +66,8 @@ class CompletedSessionsWidget extends StatelessWidget {
 
   Widget _buildSessionList(ThemeData theme) {
     return Column(
-      children: sessions.map((session) => _buildSessionRow(session, theme)).toList(),
+      children:
+          sessions.map((session) => _buildSessionRow(session, theme)).toList(),
     );
   }
 

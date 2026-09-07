@@ -372,26 +372,26 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
       previously signed-in user can reopen cached workouts while offline.
 - [x] Replace the generic offline workout-customization failure with an
       explicit connection requirement that confirms the saved plan is intact.
-- [ ] Add an explicit accept/approve step after workout generation.
-- [ ] Remove the 50-character first/last-name restrictions across Flutter,
+- [x] Add an explicit accept/approve step after workout generation.
+- [x] Remove the 50-character first/last-name restrictions across Flutter,
       Laravel validation, and database storage.
-- [ ] Add a unique customizable username, populate profile names from signup,
-      and prevent duplicate usernames.
-- [ ] Calculate weekly progress against the actual scheduled days and prevent
+- [x] Collect a unique username during signup, keep first/last names in profile
+      setup only, allow username customization, and prevent duplicates.
+- [x] Calculate weekly progress against the actual scheduled days and prevent
       the completed count from exceeding the planned count.
 
-- [ ] All new backend migrations run on a clean database and upgrade an
+- [x] All new backend migrations run on a clean database and upgrade an
       existing development database.
-- [ ] API responses and Flutter serializers agree on nullability and types.
-- [ ] Authentication/account switching clears user-scoped state.
-- [ ] Offline queue operations are idempotent and conflict behavior is tested.
-- [ ] Dashboard, workout, profile, Progress, and Community regressions pass.
-- [ ] No uncaught Flutter exceptions, render overflow, or blocked actions at
+- [x] API responses and Flutter serializers agree on nullability and types.
+- [x] Authentication/account switching clears user-scoped state.
+- [x] Offline queue operations are idempotent and conflict behavior is tested.
+- [ ] Dashboard, workout, profile, Progress, and Community regressions pass. (Skipped by user.)
+- [x] No uncaught Flutter exceptions, render overflow, or blocked actions at
       supported Android configurations.
-- [ ] `flutter analyze` passes.
-- [ ] Flutter test suite passes.
-- [ ] Laravel test suite passes.
-- [ ] Android release build succeeds.
+- [x] `flutter analyze` passes.
+- [x] Flutter test suite passes.
+- [x] Laravel test suite passes.
+- [x] Android release build succeeds.
 - [ ] Manual smoke test completes on an emulator or device.
 
 ## Out of scope
@@ -445,6 +445,7 @@ No unresolved decisions currently block implementation.
 | 2026-09-06 | Keep workout customization online-only and state that requirement explicitly in the UI. | The backend must recalculate and validate level-based sets, reps, and rest; silently queueing only exercise IDs could apply against a changed plan later. |
 | 2026-09-06 | Fall back to account-scoped SQLite profile/workout records whenever an optimistic cold-start request fails, and write generated plans through the caching repository. | Device testing showed authentication survived restart while profile and workout data disappeared because reachability detection completed after providers attempted remote reads. |
 | 2026-09-06 | Query cached profiles by authenticated user ID instead of returning the first SQLite row. | Direct device-database inspection showed multiple valid account profiles; returning Simon's first row caused Aquil's profile check to fail and prevented schedule construction offline. |
+| 2026-09-06 | Treat newly generated workout plans as server-side drafts until the user explicitly accepts them. | A visual-only confirmation would be misleading; preserving the active plan during review makes Regenerate and Accept Plan behavior unambiguous and recoverable. |
 
 ## Progress summary
 

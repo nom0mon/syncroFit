@@ -26,8 +26,7 @@ const _validDays = [
 ];
 
 void main() {
-  group(
-      'Property 6: Frontend Workout model and DAO serialization round-trip',
+  group('Property 6: Frontend Workout model and DAO serialization round-trip',
       () {
     // Test with varying exercise list sizes and workout metadata
     Glados3(
@@ -70,7 +69,8 @@ void main() {
 
         // Verify round-trip equivalence
         expect(restored, equals(workout),
-            reason: 'Workout round-trip failed for exerciseCount=$exerciseCount, '
+            reason:
+                'Workout round-trip failed for exerciseCount=$exerciseCount, '
                 'isGenerated=$isGenerated, dayOfWeek=$dayOfWeek');
       },
     );
@@ -168,12 +168,10 @@ void main() {
     ).test(
       'toJson() → fromJson() handles nullable timestamps correctly',
       (createdAtFlag, updatedAtFlag) {
-        final createdAt = createdAtFlag == 0
-            ? null
-            : DateTime(2024, 5, 20, 8, 0, 0);
-        final updatedAt = updatedAtFlag == 0
-            ? null
-            : DateTime(2024, 5, 20, 9, 30, 0);
+        final createdAt =
+            createdAtFlag == 0 ? null : DateTime(2024, 5, 20, 8, 0, 0);
+        final updatedAt =
+            updatedAtFlag == 0 ? null : DateTime(2024, 5, 20, 9, 30, 0);
 
         final workout = Workout(
           id: 'workout-timestamps',

@@ -30,7 +30,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(communityProvider.notifier).loadPost(widget.postId));
+    Future.microtask(
+        () => ref.read(communityProvider.notifier).loadPost(widget.postId));
   }
 
   @override
@@ -67,7 +68,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       appBar: AppBar(
         title: const Text('Post'),
         actions: [
-          if (ref.watch(postDetailProvider(widget.postId))?.isOwnedByCurrentUser ?? false)
+          if (ref
+                  .watch(postDetailProvider(widget.postId))
+                  ?.isOwnedByCurrentUser ??
+              false)
             IconButton(
               tooltip: 'Delete post',
               onPressed: _confirmDeletePost,
@@ -136,18 +140,24 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         title: const Text('Delete post?'),
         content: const Text('This removes the post and its comments.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
         ],
       ),
     );
     if (confirmed != true) return;
-    final error = await ref.read(communityProvider.notifier).deletePost(widget.postId);
+    final error =
+        await ref.read(communityProvider.notifier).deletePost(widget.postId);
     if (!mounted) return;
     if (error == null) {
       context.pop();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
@@ -157,15 +167,22 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete comment?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
         ],
       ),
     );
     if (confirmed == true) {
-      final error = await ref.read(communityProvider.notifier).deleteComment(widget.postId, comment.id);
+      final error = await ref
+          .read(communityProvider.notifier)
+          .deleteComment(widget.postId, comment.id);
       if (mounted && error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error)));
       }
     }
   }
@@ -301,7 +318,9 @@ class _PostDetailBody extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: _CommentCard(
                         comment: comment,
-                        onDelete: comment.isOwnedByCurrentUser ? () => onDeleteComment(comment) : null,
+                        onDelete: comment.isOwnedByCurrentUser
+                            ? () => onDeleteComment(comment)
+                            : null,
                       ),
                     ),
               ],

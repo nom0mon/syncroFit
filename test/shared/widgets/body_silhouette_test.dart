@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:glados/glados.dart';
 import 'package:synchrofit/shared/widgets/body_silhouette_widget.dart';
 
@@ -55,14 +53,12 @@ void main() {
         expect(
           position.dx >= 0.0 && position.dx <= 1.0,
           isTrue,
-          reason:
-              '$muscleGroup dx=${position.dx} is outside [0, 1] bounds',
+          reason: '$muscleGroup dx=${position.dx} is outside [0, 1] bounds',
         );
         expect(
           position.dy >= 0.0 && position.dy <= 1.0,
           isTrue,
-          reason:
-              '$muscleGroup dy=${position.dy} is outside [0, 1] bounds',
+          reason: '$muscleGroup dy=${position.dy} is outside [0, 1] bounds',
         );
       },
     );

@@ -54,6 +54,9 @@ class ProfileDao {
     return UserProfile.fromJson({
       'user_id': row['user_id'],
       'name': row['name'],
+      'first_name': row['first_name'],
+      'last_name': row['last_name'],
+      'username': row['username'],
       'age': row['age'],
       'height_cm': row['height_cm'],
       'weight_kg': row['weight_kg'],
@@ -71,6 +74,9 @@ class ProfileDao {
     return {
       'user_id': profile.userId,
       'name': profile.name,
+      'first_name': profile.firstName,
+      'last_name': profile.lastName,
+      'username': profile.username,
       'age': profile.age,
       'height_cm': profile.heightCm,
       'weight_kg': profile.weightKg,

@@ -23,7 +23,8 @@ class RegistrationValidationTest extends TestCase
      * Generate random payloads where some fields are valid and some are invalid.
      * Verify the errors object only contains keys for the invalid fields.
      *
-     * Valid ranges: first_name 1-50 chars, last_name 1-50 chars, email valid+unique+<=254, password 8-128 chars
+     * Valid ranges: username is 3-30 allowed characters and unique,
+     * email is valid+unique+<=254, password is 8-128 chars.
      *
      * **Validates: Requirements 1.3**
      */
@@ -75,11 +76,11 @@ class RegistrationValidationTest extends TestCase
      */
     private function randomInvalidFieldSubset(): array
     {
-        $allFields = ['first_name', 'last_name', 'email', 'password'];
+        $allFields = ['username', 'email', 'password'];
 
         // Generate a random bitmask (1-15) to select which fields are invalid
         // At least one field must be invalid (exclude 0)
-        $bitmask = mt_rand(1, 15);
+        $bitmask = mt_rand(1, 7);
 
         $invalidFields = [];
         foreach ($allFields as $index => $field) {
@@ -102,20 +103,11 @@ class RegistrationValidationTest extends TestCase
         $data = [];
         $validFields = [];
 
-        // first_name: valid = 1-50 chars, invalid = empty or >50 chars
-        if (in_array('first_name', $invalidFields)) {
-            $data['first_name'] = $this->generateInvalidName();
+        if (in_array('username', $invalidFields)) {
+            $data['username'] = 'invalid username';
         } else {
-            $data['first_name'] = $this->generateValidName();
-            $validFields[] = 'first_name';
-        }
-
-        // last_name: valid = 1-50 chars, invalid = empty or >50 chars
-        if (in_array('last_name', $invalidFields)) {
-            $data['last_name'] = $this->generateInvalidName();
-        } else {
-            $data['last_name'] = $this->generateValidName();
-            $validFields[] = 'last_name';
+            $data['username'] = 'user_'.$this->randomAlphanumeric(12);
+            $validFields[] = 'username';
         }
 
         // Email: valid = proper format + unique + <=254 chars, invalid = bad format or >254 chars
@@ -135,23 +127,6 @@ class RegistrationValidationTest extends TestCase
         }
 
         return ['data' => $data, 'validFields' => $validFields];
-    }
-
-    private function generateValidName(): string
-    {
-        $length = mt_rand(1, 50);
-        return $this->randomString($length);
-    }
-
-    private function generateInvalidName(): string
-    {
-        // Randomly pick an invalid name strategy
-        $strategy = mt_rand(0, 1);
-
-        return match ($strategy) {
-            0 => '', // empty name
-            1 => $this->randomString(mt_rand(51, 100)), // too long
-        };
     }
 
     private function generateValidUniqueEmail(): string

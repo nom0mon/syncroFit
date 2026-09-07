@@ -82,7 +82,7 @@ void main() {
     });
 
     test('toJson maps enums to backend values', () {
-      final profile = UserProfile(
+      const profile = UserProfile(
         userId: '1',
         firstName: 'Jane',
         lastName: '',
@@ -388,12 +388,12 @@ void main() {
       expect(restored.userId, original.userId);
       expect(restored.name, original.name);
       expect(restored.dayOfWeek, original.dayOfWeek);
-      expect(restored.estimatedDurationMinutes,
-          original.estimatedDurationMinutes);
+      expect(
+          restored.estimatedDurationMinutes, original.estimatedDurationMinutes);
       expect(restored.isGenerated, original.isGenerated);
       expect(restored.exercises.length, original.exercises.length);
-      expect(restored.exercises[0].exerciseId,
-          original.exercises[0].exerciseId);
+      expect(
+          restored.exercises[0].exerciseId, original.exercises[0].exerciseId);
       expect(restored.exercises[1].order, original.exercises[1].order);
     });
   });

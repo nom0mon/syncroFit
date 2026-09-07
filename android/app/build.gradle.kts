@@ -19,7 +19,7 @@ if (signingPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.synchrofit"
+    namespace = "com.nom0mon.synchrofit"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,8 +29,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.synchrofit"
+        applicationId = "com.nom0mon.synchrofit"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -52,10 +51,13 @@ android {
 
     buildTypes {
         release {
-            // Pull requests and ordinary branches produce an unsigned validation
-            // bundle. Protected release-tag CI injects key.properties and signs it.
+            // Protected release-tag CI injects key.properties and the permanent
+            // production key. Local builds use Android's debug certificate so
+            // release-mode artifacts remain installable for device smoke tests.
             if (signingPropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }

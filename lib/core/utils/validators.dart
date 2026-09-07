@@ -29,13 +29,22 @@ String? validatePassword(String? value) {
   return null;
 }
 
-/// Validates that the name is between 1 and 50 characters (non-empty).
+/// Validates that the name is non-empty. Names are intentionally not capped.
 String? validateName(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'Name is required';
   }
-  if (value.trim().length > 50) {
-    return 'Name must be 50 characters or fewer';
+  return null;
+}
+
+String? validateUsername(String? value) {
+  final username = value?.trim() ?? '';
+  if (username.isEmpty) return 'Username is required';
+  if (username.length < 3 || username.length > 30) {
+    return 'Username must be 3 to 30 characters';
+  }
+  if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username)) {
+    return 'Use only letters, numbers, periods, and underscores';
   }
   return null;
 }

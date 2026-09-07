@@ -1,7 +1,5 @@
-/// Connectivity monitoring abstraction for offline support.
-///
-/// Wraps platform-level network detection and performs actual server
-/// reachability validation before declaring online status.
+// Connectivity monitoring abstraction for offline support. It wraps
+// platform-level detection and validates server reachability.
 
 /// Represents the current connectivity state of the application.
 enum ConnectivityStatus { online, offline }

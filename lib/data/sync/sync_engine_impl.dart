@@ -198,12 +198,23 @@ class SyncEngineImpl implements SyncEngine {
   /// Sends the appropriate HTTP request based on the mutation's operation type.
   Future<Response> _sendRequest(SyncMutation mutation) {
     final path = _buildPath(mutation);
+    final payload = mutation.entityType == 'workout_history' &&
+            mutation.operationType == 'create'
+        ? {
+            ...mutation.payload,
+            // Older queued rows do not contain this field. The stable local
+            // entity id makes those uploads retry-safe after an app restart.
+            'client_mutation_id': mutation.entityId,
+          }
+        : mutation.payload;
 
     switch (mutation.operationType) {
       case 'create':
-        return _dio.post(path, data: mutation.payload);
+        return _dio.post(path, data: payload);
       case 'update':
-        return _dio.patch(path, data: mutation.payload);
+        return mutation.entityType == 'profile'
+            ? _dio.put(path, data: payload)
+            : _dio.patch(path, data: payload);
       case 'delete':
         return _dio.delete(path);
       default:
@@ -213,6 +224,9 @@ class SyncEngineImpl implements SyncEngine {
 
   /// Builds the API path for a mutation based on entity type and operation.
   String _buildPath(SyncMutation mutation) {
+    if (mutation.entityType == 'profile') {
+      return '${ApiConfig.baseUrl}/api/profile';
+    }
     final segment = _entityTypeToPathSegment(mutation.entityType);
     final base = '${ApiConfig.baseUrl}/api/$segment';
     if (mutation.operationType == 'create') {

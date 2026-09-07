@@ -1,6 +1,4 @@
 // Feature: database-simplification, Property 9: WorkoutHistory DAO date range query correctness
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glados/glados.dart'
     hide expect, group, setUpAll, setUp, tearDown, test;
@@ -105,7 +103,8 @@ void main() {
           final queryEnd = baseDate.add(Duration(days: rangeEnd));
 
           // Query the DAO
-          final results = await dao.getByDateRange(userId, queryStart, queryEnd);
+          final results =
+              await dao.getByDateRange(userId, queryStart, queryEnd);
 
           // Compute expected results by filtering records whose completedAt
           // falls within [queryStart, queryEnd] inclusive using ISO 8601
@@ -123,8 +122,7 @@ void main() {
           expect(
             results.length,
             equals(expected.length),
-            reason:
-                'Expected ${expected.length} records in range '
+            reason: 'Expected ${expected.length} records in range '
                 '[$queryStart, $queryEnd], got ${results.length}. '
                 'Records: ${records.map((r) => r.completedAt).toList()}',
           );
@@ -238,7 +236,13 @@ void main() {
               completedAt: baseDate.add(Duration(days: i)),
               totalDurationSeconds: 1800,
               exercisesCompleted: [
-                {'exercise_id': 1, 'exercise_name': 'Ex', 'sets_completed': 3, 'reps_completed': 10, 'skipped': false},
+                {
+                  'exercise_id': 1,
+                  'exercise_name': 'Ex',
+                  'sets_completed': 3,
+                  'reps_completed': 10,
+                  'skipped': false
+                },
               ],
               createdAt: baseDate,
               updatedAt: baseDate,
@@ -255,7 +259,13 @@ void main() {
               completedAt: baseDate.add(Duration(days: i)),
               totalDurationSeconds: 2400,
               exercisesCompleted: [
-                {'exercise_id': 2, 'exercise_name': 'Ex2', 'sets_completed': 4, 'reps_completed': 8, 'skipped': false},
+                {
+                  'exercise_id': 2,
+                  'exercise_name': 'Ex2',
+                  'sets_completed': 4,
+                  'reps_completed': 8,
+                  'skipped': false
+                },
               ],
               createdAt: baseDate,
               updatedAt: baseDate,
@@ -264,7 +274,8 @@ void main() {
           }
 
           // Query with a range that covers all records
-          final rangeEnd = baseDate.add(Duration(days: targetCount + otherCount));
+          final rangeEnd =
+              baseDate.add(Duration(days: targetCount + otherCount));
           final results =
               await dao.getByDateRange(targetUser, baseDate, rangeEnd);
 
@@ -308,7 +319,8 @@ void main() {
           // Query a range entirely in January 2024 (before all records)
           final queryStart = DateTime(2024, 1, 1);
           final queryEnd = DateTime(2024, 1, 31);
-          final results = await dao.getByDateRange(userId, queryStart, queryEnd);
+          final results =
+              await dao.getByDateRange(userId, queryStart, queryEnd);
 
           expect(results, isEmpty,
               reason: 'Expected no records in January range');

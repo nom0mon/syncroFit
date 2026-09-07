@@ -566,6 +566,7 @@ class _WorkoutHistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final exercises = record.exercises;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(
@@ -578,15 +579,34 @@ class _WorkoutHistoryTile extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        '${formatDate(record.completedAt)} • '
-        '${formatDuration(record.totalDurationSeconds)} • '
-        '${record.exercisesCompleted.length} exercises',
-        style: theme.textTheme.bodySmall,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${formatDate(record.completedAt)} • '
+            '${formatDuration(record.totalDurationSeconds)} • '
+            '${record.exercisesCompleted.length} exercises',
+            style: theme.textTheme.bodySmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (exercises.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ...exercises.map(
+              (exercise) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: Text(
+                  exercise.isDuration
+                      ? '• ${exercise.exerciseName} — ${exercise.setsCompleted} sets × ${exercise.repsOrDuration} sec'
+                      : '• ${exercise.exerciseName} — ${exercise.setsCompleted} sets × ${exercise.repsOrDuration} reps',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
-      trailing: const Icon(Icons.chevron_right),
+      isThreeLine: true,
     );
   }
 }

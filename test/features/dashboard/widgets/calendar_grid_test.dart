@@ -68,8 +68,7 @@ void main() {
           expect(
             days[i],
             equals(i + 1),
-            reason:
-                'Day at index $i should be ${i + 1}, got ${days[i]} '
+            reason: 'Day at index $i should be ${i + 1}, got ${days[i]} '
                 'for $year-$month',
           );
         }
@@ -93,8 +92,7 @@ void main() {
         expect(
           status,
           equals(DayStatus.completed),
-          reason:
-              'Date $date is in completedDates, should return completed',
+          reason: 'Date $date is in completedDates, should return completed',
         );
       },
     );
@@ -136,7 +134,9 @@ void main() {
       expect(status, equals(DayStatus.today));
     });
 
-    test('today with completed workout returns DayStatus.completed (completed takes priority)', () {
+    test(
+        'today with completed workout returns DayStatus.completed (completed takes priority)',
+        () {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final completedDates = {today};

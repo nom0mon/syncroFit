@@ -15,21 +15,33 @@ class WorkoutHistoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'client_mutation_id' => 'nullable|string|max:100',
             'workout_name' => 'required|string|max:255',
             'completed_at' => 'required|date',
             'total_duration_seconds' => 'required|integer|min:0',
             'exercises_completed' => 'required|array',
         ]);
 
-        $record = WorkoutHistory::create([
+        $attributes = [
             'user_id' => $request->user()->id,
+            'client_mutation_id' => $validated['client_mutation_id'] ?? null,
             'workout_name' => $validated['workout_name'],
             'completed_at' => $validated['completed_at'],
             'total_duration_seconds' => $validated['total_duration_seconds'],
             'exercises_completed' => $validated['exercises_completed'],
-        ]);
+        ];
 
-        return response()->json(['success' => true, 'data' => $record], 201);
+        $record = isset($validated['client_mutation_id'])
+            ? WorkoutHistory::firstOrCreate([
+                'user_id' => $request->user()->id,
+                'client_mutation_id' => $validated['client_mutation_id'],
+            ], $attributes)
+            : WorkoutHistory::create($attributes);
+
+        return response()->json(
+            ['success' => true, 'data' => $record],
+            $record->wasRecentlyCreated ? 201 : 200,
+        );
     }
 
     /**

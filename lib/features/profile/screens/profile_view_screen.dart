@@ -148,7 +148,7 @@ class _ProfileContent extends StatelessWidget {
               const SizedBox(height: AppSpacing.xl),
 
               // Physical info section
-              _SectionHeader(title: 'Physical Information'),
+              const _SectionHeader(title: 'Physical Information'),
               const SizedBox(height: AppSpacing.sm),
               _InfoRow(label: 'Age', value: '${profile.age} years'),
               _InfoRow(label: 'Height', value: '${profile.heightCm} cm'),
@@ -157,7 +157,7 @@ class _ProfileContent extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
 
               // Fitness info section
-              _SectionHeader(title: 'Fitness Settings'),
+              const _SectionHeader(title: 'Fitness Settings'),
               const SizedBox(height: AppSpacing.sm),
               _InfoRow(label: 'Goal', value: profile.fitnessGoal.label),
               _InfoRow(label: 'Level', value: profile.fitnessLevel.label),
@@ -168,7 +168,7 @@ class _ProfileContent extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
 
               // Availability section
-              _SectionHeader(title: 'Workout Availability'),
+              const _SectionHeader(title: 'Workout Availability'),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,

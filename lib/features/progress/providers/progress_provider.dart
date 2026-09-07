@@ -5,6 +5,8 @@ import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../dashboard/providers/dashboard_provider.dart'
+    show calculateWeeklyProgress;
 import '../../profile/providers/profile_provider.dart';
 import '../../workout/providers/workout_provider.dart';
 import '../../workout/providers/workout_history_refresh_provider.dart';
@@ -125,58 +127,44 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
 
     // Sort by completedAt descending for recent history
     final sortedHistory = List<WorkoutHistory>.from(history)
-      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+      ..sort(
+          (a, b) => b.effectiveCompletedAt.compareTo(a.effectiveCompletedAt));
 
     // Planned workouts this week = number of workouts in the user's plan.
     // Fetched via a one-shot repository call (not by watching the scheduler
     // StateNotifier, which emitted multiple states and caused this async
     // build to loop forever).
     final workoutsResult = await _workoutRepo.getAll();
-    final plannedThisWeek = switch (workoutsResult) {
-      Success(value: final workouts) => workouts.length,
-      Failure() => 0,
+    final workouts = switch (workoutsResult) {
+      Success(value: final values) => values,
+      Failure() => <Workout>[],
     };
 
     // Completed this week = history records whose completedAt falls in the
     // current Monday–Sunday week.
-    final (weekStart, weekEnd) = _currentWeekRange();
-    final completedThisWeek = history.where((r) {
-      return !r.completedAt.isBefore(weekStart) &&
-          !r.completedAt.isAfter(weekEnd);
-    }).length;
+    final weeklyProgress = calculateWeeklyProgress(
+      history: history,
+      workouts: workouts,
+      now: DateTime.now(),
+    );
 
     return ProgressState(
       totalWorkouts: totalWorkouts,
       totalDurationSeconds: totalDurationSeconds,
       weeklyStats: weeklyStats,
       recentHistory: sortedHistory.take(10).toList(),
-      plannedThisWeek: plannedThisWeek,
-      completedThisWeek: completedThisWeek,
+      plannedThisWeek: weeklyProgress.planned,
+      completedThisWeek: weeklyProgress.completed,
     );
   }
 
   /// Returns the Monday 00:00:00 → Sunday 23:59:59 range for the current week.
-  (DateTime, DateTime) _currentWeekRange() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    final sunday = DateTime(
-      monday.year,
-      monday.month,
-      monday.day + 6,
-      23,
-      59,
-      59,
-    );
-    return (monday, sunday);
-  }
-
   /// Groups workout history records by ISO week and counts workouts per week.
   List<WeeklyStat> _computeWeeklyStats(List<WorkoutHistory> history) {
     final weekCounts = <String, int>{};
 
     for (final record in history) {
-      final weekLabel = _getIsoWeekLabel(record.completedAt);
+      final weekLabel = _getIsoWeekLabel(record.effectiveCompletedAt);
       weekCounts[weekLabel] = (weekCounts[weekLabel] ?? 0) + 1;
     }
 

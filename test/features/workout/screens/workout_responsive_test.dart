@@ -29,7 +29,8 @@ void main() {
           );
 
           expect(find.text(_exercises.first.name), findsOneWidget);
-          expect(find.text('Regenerate Workout'), findsOneWidget);
+          expect(find.text('Regenerate'), findsOneWidget);
+          expect(find.text('Accept Plan'), findsOneWidget);
         },
       );
     }

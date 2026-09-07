@@ -35,8 +35,7 @@ class Workout {
       name: json['name'] as String,
       dayOfWeek: json['day_of_week'] as String?,
       // Manually-created legacy workouts may omit this optional backend value.
-      estimatedDurationMinutes:
-          json['estimated_duration_minutes'] as int? ?? 0,
+      estimatedDurationMinutes: json['estimated_duration_minutes'] as int? ?? 0,
       exercises: (json['exercises'] as List<dynamic>)
           .map((e) => WorkoutExercise.fromJson(e as Map<String, dynamic>))
           .toList(),

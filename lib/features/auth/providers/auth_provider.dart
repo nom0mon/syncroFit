@@ -28,8 +28,16 @@ final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 /// Manages authentication state and exposes login, register, and
 /// forgotPassword operations.
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._ref) : super(const AuthState(isLoading: true)) {
-    _restoreSession();
+  AuthNotifier(this._ref, {bool restoreSession = true})
+      : super(AuthState(isLoading: restoreSession)) {
+    _ref.listen<int>(authSessionInvalidationProvider, (previous, next) {
+      if (previous != null && previous != next && mounted) {
+        state = const AuthState();
+      }
+    });
+    if (restoreSession) {
+      _restoreSession();
+    }
   }
 
   final Ref _ref;
@@ -74,16 +82,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Registers a new user with the given [firstName], [lastName], [email], and [password].
+  /// Registers a new user with the given [username], [email], and [password].
   ///
   /// On success, sets [AuthState.isAuthenticated] to true and populates the
   /// user. On failure, sets [AuthState.errorMessage].
-  Future<void> register(
-      String firstName, String lastName, String email, String password) async {
+  Future<void> register(String username, String email, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result =
-        await _repository.register(firstName, lastName, email, password);
+    final result = await _repository.register(username, email, password);
 
     switch (result) {
       case Success(value: final user):
@@ -137,5 +143,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Clears the current error message (e.g., after the user dismisses it).
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  Future<void> updateCachedIdentity({
+    required String firstName,
+    required String lastName,
+    required String username,
+  }) async {
+    final current = state.user;
+    if (current == null) return;
+    final updated = User(
+      id: current.id,
+      firstName: firstName,
+      lastName: lastName,
+      username: username,
+      email: current.email,
+      createdAt: current.createdAt,
+    );
+    await _ref.read(tokenStorageProvider).saveUser(updated);
+    state = state.copyWith(user: updated);
   }
 }

@@ -238,7 +238,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'log',
-                    builder: (context, state) => const ProgressLogCreateScreen(),
+                    builder: (context, state) =>
+                        const ProgressLogCreateScreen(),
                   ),
                 ],
               ),

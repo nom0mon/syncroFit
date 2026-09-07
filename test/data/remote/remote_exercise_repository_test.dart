@@ -18,10 +18,11 @@ void main() {
   group('RemoteExerciseRepository - getAll', () {
     test('calls correct endpoint with page_size=100', () async {
       when(() => mockApiClient.get<List<Exercise>>(
-            '/api/exercises',
-            queryParameters: any(named: 'queryParameters'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<List<Exercise>, AppError>([]));
+                '/api/exercises',
+                queryParameters: any(named: 'queryParameters'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Exercise>, AppError>([]));
 
       await repository.getAll();
 
@@ -61,10 +62,12 @@ void main() {
       ];
 
       when(() => mockApiClient.get<List<Exercise>>(
-            '/api/exercises',
-            queryParameters: any(named: 'queryParameters'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<List<Exercise>, AppError>(exercises));
+                '/api/exercises',
+                queryParameters: any(named: 'queryParameters'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer(
+              (_) async => Success<List<Exercise>, AppError>(exercises));
 
       final result = await repository.getAll();
 
@@ -97,8 +100,8 @@ void main() {
       when(() => mockApiClient.get<Exercise>(
             '/api/exercises/42',
             fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<Exercise, AppError>(
-            const Exercise(
+          )).thenAnswer((_) async => const Success<Exercise, AppError>(
+            Exercise(
               id: '42',
               name: 'Deadlift',
               muscleGroup: 'back',
@@ -124,10 +127,11 @@ void main() {
   group('RemoteExerciseRepository - filterByMuscleGroup', () {
     test('passes muscle_group query parameter', () async {
       when(() => mockApiClient.get<List<Exercise>>(
-            '/api/exercises',
-            queryParameters: any(named: 'queryParameters'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<List<Exercise>, AppError>([]));
+                '/api/exercises',
+                queryParameters: any(named: 'queryParameters'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Exercise>, AppError>([]));
 
       await repository.filterByMuscleGroup(['chest']);
 
@@ -142,10 +146,11 @@ void main() {
   group('RemoteExerciseRepository - filterByDifficulty', () {
     test('passes difficulty query parameter', () async {
       when(() => mockApiClient.get<List<Exercise>>(
-            '/api/exercises',
-            queryParameters: any(named: 'queryParameters'),
-            fromJson: any(named: 'fromJson'),
-          )).thenAnswer((_) async => Success<List<Exercise>, AppError>([]));
+                '/api/exercises',
+                queryParameters: any(named: 'queryParameters'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Exercise>, AppError>([]));
 
       await repository.filterByDifficulty('advanced');
 

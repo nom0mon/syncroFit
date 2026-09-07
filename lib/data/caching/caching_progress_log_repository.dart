@@ -58,7 +58,9 @@ class CachingProgressLogRepository implements ProgressLogRepository {
     );
     if (result case Success(value: final log)) {
       final current = await getAll();
-      if (current case Success(value: final logs)) await _write([log, ...logs.where((e) => e.id != log.id)]);
+      if (current case Success(value: final logs)) {
+        await _write([log, ...logs.where((e) => e.id != log.id)]);
+      }
     }
     return result;
   }
@@ -85,6 +87,7 @@ class CachingProgressLogRepository implements ProgressLogRepository {
 
   Future<void> _write(List<ProgressLog> logs) async {
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_cacheKey, jsonEncode(logs.map((e) => e.toJson()).toList()));
+    await preferences.setString(
+        _cacheKey, jsonEncode(logs.map((e) => e.toJson()).toList()));
   }
 }

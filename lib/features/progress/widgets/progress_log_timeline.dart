@@ -48,22 +48,34 @@ class _GroupedLogs extends ConsumerWidget {
         final heading = '${_months[first.month - 1]} ${first.year}';
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(heading, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
             ...entry.value.map((log) => Card(
                   child: InkWell(
                     onTap: () => _showDetail(context, ref, log),
                     child: Row(children: [
-                      SizedBox(width: 112, height: 96, child: _PrivateImage(log.imageUrl)),
+                      SizedBox(
+                          width: 112,
+                          height: 96,
+                          child: _PrivateImage(log.imageUrl)),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(AppSpacing.sm),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(log.title, style: Theme.of(context).textTheme.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            Text('${log.weightKg.toStringAsFixed(1)} kg'),
-                            Text('${log.createdAt.toLocal().day} $heading', style: Theme.of(context).textTheme.bodySmall),
-                          ]),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(log.title,
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
+                                Text('${log.weightKg.toStringAsFixed(1)} kg'),
+                                Text('${log.createdAt.toLocal().day} $heading',
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall),
+                              ]),
                         ),
                       ),
                     ]),
@@ -75,12 +87,15 @@ class _GroupedLogs extends ConsumerWidget {
     );
   }
 
-  Future<void> _showDetail(BuildContext context, WidgetRef ref, ProgressLog log) async {
+  Future<void> _showDetail(
+      BuildContext context, WidgetRef ref, ProgressLog log) async {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(log.title),
-        content: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        content: SingleChildScrollView(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           AspectRatio(aspectRatio: 1, child: _PrivateImage(log.imageUrl)),
           const SizedBox(height: AppSpacing.sm),
           Text(log.description),
@@ -88,25 +103,38 @@ class _GroupedLogs extends ConsumerWidget {
           Text('${log.weightKg.toStringAsFixed(1)} kg'),
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close')),
           TextButton(
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (confirmContext) => AlertDialog(
                       title: const Text('Delete progress log?'),
-                      content: const Text('This permanently removes the log and its private photo.'),
+                      content: const Text(
+                          'This permanently removes the log and its private photo.'),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(confirmContext, false), child: const Text('Cancel')),
-                        FilledButton(onPressed: () => Navigator.pop(confirmContext, true), child: const Text('Delete')),
+                        TextButton(
+                            onPressed: () =>
+                                Navigator.pop(confirmContext, false),
+                            child: const Text('Cancel')),
+                        FilledButton(
+                            onPressed: () =>
+                                Navigator.pop(confirmContext, true),
+                            child: const Text('Delete')),
                       ],
                     ),
                   ) ??
                   false;
               if (!confirmed) return;
-              final error = await ref.read(progressLogsProvider.notifier).delete(log.id);
+              final error =
+                  await ref.read(progressLogsProvider.notifier).delete(log.id);
               if (context.mounted && error == null) Navigator.pop(context);
-              if (context.mounted && error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+              if (context.mounted && error != null) {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text(error.message)));
+              }
             },
             child: const Text('Delete'),
           ),
@@ -129,12 +157,28 @@ class _PrivateImage extends StatelessWidget {
           }
           return Image.network(
             url,
-            headers: snapshot.data == null ? null : {'Authorization': 'Bearer ${snapshot.data}'},
+            headers: snapshot.data == null
+                ? null
+                : {'Authorization': 'Bearer ${snapshot.data}'},
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)),
+            errorBuilder: (_, __, ___) =>
+                const Center(child: Icon(Icons.broken_image_outlined)),
           );
         },
       );
 }
 
-const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const _months = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+];

@@ -5,11 +5,22 @@ import 'package:glados/glados.dart'
     hide expect, group, setUpAll, setUp, tearDown, test;
 import 'package:synchrofit/core/theme/app_colors.dart';
 import 'package:synchrofit/core/theme/app_theme.dart';
+import 'package:synchrofit/core/network/api_client.dart';
+import 'package:synchrofit/core/network/token_storage.dart';
 import 'package:synchrofit/data/mock/mock_auth_repository.dart';
 import 'package:synchrofit/features/auth/providers/auth_provider.dart';
 import 'package:synchrofit/features/auth/screens/login_screen.dart';
 import 'package:synchrofit/features/auth/screens/register_screen.dart';
 import 'package:synchrofit/shared/widgets/floating_pill_nav_bar.dart';
+import 'package:synchrofit/shared/models/user.dart';
+
+class _EmptyTokenStorage extends TokenStorage {
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<User?> getUser() async => null;
+}
 
 /// **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
 ///
@@ -30,6 +41,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
               authRepositoryProvider.overrideWithValue(MockAuthRepository()),
             ],
             child: MaterialApp(
@@ -80,6 +92,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
               authRepositoryProvider.overrideWithValue(MockAuthRepository()),
             ],
             child: MaterialApp(
@@ -151,8 +164,7 @@ void main() {
 
         // Call register directly on the provider
         await container.read(authStateProvider.notifier).register(
-              'Test',
-              'User',
+              'test.user',
               'test@example.com',
               'password123',
             );
@@ -169,9 +181,9 @@ void main() {
           reason: 'User should be populated after registration',
         );
         expect(
-          state.user!.fullName,
-          equals('Test User'),
-          reason: 'Registered user full name should match provided names',
+          state.user!.username,
+          equals('test.user'),
+          reason: 'Registered user username should match the supplied username',
         );
       },
     );
@@ -182,6 +194,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
               authRepositoryProvider.overrideWithValue(MockAuthRepository()),
             ],
             child: MaterialApp(

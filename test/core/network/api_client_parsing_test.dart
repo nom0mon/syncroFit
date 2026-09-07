@@ -12,8 +12,8 @@ import 'package:synchrofit/shared/models/result.dart';
 /// For any valid API response JSON (both success and error shapes conforming
 /// to the {"success", "data", "message", "errors"} envelope), parsing through
 /// the ApiClient response parser produces correct Result types:
-/// - Success envelopes produce Success<T> results
-/// - Error envelopes produce Failure<AppError> results
+/// - Success envelopes produce `Success<T>` results
+/// - Error envelopes produce `Failure<AppError>` results
 /// - 422 error envelopes with errors field produce ValidationError
 /// - Other error envelopes produce ServerError
 

@@ -33,16 +33,14 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   Future<Result<User, AppError>> register(
-    String firstName,
-    String lastName,
+    String username,
     String email,
     String password,
   ) async {
     final result = await _apiClient.post<Map<String, dynamic>>(
       '/api/register',
       body: {
-        'first_name': firstName,
-        'last_name': lastName,
+        'username': username,
         'email': email,
         'password': password,
       },

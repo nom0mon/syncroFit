@@ -1,4 +1,3 @@
-import '../../core/models/workout_history.dart';
 import '../../shared/models/models.dart';
 
 /// Abstract interface for workout history operations.

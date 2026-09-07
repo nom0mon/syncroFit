@@ -4,7 +4,9 @@ import 'package:synchrofit/shared/models/completed_exercise.dart';
 import 'package:synchrofit/core/models/workout_history.dart';
 
 void main() {
-  group('Property 4: Four-week ranges are non-overlapping and chronologically ordered', () {
+  group(
+      'Property 4: Four-week ranges are non-overlapping and chronologically ordered',
+      () {
     /// **Validates: Requirements 5.2**
     ///
     /// For any reference date, the computed four week ranges SHALL each span
@@ -16,7 +18,8 @@ void main() {
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
       'computeWeekRanges returns exactly 4 ranges for any reference date',
       (year, dayOfYear) {
-        final referenceDate = DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
+        final referenceDate =
+            DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
         expect(ranges.length, 4);
       },
@@ -25,7 +28,8 @@ void main() {
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
       'each range spans exactly 7 days (Monday 00:00 to Sunday 23:59)',
       (year, dayOfYear) {
-        final referenceDate = DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
+        final referenceDate =
+            DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
 
         for (final range in ranges) {
@@ -54,7 +58,8 @@ void main() {
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
       'ranges are non-overlapping and chronologically ordered',
       (year, dayOfYear) {
-        final referenceDate = DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
+        final referenceDate =
+            DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
 
         for (int i = 0; i < 3; i++) {
@@ -71,13 +76,15 @@ void main() {
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
       'all 4 ranges cover exactly 28 consecutive days',
       (year, dayOfYear) {
-        final referenceDate = DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
+        final referenceDate =
+            DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
 
         // The total span from W1 Monday to W4 Sunday should be 27 days (28 days inclusive)
         final totalDays = ranges[3].end.difference(ranges[0].start).inDays;
         expect(totalDays, 27,
-            reason: 'Total span should be 27 days (28 consecutive days inclusive)');
+            reason:
+                'Total span should be 27 days (28 consecutive days inclusive)');
 
         // Each consecutive range should be exactly 7 days apart (start to start)
         for (int i = 0; i < 3; i++) {
@@ -90,7 +97,8 @@ void main() {
     );
   });
 
-  group('Property 5: Weekly volume calculation equals sum of sets times reps', () {
+  group('Property 5: Weekly volume calculation equals sum of sets times reps',
+      () {
     /// **Validates: Requirements 5.3**
     ///
     /// For any list of CompletedExercise items (including empty lists), the
@@ -101,7 +109,8 @@ void main() {
       'weekly volume equals manual sum of sets * reps for exercises in a session',
       (exerciseData) {
         final weekStart = DateTime(2025, 1, 13); // Monday
-        final sessionDate = DateTime(2025, 1, 15); // Wednesday - within the week
+        final sessionDate =
+            DateTime(2025, 1, 15); // Wednesday - within the week
 
         final exercises = exerciseData.asMap().entries.map((entry) {
           final setsCompleted = (entry.value % 10) + 1; // 1-10 sets

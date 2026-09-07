@@ -47,7 +47,8 @@ class CachingProfileRepository implements ProfileRepository {
   Future<Result<UserProfile, AppError>> getProfile(String userId) async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
       // Check if cache is still fresh
-      final lastSynced = await _cacheMetadataDao.getLastSynced(_cacheEntityType(userId));
+      final lastSynced =
+          await _cacheMetadataDao.getLastSynced(_cacheEntityType(userId));
       if (lastSynced != null &&
           DateTime.now().difference(lastSynced) < _cacheDuration) {
         final cached = await _dao.get(userId: userId);
@@ -60,7 +61,8 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.getProfile(userId);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(userId), DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(
+            _cacheEntityType(userId), DateTime.now());
         return result;
       }
       // Connectivity starts optimistically online. If the cold-start request
@@ -84,7 +86,8 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.saveProfile(profile);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(profile.userId), DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(
+            _cacheEntityType(profile.userId), DateTime.now());
       }
       return result;
     }
@@ -131,7 +134,8 @@ class CachingProfileRepository implements ProfileRepository {
       final result = await _remote.updateProfile(profile);
       if (result is Success<UserProfile, AppError>) {
         await _dao.upsert(result.value);
-        await _cacheMetadataDao.updateLastSynced(_cacheEntityType(profile.userId), DateTime.now());
+        await _cacheMetadataDao.updateLastSynced(
+            _cacheEntityType(profile.userId), DateTime.now());
       }
       return result;
     }

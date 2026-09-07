@@ -4,7 +4,6 @@ import 'package:glados/glados.dart'
     hide expect, group, setUpAll, setUp, tearDown, test;
 import 'package:mocktail/mocktail.dart' hide any;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:synchrofit/core/network/connectivity_monitor.dart';
 import 'package:synchrofit/data/caching/caching_exercise_repository.dart';
 import 'package:synchrofit/data/local/daos/cache_metadata_dao.dart';
@@ -253,9 +252,12 @@ void main() {
   group('Property 9: Exercise filtering preserves existing behavior', () {
     // ─── Combined filter property: AND logic across types, OR within muscle groups ───
     Glados3(
-      any.intInRange(0, (1 << _allMuscleGroups.length) - 1), // bitmask for muscle groups
-      any.intInRange(0, DifficultyLevel.values.length), // 0 = no difficulty filter
-      any.intInRange(0, _allExercises.length - 1), // index to derive search query
+      any.intInRange(
+          0, (1 << _allMuscleGroups.length) - 1), // bitmask for muscle groups
+      any.intInRange(
+          0, DifficultyLevel.values.length), // 0 = no difficulty filter
+      any.intInRange(
+          0, _allExercises.length - 1), // index to derive search query
     ).test(
       'combined filter: results are subset matching ALL criteria (AND across types, OR within groups)',
       (muscleGroupBitmask, difficultyIndex, searchExerciseIndex) async {
@@ -326,8 +328,7 @@ void main() {
           expect(
             allIds.contains(exercise.id),
             isTrue,
-            reason:
-                'Exercise "${exercise.id}" not in original exercise list',
+            reason: 'Exercise "${exercise.id}" not in original exercise list',
           );
         }
 
@@ -489,7 +490,7 @@ void main() {
           resultIds.contains(_allExercises[exerciseIndex].id),
           isTrue,
           reason:
-              'Exercise "${exerciseName}" should match uppercase query "$upperQuery"',
+              'Exercise "$exerciseName" should match uppercase query "$upperQuery"',
         );
       },
     );

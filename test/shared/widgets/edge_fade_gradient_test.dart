@@ -42,8 +42,7 @@ void main() {
       expect(containerFinder, findsNothing);
     });
 
-    testWidgets('uses default height of 32 when not specified',
-        (tester) async {
+    testWidgets('uses default height of 32 when not specified', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.darkTheme,
@@ -104,7 +103,8 @@ void main() {
       expect(gradient.end, Alignment.bottomCenter);
     });
 
-    testWidgets('bottom gradient goes from transparent to scaffoldBackgroundColor',
+    testWidgets(
+        'bottom gradient goes from transparent to scaffoldBackgroundColor',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(

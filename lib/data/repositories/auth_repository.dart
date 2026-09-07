@@ -5,10 +5,9 @@ abstract class AuthRepository {
   /// Authenticates a user with email and password.
   Future<Result<User, AppError>> login(String email, String password);
 
-  /// Registers a new user with first name, last name, email, and password.
+  /// Registers a new user with a unique username, email, and password.
   Future<Result<User, AppError>> register(
-    String firstName,
-    String lastName,
+    String username,
     String email,
     String password,
   );

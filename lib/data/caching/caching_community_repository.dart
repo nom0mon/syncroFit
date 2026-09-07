@@ -7,8 +7,13 @@ import '../../shared/models/models.dart';
 import '../repositories/community_repository.dart';
 
 class CachingCommunityRepository implements CommunityRepository {
-  CachingCommunityRepository({required CommunityRepository remote, required ConnectivityMonitor connectivity, required String userId})
-      : _remote = remote, _connectivity = connectivity, _cacheKey = 'community_feed_$userId';
+  CachingCommunityRepository(
+      {required CommunityRepository remote,
+      required ConnectivityMonitor connectivity,
+      required String userId})
+      : _remote = remote,
+        _connectivity = connectivity,
+        _cacheKey = 'community_feed_$userId';
 
   final CommunityRepository _remote;
   final ConnectivityMonitor _connectivity;
@@ -23,39 +28,62 @@ class CachingCommunityRepository implements CommunityRepository {
       }
       return result;
     }
-    if (page > 1) return const Success(CommunityPage(posts: [], currentPage: 1, lastPage: 1));
+    if (page > 1) {
+      return const Success(
+          CommunityPage(posts: [], currentPage: 1, lastPage: 1));
+    }
     final preferences = await SharedPreferences.getInstance();
     final encoded = preferences.getString(_cacheKey);
-    if (encoded == null) return const Success(CommunityPage(posts: [], currentPage: 1, lastPage: 1));
-    final posts = (jsonDecode(encoded) as List).map((item) => Post.fromJson(item as Map<String, dynamic>)).toList();
+    if (encoded == null) {
+      return const Success(
+          CommunityPage(posts: [], currentPage: 1, lastPage: 1));
+    }
+    final posts = (jsonDecode(encoded) as List)
+        .map((item) => Post.fromJson(item as Map<String, dynamic>))
+        .toList();
     return Success(CommunityPage(posts: posts, currentPage: 1, lastPage: 1));
   }
 
-  Future<Result<T, AppError>> _online<T>(Future<Result<T, AppError>> Function() action) {
-    if (_connectivity.currentStatus != ConnectivityStatus.online) return Future.value(Failure(NetworkError()));
+  Future<Result<T, AppError>> _online<T>(
+      Future<Result<T, AppError>> Function() action) {
+    if (_connectivity.currentStatus != ConnectivityStatus.online) {
+      return Future.value(Failure(NetworkError()));
+    }
     return action();
   }
 
   @override
-  Future<Result<Post, AppError>> getPostById(String id) => _online(() => _remote.getPostById(id));
+  Future<Result<Post, AppError>> getPostById(String id) =>
+      _online(() => _remote.getPostById(id));
   @override
-  Future<Result<Post, AppError>> createPost(Post post, {List<CommunityPhotoUpload> photos = const [], void Function(int, int)? onProgress}) async {
-    final result = await _online(() => _remote.createPost(post, photos: photos, onProgress: onProgress));
-    if (result case Success(value: final created)) await _upsert(created, prepend: true);
+  Future<Result<Post, AppError>> createPost(Post post,
+      {List<CommunityPhotoUpload> photos = const [],
+      void Function(int, int)? onProgress}) async {
+    final result = await _online(
+        () => _remote.createPost(post, photos: photos, onProgress: onProgress));
+    if (result case Success(value: final created)) {
+      await _upsert(created, prepend: true);
+    }
     return result;
   }
+
   @override
   Future<Result<Post, AppError>> toggleLike(String postId) async {
     final result = await _online(() => _remote.toggleLike(postId));
-    if (result case Success(value: final post)) await _upsert(post);
+    if (result case Success(value: final post)) {
+      await _upsert(post);
+    }
     return result;
   }
+
   @override
-  Future<Result<Post, AppError>> addComment(String postId, Comment comment) async {
+  Future<Result<Post, AppError>> addComment(
+      String postId, Comment comment) async {
     final result = await _online(() => _remote.addComment(postId, comment));
     if (result case Success(value: final post)) await _upsert(post);
     return result;
   }
+
   @override
   Future<Result<void, AppError>> deletePost(String postId) async {
     final result = await _online(() => _remote.deletePost(postId));
@@ -65,15 +93,20 @@ class CachingCommunityRepository implements CommunityRepository {
     }
     return result;
   }
+
   @override
-  Future<Result<void, AppError>> deleteComment(String postId, String commentId) async {
-    final result = await _online(() => _remote.deleteComment(postId, commentId));
+  Future<Result<void, AppError>> deleteComment(
+      String postId, String commentId) async {
+    final result =
+        await _online(() => _remote.deleteComment(postId, commentId));
     if (result is Success<void, AppError>) {
       final posts = await _read();
       await _write(posts.map((post) {
         if (post.id != postId) return post;
         return post.copyWith(
-          comments: post.comments.where((comment) => comment.id != commentId).toList(),
+          comments: post.comments
+              .where((comment) => comment.id != commentId)
+              .toList(),
           commentCount: (post.commentCount - 1).clamp(0, post.commentCount),
         );
       }).toList());
@@ -82,10 +115,12 @@ class CachingCommunityRepository implements CommunityRepository {
   }
 
   Future<List<Post>> _read() async {
-    final encoded = (await SharedPreferences.getInstance()).getString(_cacheKey);
+    final encoded =
+        (await SharedPreferences.getInstance()).getString(_cacheKey);
     if (encoded == null) return [];
     return (jsonDecode(encoded) as List)
-        .map((item) => Post.fromJson(item as Map<String, dynamic>)).toList();
+        .map((item) => Post.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> _upsert(Post updated, {bool prepend = false}) async {
@@ -99,6 +134,7 @@ class CachingCommunityRepository implements CommunityRepository {
 
   Future<void> _write(List<Post> posts) async {
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_cacheKey, jsonEncode(posts.map((post) => post.toJson()).toList()));
+    await preferences.setString(
+        _cacheKey, jsonEncode(posts.map((post) => post.toJson()).toList()));
   }
 }

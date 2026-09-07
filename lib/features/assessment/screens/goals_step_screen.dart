@@ -148,8 +148,9 @@ class _GoalsStepScreenState extends ConsumerState<GoalsStepScreen> {
                             .toList(),
                         onChanged: (value) =>
                             setState(() => _selectedGoal = value),
-                        validator: (value) =>
-                            value == null ? 'Please select a fitness goal' : null,
+                        validator: (value) => value == null
+                            ? 'Please select a fitness goal'
+                            : null,
                       ),
                       if (_selectedGoal != null) ...[
                         const SizedBox(height: AppSpacing.sm),

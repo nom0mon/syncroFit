@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:synchrofit/core/network/api_client.dart';
+import 'package:synchrofit/core/network/token_storage.dart';
 import 'package:synchrofit/data/repositories/workout_history_repository.dart';
 import 'package:synchrofit/data/repositories/workout_repository.dart';
 import 'package:synchrofit/features/auth/providers/auth_provider.dart';
@@ -13,7 +15,7 @@ import 'package:synchrofit/shared/models/models.dart';
 /// Extends the real [AuthNotifier] so it satisfies the [authStateProvider]
 /// override closure's return type.
 class _TestAuthNotifier extends AuthNotifier {
-  _TestAuthNotifier(super.ref);
+  _TestAuthNotifier(super.ref) : super(restoreSession: false);
 
   void signIn(User user) {
     state = AuthState(isAuthenticated: true, user: user);
@@ -22,6 +24,14 @@ class _TestAuthNotifier extends AuthNotifier {
   void signOut() {
     state = const AuthState();
   }
+}
+
+class _EmptyTokenStorage extends TokenStorage {
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<User?> getUser() async => null;
 }
 
 /// Records the user ids that history was requested for, and returns a
@@ -92,8 +102,8 @@ void main() {
   ProviderContainer buildContainer() {
     final container = ProviderContainer(
       overrides: [
-        progressWorkoutHistoryRepositoryProvider
-            .overrideWithValue(historyRepo),
+        tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
+        progressWorkoutHistoryRepositoryProvider.overrideWithValue(historyRepo),
         workoutRepositoryProvider.overrideWithValue(_StubWorkoutRepository()),
         // The notifier now needs a Ref, so construct it inside the override
         // and capture it for the tests to drive.

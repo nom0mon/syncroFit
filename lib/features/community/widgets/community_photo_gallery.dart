@@ -24,12 +24,11 @@ class CommunityPhotoGallery extends StatelessWidget {
             : {'Authorization': 'Bearer ${snapshot.data}'};
         if (photos.length == 1) {
           final photo = photos.first;
-          final ratio =
-              photo.width != null && photo.height != null && photo.height! > 0
-                  ? (photo.width! / photo.height!)
-                      .clamp(0.75, 16 / 9)
-                      .toDouble()
-                  : 16 / 9;
+          final ratio = photo.width != null &&
+                  photo.height != null &&
+                  photo.height! > 0
+              ? (photo.width! / photo.height!).clamp(0.75, 16 / 9).toDouble()
+              : 16 / 9;
           return AspectRatio(
             aspectRatio: ratio,
             child: _Photo(photo: photo, headers: headers),

@@ -23,16 +23,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   static const double _maxFormWidth = 480;
 
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -43,8 +41,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     await ref.read(authStateProvider.notifier).register(
-          _firstNameController.text.trim(),
-          _lastNameController.text.trim(),
+          _usernameController.text.trim().toLowerCase(),
           _emailController.text.trim(),
           _passwordController.text,
         );
@@ -132,25 +129,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         TextFormField(
-                          controller: _firstNameController,
-                          decoration:
-                              const InputDecoration(hintText: 'First Name'),
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            hintText: 'Username',
+                          ),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
                           textInputAction: TextInputAction.next,
-                          maxLength: 50,
-                          validator: validateName,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextFormField(
-                          controller: _lastNameController,
-                          decoration:
-                              const InputDecoration(hintText: 'Last Name'),
-                          style: const TextStyle(color: Colors.black),
-                          cursorColor: Colors.black,
-                          textInputAction: TextInputAction.next,
-                          maxLength: 50,
-                          validator: validateName,
+                          maxLength: 30,
+                          validator: validateUsername,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(

@@ -148,12 +148,12 @@ class _WorkoutDetailContent extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
               ],
               FilledButton.icon(
-              onPressed: () {
-                context.go('/dashboard/workout/$workoutId/active');
-              },
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Start Workout'),
-            ),
+                onPressed: () {
+                  context.go('/dashboard/workout/$workoutId/active');
+                },
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Start Workout'),
+              ),
             ],
           ),
         ),

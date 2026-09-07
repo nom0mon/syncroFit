@@ -118,8 +118,8 @@ class _BmiStepScreenState extends ConsumerState<BmiStepScreen> {
                           hintText: 'e.g. 175',
                           prefixIcon: Icon(Icons.height),
                         ),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         validator: validateHeight,
                         onChanged: (_) => setState(() {}),
                       ),
@@ -133,8 +133,8 @@ class _BmiStepScreenState extends ConsumerState<BmiStepScreen> {
                           hintText: 'e.g. 70',
                           prefixIcon: Icon(Icons.monitor_weight_outlined),
                         ),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         validator: validateWeight,
                         onChanged: (_) => setState(() {}),
                       ),

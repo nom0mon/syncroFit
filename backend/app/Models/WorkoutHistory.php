@@ -13,6 +13,7 @@ class WorkoutHistory extends Model
 
     protected $fillable = [
         'user_id',
+        'client_mutation_id',
         'workout_name',
         'completed_at',
         'total_duration_seconds',

@@ -81,6 +81,7 @@ class RemoteWorkoutRepository
   /// Optionally accepts [includedExercises] and [excludedExercises] as lists
   /// of exercise IDs. These are only sent when non-empty. The backend accepts
   /// a JSON body `{ "included_exercises": [...], "excluded_exercises": [...] }`.
+  @override
   Future<Result<List<Workout>, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],

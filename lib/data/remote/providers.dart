@@ -63,9 +63,10 @@ final remoteWorkoutHistoryRepositoryProvider =
   return RemoteWorkoutHistoryRepository(apiClient);
 });
 
-final remoteProgressLogRepositoryProvider = Provider<ProgressLogRepository>((ref) {
+final remoteProgressLogRepositoryProvider =
+    Provider<ProgressLogRepository>((ref) {
   return RemoteProgressLogRepository(ref.watch(apiClientProvider));
 });
 
-final remoteCommunityRepositoryProvider = Provider<CommunityRepository>((ref) =>
-    RemoteCommunityRepository(ref.watch(apiClientProvider)));
+final remoteCommunityRepositoryProvider = Provider<CommunityRepository>(
+    (ref) => RemoteCommunityRepository(ref.watch(apiClientProvider)));

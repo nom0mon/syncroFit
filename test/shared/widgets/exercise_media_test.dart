@@ -69,7 +69,9 @@ void main() {
       expect(find.byIcon(Icons.videocam_off_outlined), findsOneWidget);
       expect(find.byIcon(Icons.play_circle_outline), findsNothing);
       expect(
-        tester.widget<AspectRatio>(find.byKey(const Key('exercise-media'))).aspectRatio,
+        tester
+            .widget<AspectRatio>(find.byKey(const Key('exercise-media')))
+            .aspectRatio,
         16 / 9,
       );
     });

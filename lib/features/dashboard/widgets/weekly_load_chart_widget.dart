@@ -43,6 +43,11 @@ class WeeklyLoadChartWidget extends StatelessWidget {
     final volumes = weekRanges
         .map((range) => calculateWeeklyVolume(sessions, range.start))
         .toList();
+    final weeksWithSessions = weekRanges
+        .map((range) => sessions.any(
+              (session) => isInWeek(session.effectiveCompletedAt, range.start),
+            ))
+        .toList();
 
     // Compute proportional bar heights.
     final barHeights = computeBarHeights(volumes, maxChartHeight);
@@ -58,7 +63,7 @@ class WeeklyLoadChartWidget extends StatelessWidget {
         SizedBox(
           height: maxChartHeight + AppSpacing.xxl,
           child: BarChart(
-            _buildChartData(volumes, barHeights, theme),
+            _buildChartData(volumes, barHeights, weeksWithSessions, theme),
             duration: Duration.zero,
           ),
         ),
@@ -66,7 +71,12 @@ class WeeklyLoadChartWidget extends StatelessWidget {
     );
   }
 
-  BarChartData _buildChartData(List<int> volumes, List<double> barHeights, ThemeData theme) {
+  BarChartData _buildChartData(
+    List<int> volumes,
+    List<double> barHeights,
+    List<bool> weeksWithSessions,
+    ThemeData theme,
+  ) {
     final maxY = barHeights.isEmpty
         ? maxChartHeight
         : barHeights.reduce((a, b) => a > b ? a : b);
@@ -96,7 +106,8 @@ class WeeklyLoadChartWidget extends StatelessWidget {
             reservedSize: 20,
           ),
         ),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -121,9 +132,9 @@ class WeeklyLoadChartWidget extends StatelessWidget {
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
       barGroups: List.generate(4, (index) {
-        final volume = index < volumes.length ? volumes[index] : 0;
         final height = index < barHeights.length ? barHeights[index] : 4.0;
-        final isZero = volume == 0;
+        final hasSession =
+            index < weeksWithSessions.length && weeksWithSessions[index];
 
         return BarChartGroupData(
           x: index,
@@ -131,9 +142,9 @@ class WeeklyLoadChartWidget extends StatelessWidget {
             BarChartRodData(
               toY: height,
               width: barWidth,
-              color: isZero
-                  ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
-                  : theme.colorScheme.onSurface,
+              color: hasSession
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(4),
               ),

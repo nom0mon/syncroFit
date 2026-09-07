@@ -29,10 +29,9 @@ class MockExerciseRepository implements ExerciseRepository {
     await Future.delayed(const Duration(milliseconds: 250));
 
     final lowerQuery = query.toLowerCase();
-    final results =
-        _exercises
-            .where((e) => e.name.toLowerCase().contains(lowerQuery))
-            .toList();
+    final results = _exercises
+        .where((e) => e.name.toLowerCase().contains(lowerQuery))
+        .toList();
 
     return Success(results);
   }
@@ -44,12 +43,11 @@ class MockExerciseRepository implements ExerciseRepository {
     await Future.delayed(const Duration(milliseconds: 250));
 
     final lowerGroups = groups.map((g) => g.toLowerCase()).toList();
-    final results =
-        _exercises
-            .where(
-              (e) => lowerGroups.contains(e.muscleGroup.toLowerCase()),
-            )
-            .toList();
+    final results = _exercises
+        .where(
+          (e) => lowerGroups.contains(e.muscleGroup.toLowerCase()),
+        )
+        .toList();
 
     return Success(results);
   }
@@ -69,9 +67,7 @@ class MockExerciseRepository implements ExerciseRepository {
     }
 
     final results =
-        _exercises
-            .where((e) => e.difficulty == difficultyLevel.first)
-            .toList();
+        _exercises.where((e) => e.difficulty == difficultyLevel.first).toList();
 
     return Success(results);
   }

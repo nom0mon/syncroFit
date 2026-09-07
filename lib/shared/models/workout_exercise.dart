@@ -48,8 +48,8 @@ class WorkoutExercise {
           order == other.order;
 
   @override
-  int get hashCode => Object.hash(
-      exerciseId, sets, reps, durationSeconds, restSeconds, order);
+  int get hashCode =>
+      Object.hash(exerciseId, sets, reps, durationSeconds, restSeconds, order);
 
   @override
   String toString() =>

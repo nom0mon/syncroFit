@@ -148,59 +148,60 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                ResponsiveCard(
-                  margin: EdgeInsets.zero,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                      ResponsiveCard(
+                        margin: EdgeInsets.zero,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sessionState.workout!.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              exerciseName,
+                              key: const Key('active-exercise-name'),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ExerciseMedia(
+                        videoPath: details?.videoPath,
+                        // The library can still be loading when a session starts.
+                        // Use the resolved workout name so the media and screen
+                        // never render as an unnamed exercise.
+                        exerciseName: exerciseName,
+                        borderRadius: AppSpacing.md,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
-                        sessionState.workout!.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        isDuration
+                            ? '${currentExercise.sets} sets · ${formatDuration(currentExercise.durationSeconds)}'
+                            : '${currentExercise.sets} sets · ${currentExercise.reps} reps',
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        exerciseName,
-                        key: const Key('active-exercise-name'),
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _CurrentSetCard(
+                        setNumber: sessionState.currentSet,
+                        totalSets: currentExercise.sets,
+                        perSetLabel: perSetLabel,
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ExerciseMedia(
-                  videoPath: details?.videoPath,
-                  // The library can still be loading when a session starts.
-                  // Use the resolved workout name so the media and screen
-                  // never render as an unnamed exercise.
-                  exerciseName: exerciseName,
-                  borderRadius: AppSpacing.md,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  isDuration
-                      ? '${currentExercise.sets} sets · ${formatDuration(currentExercise.durationSeconds)}'
-                      : '${currentExercise.sets} sets · ${currentExercise.reps} reps',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _CurrentSetCard(
-                  setNumber: sessionState.currentSet,
-                  totalSets: currentExercise.sets,
-                  perSetLabel: perSetLabel,
-                ),
-                if (details != null && details.instructions.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  _ProcedureSection(instructions: details.instructions),
-                ],
-                const SizedBox(height: AppSpacing.md),
+                      if (details != null &&
+                          details.instructions.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        _ProcedureSection(instructions: details.instructions),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
                     ],
                   ),
                 ),

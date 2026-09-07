@@ -12,10 +12,12 @@ class ProgressLogCreateScreen extends ConsumerStatefulWidget {
   const ProgressLogCreateScreen({super.key});
 
   @override
-  ConsumerState<ProgressLogCreateScreen> createState() => _ProgressLogCreateScreenState();
+  ConsumerState<ProgressLogCreateScreen> createState() =>
+      _ProgressLogCreateScreenState();
 }
 
-class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScreen> {
+class _ProgressLogCreateScreenState
+    extends ConsumerState<ProgressLogCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
@@ -54,7 +56,9 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
                   controller: _title,
                   maxLength: 100,
                   decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'Enter a title.' : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter a title.'
+                      : null,
                 ),
                 TextFormField(
                   controller: _description,
@@ -62,12 +66,16 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
                   minLines: 3,
                   maxLines: 6,
                   decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'Enter a description.' : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter a description.'
+                      : null,
                 ),
                 TextFormField(
                   controller: _weight,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Current weight', suffixText: 'kg'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Current weight', suffixText: 'kg'),
                   validator: (value) {
                     final weight = double.tryParse(value ?? '');
                     return weight == null || weight < 20 || weight > 500
@@ -80,14 +88,16 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
                   aspectRatio: 16 / 9,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _imageBytes == null
                         ? const Center(child: Text('Add one progress photo'))
                         : ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                            child:
+                                Image.memory(_imageBytes!, fit: BoxFit.cover),
                           ),
                   ),
                 ),
@@ -96,12 +106,14 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
                   spacing: AppSpacing.sm,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: _saving ? null : () => _select(ImageSource.gallery),
+                      onPressed:
+                          _saving ? null : () => _select(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library_outlined),
                       label: const Text('Gallery'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: _saving ? null : () => _select(ImageSource.camera),
+                      onPressed:
+                          _saving ? null : () => _select(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt_outlined),
                       label: const Text('Camera'),
                     ),
@@ -109,7 +121,8 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
                 ),
                 if (_saving) ...[
                   const SizedBox(height: AppSpacing.md),
-                  LinearProgressIndicator(value: _progress == 0 ? null : _progress),
+                  LinearProgressIndicator(
+                      value: _progress == 0 ? null : _progress),
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton.icon(
@@ -127,13 +140,15 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
     if (source == ImageSource.camera &&
         !kIsWeb &&
         defaultTargetPlatform != TargetPlatform.android) {
-      _showMessage('Camera capture is unavailable on this platform. Choose a gallery photo instead.');
+      _showMessage(
+          'Camera capture is unavailable on this platform. Choose a gallery photo instead.');
       return;
     }
     if (source == ImageSource.camera &&
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.android) {
-      const coordinator = CameraPermissionCoordinator(AndroidCameraPermissionGateway());
+      const coordinator =
+          CameraPermissionCoordinator(AndroidCameraPermissionGateway());
       if (!await coordinator.requestAtPointOfUse(context)) return;
     }
     XFile? image;
@@ -154,8 +169,10 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
     final bytes = await image.readAsBytes();
     final extension = image.name.split('.').last.toLowerCase();
     final mimeType = image.mimeType?.toLowerCase();
-    final allowedByName = const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension);
-    final allowedByMime = const {'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType);
+    final allowedByName =
+        const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension);
+    final allowedByMime =
+        const {'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType);
     final detectedFormat = _detectImageFormat(bytes);
     if (!allowedByName && !allowedByMime && detectedFormat == null) {
       _showMessage('Choose a JPEG, PNG, or WebP image.');
@@ -170,7 +187,8 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
       image = XFile.fromData(
         bytes,
         mimeType: format.mimeType,
-        name: 'progress-photo-${DateTime.now().millisecondsSinceEpoch}.${format.extension}',
+        name:
+            'progress-photo-${DateTime.now().millisecondsSinceEpoch}.${format.extension}',
       );
     }
     setState(() {
@@ -216,7 +234,9 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
   Future<void> _recoverLostImage() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
     final response = await _picker.retrieveLostData();
-    if (response.isEmpty || response.files == null || response.files!.isEmpty) return;
+    if (response.isEmpty || response.files == null || response.files!.isEmpty) {
+      return;
+    }
     final image = response.files!.first;
     final bytes = await image.readAsBytes();
     if (!mounted || bytes.length > 5 * 1024 * 1024) return;
@@ -227,32 +247,40 @@ class _ProgressLogCreateScreenState extends ConsumerState<ProgressLogCreateScree
   }
 
   void _showMessage(String message) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_image == null || _imageBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add a progress photo.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Add a progress photo.')));
       return;
     }
-    setState(() { _saving = true; _progress = 0; });
+    setState(() {
+      _saving = true;
+      _progress = 0;
+    });
     final error = await ref.read(progressLogsProvider.notifier).create(
-      title: _title.text.trim(),
-      description: _description.text.trim(),
-      weightKg: double.parse(_weight.text),
-      imageBytes: _imageBytes!,
-      imageFilename: _image!.name,
-      onProgress: (sent, total) {
-        if (mounted && total > 0) setState(() => _progress = sent / total);
-      },
-    );
+          title: _title.text.trim(),
+          description: _description.text.trim(),
+          weightKg: double.parse(_weight.text),
+          imageBytes: _imageBytes!,
+          imageFilename: _image!.name,
+          onProgress: (sent, total) {
+            if (mounted && total > 0) setState(() => _progress = sent / total);
+          },
+        );
     if (!mounted) return;
     setState(() => _saving = false);
     if (error == null) {
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 }
@@ -341,7 +369,8 @@ class _CameraCaptureDialogState extends State<_CameraCaptureDialog> {
             if (snapshot.hasError) {
               return const AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Center(child: Text('Chrome could not start the camera.')),
+                child:
+                    Center(child: Text('Chrome could not start the camera.')),
               );
             }
             if (snapshot.connectionState != ConnectionState.done ||

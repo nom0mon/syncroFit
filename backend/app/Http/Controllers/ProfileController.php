@@ -8,6 +8,8 @@ use App\Models\Exercise;
 use App\Models\Workout;
 use App\Services\WorkoutPrescriptionPolicy;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -37,10 +39,17 @@ class ProfileController extends Controller
         }
 
         $data = $request->validated();
-        $data['user_id'] = $user->id;
-        $data['bmi'] = $this->computeBmi($data['weight_kg'], $data['height_cm']);
+        $identity = Arr::only($data, ['first_name', 'last_name', 'username']);
+        $profileData = Arr::except($data, ['first_name', 'last_name', 'username']);
+        $profileData['user_id'] = $user->id;
+        $profileData['bmi'] = $this->computeBmi($profileData['weight_kg'], $profileData['height_cm']);
 
-        $profile = $user->profile()->create($data);
+        $profile = DB::transaction(function () use ($user, $identity, $profileData) {
+            if ($identity !== []) {
+                $user->update($identity);
+            }
+            return $user->profile()->create($profileData);
+        });
 
         return $this->createdResponse($this->profileWithName($profile));
     }
@@ -50,13 +59,16 @@ class ProfileController extends Controller
      */
     public function update(UpdateProfileRequest $request): JsonResponse
     {
-        $profile = auth()->user()->profile;
+        $user = auth()->user();
+        $profile = $user->profile;
 
         if (!$profile) {
             return $this->errorResponse('No profile exists', 404);
         }
 
         $data = $request->validated();
+        $identity = Arr::only($data, ['first_name', 'last_name', 'username']);
+        $data = Arr::except($data, ['first_name', 'last_name', 'username']);
 
         // Recompute BMI if height or weight changed
         $heightCm = $data['height_cm'] ?? $profile->height_cm;
@@ -66,7 +78,12 @@ class ProfileController extends Controller
             $data['bmi'] = $this->computeBmi($weightKg, $heightCm);
         }
 
-        $profile->update($data);
+        DB::transaction(function () use ($user, $profile, $identity, $data): void {
+            if ($identity !== []) {
+                $user->update($identity);
+            }
+            $profile->update($data);
+        });
         $profile->refresh();
 
         if (array_key_exists('fitness_level', $data) || array_key_exists('goal', $data)) {
@@ -103,6 +120,7 @@ class ProfileController extends Controller
         $user = auth()->user();
         $data['first_name'] = $user->first_name;
         $data['last_name'] = $user->last_name;
+        $data['username'] = $user->username;
         $data['name'] = $user->full_name; // backward compat
         return $data;
     }

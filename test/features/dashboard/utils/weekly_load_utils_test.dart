@@ -90,6 +90,38 @@ void main() {
   });
 
   group('calculateWeeklyVolume', () {
+    test('uses server creation time for legacy timezone-shifted completions',
+        () {
+      final createdAt = DateTime.utc(2026, 9, 6, 13, 54);
+      final session = WorkoutHistory(
+        id: 'legacy',
+        userId: 'u1',
+        workoutName: 'Legacy mobile save',
+        completedAt: DateTime.utc(2026, 9, 6, 21, 54),
+        createdAt: createdAt,
+        totalDurationSeconds: 600,
+        exercisesCompleted: [
+          const CompletedExercise(
+            exerciseId: '1',
+            exerciseName: 'Push-Up',
+            setsCompleted: 3,
+            repsOrDuration: 10,
+          ).toJson(),
+        ],
+      );
+      final localCreated = createdAt.toLocal();
+      final weekStartValue =
+          localCreated.subtract(Duration(days: localCreated.weekday - 1));
+      final weekStart = DateTime(
+        weekStartValue.year,
+        weekStartValue.month,
+        weekStartValue.day,
+      );
+
+      expect(session.effectiveCompletedAt, createdAt.toLocal());
+      expect(calculateWeeklyVolume([session], weekStart), 30);
+    });
+
     test('returns 0 for empty sessions list', () {
       final volume = calculateWeeklyVolume([], DateTime(2025, 1, 13));
       expect(volume, 0);
@@ -161,6 +193,27 @@ void main() {
       expect(volume, 30 + 48 + 40); // 118
     });
 
+    test('does not inflate volume for a duplicated exercise completion', () {
+      final weekStart = DateTime(2025, 1, 13);
+      final duplicate = const CompletedExercise(
+        exerciseId: 'e1',
+        exerciseName: 'Squat',
+        setsCompleted: 2,
+        repsOrDuration: 10,
+      ).toJson();
+      final session = WorkoutHistory(
+        id: 'duplicate-session',
+        userId: 'u1',
+        workoutName: 'Leg Day',
+        completedAt: DateTime(2025, 1, 14),
+        totalDurationSeconds: 600,
+        exercisesCompleted: [duplicate, duplicate],
+      );
+
+      expect(session.exercisesCompletedCount, 1);
+      expect(calculateWeeklyVolume([session], weekStart), 20);
+    });
+
     test('only includes sessions within the specified week', () {
       final weekStart = DateTime(2025, 1, 13); // Monday
       final sessions = [
@@ -220,7 +273,7 @@ void main() {
       expect(heights[0], 100.0); // 50/100 * 200
       expect(heights[1], 200.0); // 100/100 * 200
       expect(heights[2], 150.0); // 75/100 * 200
-      expect(heights[3], 50.0);  // 25/100 * 200
+      expect(heights[3], 50.0); // 25/100 * 200
     });
 
     test('single non-zero volume gets full height', () {

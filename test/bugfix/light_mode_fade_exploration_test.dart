@@ -172,14 +172,14 @@ void main() {
             ),
             GoRoute(
               path: '/settings/edit-profile',
-              builder: (context, state) => Scaffold(
-                body: const Text('Edit Profile Page'),
+              builder: (context, state) => const Scaffold(
+                body: Text('Edit Profile Page'),
               ),
             ),
             GoRoute(
               path: '/settings/change-password',
-              builder: (context, state) => Scaffold(
-                body: const Text('Change Password Page'),
+              builder: (context, state) => const Scaffold(
+                body: Text('Change Password Page'),
               ),
             ),
           ],
@@ -234,14 +234,14 @@ void main() {
             ),
             GoRoute(
               path: '/settings/notifications',
-              builder: (context, state) => Scaffold(
-                body: const Text('Notification Settings Page'),
+              builder: (context, state) => const Scaffold(
+                body: Text('Notification Settings Page'),
               ),
             ),
             GoRoute(
               path: '/settings/edit-profile',
-              builder: (context, state) => Scaffold(
-                body: const Text('Edit Profile Page'),
+              builder: (context, state) => const Scaffold(
+                body: Text('Edit Profile Page'),
               ),
             ),
             GoRoute(

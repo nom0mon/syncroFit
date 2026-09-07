@@ -68,8 +68,7 @@ void main() {
       expect(find.text('Chest · Barbell'), findsOneWidget);
     });
 
-    testWidgets(
-        'displays subtitle as just muscleGroup when equipment is null',
+    testWidgets('displays subtitle as just muscleGroup when equipment is null',
         (tester) async {
       await tester.pumpWidget(
         buildSubject(exercise: testExerciseNoEquipment),
@@ -79,8 +78,7 @@ void main() {
       expect(find.textContaining('·'), findsNothing);
     });
 
-    testWidgets(
-        'displays subtitle as just muscleGroup when equipment is empty',
+    testWidgets('displays subtitle as just muscleGroup when equipment is empty',
         (tester) async {
       const exerciseEmptyEquipment = Exercise(
         id: 'ex-003',

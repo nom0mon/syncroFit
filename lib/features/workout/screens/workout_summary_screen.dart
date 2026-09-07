@@ -22,12 +22,35 @@ class WorkoutSummaryScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
+  bool _isSaving = true;
+  bool _isSaved = false;
+  String? _saveError;
+
   @override
   void initState() {
     super.initState();
     // Save the completed session
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(workoutProvider.notifier).saveCompletedSession();
+      _saveSession();
+    });
+  }
+
+  Future<void> _saveSession() async {
+    if (mounted) {
+      setState(() {
+        _isSaving = true;
+        _saveError = null;
+      });
+    }
+    final saved =
+        await ref.read(workoutProvider.notifier).saveCompletedSession();
+    if (!mounted) return;
+    setState(() {
+      _isSaving = false;
+      _isSaved = saved != null;
+      _saveError = saved == null
+          ? 'Could not save this workout. Check your connection and retry.'
+          : null;
     });
   }
 
@@ -98,15 +121,45 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
 
             const Spacer(),
 
+            if (_isSaving)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Text('Saving workout...'),
+                  ],
+                ),
+              ),
+            if (_saveError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Text(
+                  _saveError!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+              ),
+
             // Done button
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () {
-                  ref.read(workoutProvider.notifier).resetSession();
-                  context.go('/dashboard');
-                },
-                child: const Text('Done'),
+                onPressed: _isSaving
+                    ? null
+                    : _isSaved
+                        ? () {
+                            ref.read(workoutProvider.notifier).resetSession();
+                            context.go('/dashboard');
+                          }
+                        : _saveSession,
+                child: Text(_isSaved ? 'Done' : 'Retry Save'),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),

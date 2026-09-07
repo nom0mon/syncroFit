@@ -31,9 +31,11 @@ void main() {
   /// Helper to check if a color is achromatic (R == G == B).
   /// Colors with zero alpha are ignored (transparent).
   bool isAchromatic(Color color) {
-    if (color.alpha == 0) return true;
-    return color.red == color.green && color.green == color.blue;
+    if (color.a == 0) return true;
+    return color.r == color.g && color.g == color.b;
   }
+
+  int channel(double value) => (value * 255).round().clamp(0, 255);
 
   /// Extracts all explicitly-set colors from the dark theme for verification.
   List<MapEntry<String, Color>> extractDarkThemeColors() {
@@ -132,8 +134,8 @@ void main() {
           isAchromatic(entry.value),
           isTrue,
           reason: '${entry.key} is not achromatic: '
-              'R=${entry.value.red}, G=${entry.value.green}, B=${entry.value.blue} '
-              '(0x${entry.value.value.toRadixString(16).padLeft(8, '0')})',
+              'R=${channel(entry.value.r)}, G=${channel(entry.value.g)}, B=${channel(entry.value.b)} '
+              '(0x${entry.value.toARGB32().toRadixString(16).padLeft(8, '0')})',
         );
       }
     });
@@ -148,7 +150,7 @@ void main() {
           isAchromatic(entry.value),
           isTrue,
           reason: '${entry.key} is not achromatic: '
-              'R=${entry.value.red}, G=${entry.value.green}, B=${entry.value.blue}',
+              'R=${channel(entry.value.r)}, G=${channel(entry.value.g)}, B=${channel(entry.value.b)}',
         );
       },
     );

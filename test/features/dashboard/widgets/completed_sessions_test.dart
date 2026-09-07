@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glados/glados.dart' hide expect, group, setUpAll, setUp, tearDown;
+import 'package:glados/glados.dart'
+    hide expect, group, setUpAll, setUp, tearDown;
 import 'package:synchrofit/features/dashboard/utils/session_display_utils.dart';
 import 'package:synchrofit/features/dashboard/widgets/completed_sessions_widget.dart';
 import 'package:synchrofit/shared/models/completed_exercise.dart';

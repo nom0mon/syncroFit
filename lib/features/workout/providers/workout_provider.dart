@@ -192,6 +192,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   /// of the final exercise. Completing an exercise's final set records it
   /// before resting.
   void finishCurrentSet() {
+    if (!state.isInProgress || state.isCompleted || state.isResting) return;
     final exercise = state.currentExercise;
     if (exercise == null) return;
 
@@ -206,8 +207,9 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
       exerciseId: exercise.exerciseId.toString(),
       exerciseName: nameFor(exercise),
       setsCompleted: exercise.sets,
-      repsOrDuration:
-          exercise.durationSeconds > 0 ? exercise.durationSeconds : exercise.reps,
+      repsOrDuration: exercise.durationSeconds > 0
+          ? exercise.durationSeconds
+          : exercise.reps,
       isDuration: exercise.durationSeconds > 0,
     );
     final updatedCompleted = [...state.completedExercises, completed];
@@ -235,6 +237,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   ///
   /// Retained for compatibility; equivalent to finishing the final set.
   void completeCurrentExercise() {
+    if (!state.isInProgress || state.isCompleted || state.isResting) return;
     final exercise = state.currentExercise;
     if (exercise == null) return;
 
@@ -327,9 +330,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
       workoutName: state.workout!.name,
       completedAt: state.completedAt ?? DateTime.now(),
       totalDurationSeconds: state.totalDurationSeconds,
-      exercisesCompleted: state.completedExercises
-          .map((e) => e.toJson())
-          .toList(),
+      exercisesCompleted:
+          state.completedExercises.map((e) => e.toJson()).toList(),
     );
 
     final result = await _historyRepo.save(record);
