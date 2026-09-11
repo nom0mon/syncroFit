@@ -66,6 +66,7 @@ class WorkoutGenerationContractTest extends TestCase
         Exercise::factory()->create([
             'muscle_group' => 'chest',
             'equipment' => 'bodyweight',
+            'environments' => ['home', 'gym', 'outdoor'],
             'difficulty' => 'beginner',
             'default_duration_seconds' => 30,
         ]);

@@ -60,4 +60,27 @@ class WorkoutCustomizationTest extends TestCase
         $this->putJson("/api/workouts/{$workout->id}/exercises", ['exercise_ids' => []])->assertUnprocessable();
         $this->putJson("/api/workouts/{$workout->id}/exercises", ['exercise_ids' => [$exercise->id, $exercise->id]])->assertUnprocessable();
     }
+
+    public function test_customization_rejects_exercises_outside_the_users_environment(): void
+    {
+        $user = $this->userWithProfile();
+        $user->profile()->update(['workout_preference' => 'home']);
+        $machineExercise = Exercise::factory()->create([
+            'name' => 'Cable Fly',
+            'equipment' => 'machine',
+            'environments' => ['gym'],
+        ]);
+        $workout = Workout::create([
+            'user_id' => $user->id,
+            'name' => 'Home Plan',
+            'exercises' => [],
+            'is_generated' => true,
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/workouts/{$workout->id}/exercises", [
+            'exercise_ids' => [$machineExercise->id],
+        ])->assertUnprocessable()
+            ->assertJsonPath('errors.exercise_ids.0', 'Cable Fly is not classified for home workouts.');
+    }
 }

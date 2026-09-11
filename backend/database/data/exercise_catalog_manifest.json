@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026-09-11",
+  "status_meaning": {
+    "catalog_cross_checked": "Exercise identity and taxonomy were cross-checked against the named open catalog; this is not a clinical claim or an individual outcome guarantee."
+  },
+  "catalog_source": {
+    "name": "Free Exercise DB",
+    "url": "https://github.com/yuhonas/free-exercise-db",
+    "data_url": "https://github.com/yuhonas/free-exercise-db/blob/main/dist/exercises.json",
+    "license": "Unlicense / public domain",
+    "license_url": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md"
+  },
+  "prescription_evidence": [
+    {
+      "name": "ACSM Resistance Training Guidelines Update (2026)",
+      "url": "https://acsm.org/resistance-training-guidelines-update-2026/",
+      "scope": "Programming principles; not exercise catalog data"
+    },
+    {
+      "name": "Physical Activity Guidelines for Americans",
+      "url": "https://odphp.health.gov/our-work/nutrition-physical-activity/physical-activity-guidelines/current-guidelines/top-10-things-know",
+      "scope": "General activity and muscle-strengthening guidance"
+    }
+  ],
+  "environment_policy": {
+    "bodyweight": ["home", "gym", "outdoor"],
+    "dumbbell": ["home", "gym"],
+    "kettlebell": ["home", "gym"],
+    "resistance_band": ["home", "gym"],
+    "barbell": ["gym"],
+    "machine": ["gym"],
+    "pull_up_bar": ["gym"]
+  },
+  "limitations": [
+    "A selected environment does not prove ownership of optional portable equipment.",
+    "Outdoor recommendations use bodyweight only under the conservative policy.",
+    "Catalog verification does not guarantee effectiveness or safety for a particular person."
+  ]
+}

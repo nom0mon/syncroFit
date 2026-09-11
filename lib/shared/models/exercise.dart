@@ -7,6 +7,7 @@ class Exercise {
   final DifficultyLevel difficulty;
   final List<String> instructions;
   final String? equipment;
+  final List<String> environments;
   final int defaultDurationSeconds;
   final int defaultSets;
   final int defaultReps;
@@ -19,6 +20,7 @@ class Exercise {
     required this.difficulty,
     required this.instructions,
     this.equipment,
+    this.environments = const [],
     required this.defaultDurationSeconds,
     required this.defaultSets,
     required this.defaultReps,
@@ -43,6 +45,9 @@ class Exercise {
           .map((e) => e as String)
           .toList(),
       equipment: json['equipment'] as String?,
+      environments: (json['environments'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
       defaultDurationSeconds: json['default_duration_seconds'] as int,
       defaultSets: json['default_sets'] as int,
       defaultReps: json['default_reps'] as int,
@@ -57,6 +62,7 @@ class Exercise {
         'difficulty': difficulty.name,
         'instructions': instructions,
         'equipment': equipment,
+        'environments': environments,
         'default_duration_seconds': defaultDurationSeconds,
         'default_sets': defaultSets,
         'default_reps': defaultReps,

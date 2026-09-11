@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 4;
+  static const int _databaseVersion = 5;
 
   Database? _database;
 
@@ -78,6 +78,12 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion == 4) {
+      await db.execute(
+          "ALTER TABLE exercises ADD COLUMN environments TEXT NOT NULL DEFAULT '[]'");
+      return;
+    }
+
     if (oldVersion == 3) {
       // Version 3 accidentally put the profile identity columns on the
       // exercises table in fresh installs, while upgraded installs had them
@@ -194,6 +200,7 @@ class LocalDatabaseImpl implements LocalDatabase {
         difficulty TEXT NOT NULL,
         instructions TEXT NOT NULL,
         equipment TEXT,
+        environments TEXT NOT NULL DEFAULT '[]',
         default_duration_seconds INTEGER NOT NULL,
         default_sets INTEGER NOT NULL,
         default_reps INTEGER NOT NULL,

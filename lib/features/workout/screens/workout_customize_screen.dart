@@ -8,6 +8,7 @@ import '../../../shared/widgets/loading_indicator.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../../dashboard/providers/dashboard_provider.dart' as dashboard;
 import '../../progress/providers/progress_provider.dart' as progress;
+import '../../profile/providers/profile_provider.dart';
 import '../providers/workout_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
 
@@ -29,6 +30,7 @@ class _WorkoutCustomizeScreenState
   Widget build(BuildContext context) {
     final workoutAsync = ref.watch(workoutByIdProvider(widget.workoutId));
     final library = ref.watch(exerciseProvider);
+    final environment = ref.watch(profileProvider).valueOrNull?.workoutPreference.name;
     return Scaffold(
       appBar: AppBar(title: const Text('Customize Workout')),
       body: workoutAsync.when(
@@ -91,7 +93,7 @@ class _WorkoutCustomizeScreenState
                     OutlinedButton.icon(
                       onPressed: library.isLoading
                           ? null
-                          : () => _pick(library.allExercises),
+                          : () => _pick(library.allExercises, environment),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Exercise'),
                     ),
@@ -113,9 +115,12 @@ class _WorkoutCustomizeScreenState
     );
   }
 
-  Future<void> _pick(List<Exercise> exercises) async {
-    final available =
-        exercises.where((e) => !_ids!.contains(int.tryParse(e.id))).toList();
+  Future<void> _pick(List<Exercise> exercises, String? environment) async {
+    final available = exercises
+        .where((exercise) => !_ids!.contains(int.tryParse(exercise.id)))
+        .where((exercise) => environment == null ||
+            exercise.environments.contains(environment))
+        .toList();
     final selected = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -123,7 +128,11 @@ class _WorkoutCustomizeScreenState
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .7,
           child: available.isEmpty
-              ? const Center(child: Text('No more exercises available.'))
+              ? Center(
+                  child: Text(environment == null
+                      ? 'No more exercises available.'
+                      : 'No more exercises are available for your selected environment.'),
+                )
               : ListView.builder(
                   itemCount: available.length,
                   itemBuilder: (context, index) => ListTile(

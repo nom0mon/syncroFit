@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 class ExerciseSeeder extends Seeder
 {
+    private const SOURCE_REFERENCE = 'https://github.com/yuhonas/free-exercise-db';
+
     /**
      * Seed the exercise library with realistic exercises covering all
      * muscle groups, equipment types, and difficulty levels.
@@ -578,6 +580,9 @@ class ExerciseSeeder extends Seeder
 
                 return array_merge($exercise, [
                     'video_path' => 'assets/videos/' . $snakeName . '.mp4',
+                    'environments' => json_encode($this->environmentsFor($exercise['equipment'])),
+                    'verification_status' => 'catalog_cross_checked',
+                    'source_reference' => self::SOURCE_REFERENCE,
                     'primary_muscles' => json_encode($exercise['primary_muscles']),
                     'secondary_muscles' => json_encode($exercise['secondary_muscles']),
                     'goals' => json_encode($exercise['goals']),
@@ -586,5 +591,14 @@ class ExerciseSeeder extends Seeder
                 ]);
             }, $exercises)
         );
+    }
+
+    private function environmentsFor(string $equipment): array
+    {
+        return match ($equipment) {
+            'bodyweight' => ['home', 'gym', 'outdoor'],
+            'dumbbell', 'kettlebell', 'resistance_band' => ['home', 'gym'],
+            default => ['gym'],
+        };
     }
 }

@@ -11,15 +11,6 @@ use Illuminate\Support\Collection;
 class RecommendationEngine
 {
     /**
-     * Equipment types available for each workout preference.
-     */
-    private const EQUIPMENT_BY_PREFERENCE = [
-        'home' => ['bodyweight', 'resistance_band', 'kettlebell', 'dumbbell'],
-        'gym' => ['bodyweight', 'dumbbell', 'barbell', 'kettlebell', 'resistance_band', 'machine', 'pull_up_bar'],
-        'outdoor' => ['bodyweight', 'resistance_band'],
-    ];
-
-    /**
      * Rep ranges by fitness goal.
      */
     private const REPS_BY_GOAL = [
@@ -109,7 +100,9 @@ class RecommendationEngine
         $includedExerciseIds = array_map('intval', $includedExerciseIds);
         $excludedExerciseIds = array_map('intval', $excludedExerciseIds);
 
-        $allowedEquipment = self::EQUIPMENT_BY_PREFERENCE[$workoutPreference] ?? self::EQUIPMENT_BY_PREFERENCE['gym'];
+        $workoutEnvironment = in_array($workoutPreference, ['home', 'gym', 'outdoor'], true)
+            ? $workoutPreference
+            : 'gym';
         $allowedDifficulties = $this->getAllowedDifficulties($fitnessLevel);
         $mappedGoal = self::GOAL_MAP[$goal] ?? 'general_fitness';
 
@@ -143,7 +136,7 @@ class RecommendationEngine
             foreach ($slots as $slotIndex => $slot) {
                 $candidate = $this->selectExerciseForSlot(
                     $slot,
-                    $allowedEquipment,
+                    $workoutEnvironment,
                     $allowedDifficulties,
                     $mappedGoal,
                     $usedExerciseIds,
@@ -183,7 +176,7 @@ class RecommendationEngine
         $this->ensureMuscleCoverage(
             $workouts,
             $usedExerciseIds,
-            $allowedEquipment,
+            $workoutEnvironment,
             $allowedDifficulties,
             $mappedGoal,
             $goal,
@@ -299,7 +292,7 @@ class RecommendationEngine
      */
     private function selectExerciseForSlot(
         array $slot,
-        array $allowedEquipment,
+        string $workoutEnvironment,
         array $allowedDifficulties,
         string $mappedGoal,
         array $usedExerciseIds,
@@ -309,7 +302,7 @@ class RecommendationEngine
         // Try each pattern pool in order ("X OR Y").
         foreach ($slot['patterns'] as $pattern) {
             $candidates = Exercise::where('movement_pattern', $pattern)
-                ->whereIn('equipment', $allowedEquipment)
+                ->whereJsonContains('environments', $workoutEnvironment)
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get();
 
@@ -423,7 +416,7 @@ class RecommendationEngine
     private function ensureMuscleCoverage(
         array &$workouts,
         array &$usedExerciseIds,
-        array $allowedEquipment,
+        string $workoutEnvironment,
         array $allowedDifficulties,
         string $mappedGoal,
         string $goal,
@@ -439,7 +432,7 @@ class RecommendationEngine
             }
 
             // Find an exercise covering this muscle that respects filters.
-            $replacement = Exercise::whereIn('equipment', $allowedEquipment)
+            $replacement = Exercise::whereJsonContains('environments', $workoutEnvironment)
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get()
                 ->reject(fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true))

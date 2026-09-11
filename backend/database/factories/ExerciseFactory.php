@@ -59,13 +59,21 @@ class ExerciseFactory extends Factory
     public function definition(): array
     {
         $muscleGroup = fake()->randomElement(self::MUSCLE_GROUPS);
+        $equipment = fake()->randomElement(self::EQUIPMENT);
 
         return [
             'name' => fake()->unique()->words(3, true),
             'description' => fake()->sentence(),
             'instructions' => [fake()->sentence(), fake()->sentence()],
             'muscle_group' => $muscleGroup,
-            'equipment' => fake()->randomElement(self::EQUIPMENT),
+            'equipment' => $equipment,
+            'environments' => match ($equipment) {
+                'bodyweight' => ['home', 'gym', 'outdoor'],
+                'dumbbell', 'kettlebell', 'resistance_band' => ['home', 'gym'],
+                default => ['gym'],
+            },
+            'verification_status' => 'catalog_cross_checked',
+            'source_reference' => 'https://github.com/yuhonas/free-exercise-db',
             'difficulty' => fake()->randomElement(self::DIFFICULTIES),
             'default_sets' => fake()->numberBetween(2, 5),
             'default_reps' => fake()->numberBetween(5, 20),

@@ -195,6 +195,23 @@ class WorkoutController extends Controller
 
         $ids = array_map('intval', $validated['exercise_ids']);
         $models = \App\Models\Exercise::whereIn('id', $ids)->get()->keyBy('id');
+        $ineligible = $models->first(
+            fn (\App\Models\Exercise $exercise) => !in_array(
+                $profile->workout_preference,
+                $exercise->environments ?? [],
+                true
+            )
+        );
+        if ($ineligible !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An exercise is unavailable in your selected workout environment.',
+                'errors' => [
+                    'exercise_ids' => ["{$ineligible->name} is not classified for {$profile->workout_preference} workouts."],
+                ],
+            ], 422);
+        }
+
         $patternCounts = [];
         $muscleSets = [];
         $prescriptions = [];

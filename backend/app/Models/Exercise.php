@@ -15,6 +15,9 @@ class Exercise extends Model
         'instructions',
         'muscle_group',
         'equipment',
+        'environments',
+        'verification_status',
+        'source_reference',
         'difficulty',
         'default_sets',
         'default_reps',
@@ -31,6 +34,7 @@ class Exercise extends Model
     {
         return [
             'instructions' => 'array',
+            'environments' => 'array',
             'default_sets' => 'integer',
             'default_reps' => 'integer',
             'default_duration_seconds' => 'integer',

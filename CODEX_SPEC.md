@@ -466,6 +466,8 @@ No unresolved decisions currently block implementation.
 | 2026-09-07 | Use local Android notifications for workout schedules only, recurring at 8:00 AM local time with inexact delivery. | This works offline and avoids Firebase/backend device-token deployment while keeping users in control through phone notification settings. |
 | 2026-09-11 | Remove unused email-verification and browser remember-token columns, but retain the unique email address. | SyncroFit uses Sanctum API tokens and has no email-verification middleware; keeping email preserves password recovery and a future consent-based email reminder option. |
 | 2026-09-11 | Use the account username as the public Community identity. | Username is unique, collected at signup, and avoids exposing a member's first and last name in posts or comments. |
+| 2026-09-11 | Classify each exercise by explicit workout environments and use that classification for generation and customization. | Location alone did not justify assuming that home/outdoor users owned portable equipment; explicit eligibility is testable and prevents gym-only exercises from entering those plans. |
+| 2026-09-11 | Cross-check catalog taxonomy against Free Exercise DB while keeping prescription evidence separate. | An open catalog can validate names, equipment, muscles, and instructions, but it cannot guarantee individual effectiveness or safety. |
 
 ## Progress summary
 
