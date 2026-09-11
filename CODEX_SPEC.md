@@ -470,6 +470,7 @@ No unresolved decisions currently block implementation.
 | 2026-09-11 | Cross-check catalog taxonomy against Free Exercise DB while keeping prescription evidence separate. | An open catalog can validate names, equipment, muscles, and instructions, but it cannot guarantee individual effectiveness or safety. |
 | 2026-09-11 | Remove Laravel's database session and cache tables while retaining password reset tokens. | The deployed application uses file-backed sessions/cache and Sanctum API tokens; password recovery still requires the reset-token table. |
 | 2026-09-11 | Complete password recovery through a secure, expiring emailed link and a backend-hosted reset form. | A browser-based form works from mobile email without requiring app-link configuration and revokes existing API tokens after a successful reset. |
+| 2026-09-11 | Set production PHP upload limits above the application-level photo limits and send an explicit progress-photo MIME type. | Render's PHP defaults could reject normal phone photos before Laravel validation, affecting both progress and Community uploads. |
 
 ## Progress summary
 

@@ -116,7 +116,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       validator: validatePassword,
                       onFieldSubmitted: (_) => _submit(),
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        key: const Key('forgot-password-link'),
+                        onPressed: () => context.go(RouteNames.forgotPassword),
+                        child: const Text('Forgot Password?'),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: 52),
                       child: ElevatedButton(

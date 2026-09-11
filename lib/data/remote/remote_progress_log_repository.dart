@@ -30,11 +30,21 @@ class RemoteProgressLogRepository implements ProgressLogRepository {
     required String imageFilename,
     void Function(int sent, int total)? onProgress,
   }) async {
+    final extension = imageFilename.split('.').last.toLowerCase();
+    final mimeType = extension == 'png'
+        ? 'image/png'
+        : extension == 'webp'
+            ? 'image/webp'
+            : 'image/jpeg';
     final form = FormData.fromMap({
       'title': title,
       'description': description,
       'weight_kg': weightKg,
-      'image': MultipartFile.fromBytes(imageBytes, filename: imageFilename),
+      'image': MultipartFile.fromBytes(
+        imageBytes,
+        filename: imageFilename,
+        contentType: DioMediaType.parse(mimeType),
+      ),
     });
     return _api.postForm<ProgressLog>(
       '/api/progress-logs',
