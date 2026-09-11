@@ -27,7 +27,7 @@ class ForgotPasswordTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
-                'message' => 'If an account with that email exists, a password reset link has been sent.',
+                'message' => 'Request successful. If an account uses that email, reset instructions have been sent.',
             ]);
 
         Http::assertSent(fn ($request) =>
@@ -49,7 +49,7 @@ class ForgotPasswordTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
-                'message' => 'If an account with that email exists, a password reset link has been sent.',
+                'message' => 'Request successful. If an account uses that email, reset instructions have been sent.',
             ]);
 
         Http::assertNothingSent();
@@ -107,5 +107,30 @@ class ForgotPasswordTest extends TestCase
 
         $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
         $this->assertSame(0, $user->tokens()->count());
+    }
+
+    public function test_reset_link_displays_the_password_form(): void
+    {
+        $user = User::factory()->create(['email' => 'user@example.com']);
+        $token = Password::createToken($user);
+
+        $this->get(route('password.reset', [
+            'token' => $token,
+            'email' => $user->email,
+        ]))->assertOk()
+            ->assertSee('Reset your password')
+            ->assertSee('user@example.com');
+    }
+
+    public function test_email_provider_failure_returns_a_clear_message(): void
+    {
+        config(['services.brevo.key' => 'test-key']);
+        Http::fake(['api.brevo.com/*' => Http::response(['message' => 'Unavailable'], 503)]);
+        User::factory()->create(['email' => 'user@example.com']);
+
+        $this->postJson('/api/forgot-password', ['email' => 'user@example.com'])
+            ->assertStatus(503)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Reset instructions could not be sent right now. Please try again later.');
     }
 }

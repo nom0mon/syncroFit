@@ -34,17 +34,21 @@ class ForgotPasswordController extends Controller
         RateLimiter::hit($rateLimitKey, 15 * 60);
 
         // Attempt to send the reset link — we ignore the result
-        // to always return the same response (anti-enumeration)
+        // Unknown addresses still receive the same success response.
         try {
             $mailer->send($email);
         } catch (\Exception $e) {
             report($e);
+            return $this->errorResponse(
+                'Reset instructions could not be sent right now. Please try again later.',
+                503
+            );
             // Silently fail — anti-enumeration requires identical response
         }
 
         return $this->successResponse(
             null,
-            'If an account with that email exists, a password reset link has been sent.'
+            'Request successful. If an account uses that email, reset instructions have been sent.'
         );
     }
 }

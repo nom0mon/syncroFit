@@ -5,6 +5,7 @@ namespace Tests\Feature\Property;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -59,7 +60,9 @@ class ForgotPasswordAntiEnumerationTest extends TestCase
     public function test_forgot_password_anti_enumeration_property(): void
     {
         $iterations = 100;
-        $expectedMessage = 'If an account with that email exists, a password reset link has been sent.';
+        config(['services.brevo.key' => 'test-key']);
+        Http::fake(['api.brevo.com/*' => Http::response(['messageId' => 'test'], 201)]);
+        $expectedMessage = 'Request successful. If an account uses that email, reset instructions have been sent.';
 
         // Collect all responses to compare structure
         $responses = [];

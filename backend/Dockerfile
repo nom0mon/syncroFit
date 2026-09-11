@@ -11,7 +11,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader \
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
+    && composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
