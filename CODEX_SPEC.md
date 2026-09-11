@@ -468,6 +468,8 @@ No unresolved decisions currently block implementation.
 | 2026-09-11 | Use the account username as the public Community identity. | Username is unique, collected at signup, and avoids exposing a member's first and last name in posts or comments. |
 | 2026-09-11 | Classify each exercise by explicit workout environments and use that classification for generation and customization. | Location alone did not justify assuming that home/outdoor users owned portable equipment; explicit eligibility is testable and prevents gym-only exercises from entering those plans. |
 | 2026-09-11 | Cross-check catalog taxonomy against Free Exercise DB while keeping prescription evidence separate. | An open catalog can validate names, equipment, muscles, and instructions, but it cannot guarantee individual effectiveness or safety. |
+| 2026-09-11 | Remove Laravel's database session and cache tables while retaining password reset tokens. | The deployed application uses file-backed sessions/cache and Sanctum API tokens; password recovery still requires the reset-token table. |
+| 2026-09-11 | Complete password recovery through a secure, expiring emailed link and a backend-hosted reset form. | A browser-based form works from mobile email without requiring app-link configuration and revokes existing API tokens after a successful reset. |
 
 ## Progress summary
 

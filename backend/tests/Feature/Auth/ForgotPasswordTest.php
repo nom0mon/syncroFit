@@ -5,6 +5,10 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 class ForgotPasswordTest extends TestCase
@@ -13,6 +17,7 @@ class ForgotPasswordTest extends TestCase
 
     public function test_forgot_password_returns_200_for_existing_email(): void
     {
+        Notification::fake();
         User::factory()->create(['email' => 'user@example.com']);
 
         $response = $this->postJson('/api/forgot-password', [
@@ -24,6 +29,15 @@ class ForgotPasswordTest extends TestCase
                 'success' => true,
                 'message' => 'If an account with that email exists, a password reset link has been sent.',
             ]);
+
+        Notification::assertSentTo(
+            User::where('email', 'user@example.com')->firstOrFail(),
+            ResetPassword::class,
+            fn (ResetPassword $notification) => str_contains(
+                $notification->toMail(User::where('email', 'user@example.com')->firstOrFail())->actionUrl,
+                '/reset-password/'
+            )
+        );
     }
 
     public function test_forgot_password_returns_200_for_nonexistent_email(): void
@@ -71,5 +85,25 @@ class ForgotPasswordTest extends TestCase
         $response->assertStatus(422)
             ->assertJson(['success' => false])
             ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_emailed_token_can_reset_password_and_revoke_existing_tokens(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'user@example.com',
+            'password' => 'OldPassword123!',
+        ]);
+        $user->createToken('mobile');
+        $token = Password::createToken($user);
+
+        $this->post('/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
+        ])->assertRedirect(route('password.reset.complete'));
+
+        $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
+        $this->assertSame(0, $user->tokens()->count());
     }
 }

@@ -62,6 +62,9 @@ class MigrationTest extends TestCase
 
     public function test_obsolete_tables_do_not_exist(): void
     {
+        $this->assertFalse(Schema::hasTable('sessions'));
+        $this->assertFalse(Schema::hasTable('cache'));
+        $this->assertFalse(Schema::hasTable('cache_locks'));
         $this->assertFalse(Schema::hasTable('recommendations'));
         $this->assertFalse(Schema::hasTable('workout_exercises'));
         $this->assertFalse(Schema::hasTable('workout_sessions'));
