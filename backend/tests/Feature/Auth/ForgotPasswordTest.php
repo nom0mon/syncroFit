@@ -5,9 +5,8 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
@@ -17,7 +16,8 @@ class ForgotPasswordTest extends TestCase
 
     public function test_forgot_password_returns_200_for_existing_email(): void
     {
-        Notification::fake();
+        config(['services.brevo.key' => 'test-key']);
+        Http::fake(['api.brevo.com/*' => Http::response(['messageId' => 'test'], 201)]);
         User::factory()->create(['email' => 'user@example.com']);
 
         $response = $this->postJson('/api/forgot-password', [
@@ -30,18 +30,18 @@ class ForgotPasswordTest extends TestCase
                 'message' => 'If an account with that email exists, a password reset link has been sent.',
             ]);
 
-        Notification::assertSentTo(
-            User::where('email', 'user@example.com')->firstOrFail(),
-            ResetPassword::class,
-            fn (ResetPassword $notification) => str_contains(
-                $notification->toMail(User::where('email', 'user@example.com')->firstOrFail())->actionUrl,
-                '/reset-password/'
-            )
+        Http::assertSent(fn ($request) =>
+            $request->url() === 'https://api.brevo.com/v3/smtp/email'
+            && $request->hasHeader('api-key', 'test-key')
+            && $request['to'][0]['email'] === 'user@example.com'
+            && str_contains($request['htmlContent'], '/reset-password/')
         );
     }
 
     public function test_forgot_password_returns_200_for_nonexistent_email(): void
     {
+        config(['services.brevo.key' => 'test-key']);
+        Http::fake();
         $response = $this->postJson('/api/forgot-password', [
             'email' => 'nobody@example.com',
         ]);
@@ -51,6 +51,8 @@ class ForgotPasswordTest extends TestCase
                 'success' => true,
                 'message' => 'If an account with that email exists, a password reset link has been sent.',
             ]);
+
+        Http::assertNothingSent();
     }
 
     public function test_forgot_password_rate_limits_after_5_requests(): void
