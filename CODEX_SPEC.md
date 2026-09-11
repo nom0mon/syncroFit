@@ -379,6 +379,10 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
       setup only, allow username customization, and prevent duplicates.
 - [x] Calculate weekly progress against the actual scheduled days and prevent
       the completed count from exceeding the planned count.
+- [x] Remove unused `email_verified_at` and `remember_token` user columns while
+      preserving email addresses for authentication and future messaging.
+- [x] Display unique usernames instead of first/last names on Community posts
+      and comments.
 
 - [x] All new backend migrations run on a clean database and upgrade an
       existing development database.
@@ -460,6 +464,8 @@ No unresolved decisions currently block implementation.
 | 2026-09-06 | Query cached profiles by authenticated user ID instead of returning the first SQLite row. | Direct device-database inspection showed multiple valid account profiles; returning Simon's first row caused Aquil's profile check to fail and prevented schedule construction offline. |
 | 2026-09-06 | Treat newly generated workout plans as server-side drafts until the user explicitly accepts them. | A visual-only confirmation would be misleading; preserving the active plan during review makes Regenerate and Accept Plan behavior unambiguous and recoverable. |
 | 2026-09-07 | Use local Android notifications for workout schedules only, recurring at 8:00 AM local time with inexact delivery. | This works offline and avoids Firebase/backend device-token deployment while keeping users in control through phone notification settings. |
+| 2026-09-11 | Remove unused email-verification and browser remember-token columns, but retain the unique email address. | SyncroFit uses Sanctum API tokens and has no email-verification middleware; keeping email preserves password recovery and a future consent-based email reminder option. |
+| 2026-09-11 | Use the account username as the public Community identity. | Username is unique, collected at signup, and avoids exposing a member's first and last name in posts or comments. |
 
 ## Progress summary
 

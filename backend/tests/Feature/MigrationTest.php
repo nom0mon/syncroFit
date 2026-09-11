@@ -16,6 +16,8 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('users', [
             'id', 'first_name', 'last_name', 'email', 'password', 'created_at', 'updated_at',
         ]));
+        $this->assertFalse(Schema::hasColumn('users', 'email_verified_at'));
+        $this->assertFalse(Schema::hasColumn('users', 'remember_token'));
     }
 
     public function test_profiles_table_is_created(): void

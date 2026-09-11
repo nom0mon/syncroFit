@@ -16,7 +16,7 @@ SyncroFit is an Android fitness application built with Flutter and a Laravel RES
 - Account-scoped SQLite caching, retained offline sessions, and queued synchronization where supported.
 - Offline-capable Android reminders for accepted workout days, managed through Android system settings.
 
-The implementation status and feature decisions are tracked in [CODEX_SPEC.md](CODEX_SPEC.md).
+The implementation status and feature decisions are tracked in [CODEX_SPEC.md](CODEX_SPEC.md). The development timeline, sprint outcomes, defect feedback, and release-readiness assessment are documented in the [Agile Sprint Progress Report](docs/agile-sprint-progress-report.md).
 
 ## Technology
 

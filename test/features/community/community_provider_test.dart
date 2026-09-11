@@ -79,6 +79,23 @@ void main() {
     expect(repository.lastPhotoCount, 1);
   });
 
+  test('optimistic comments use the signed-in username', () async {
+    final repository = _FakeCommunityRepository(post());
+    final container = ProviderContainer(overrides: [
+      communityUserIdProvider.overrideWithValue('test-user'),
+      communityUsernameProvider.overrideWithValue('member.username'),
+      communityRepositoryProvider.overrideWithValue(repository),
+    ]);
+    addTearDown(container.dispose);
+    await container.read(communityProvider.future);
+
+    await container
+        .read(communityProvider.notifier)
+        .addComment('1', 'Testing usernames');
+
+    expect(repository.lastComment?.authorName, 'member.username');
+  });
+
   test('switching accounts rebuilds the feed for the new user', () async {
     final activeUser = StateProvider<String?>((ref) => 'user-a');
     final repositories = {
@@ -115,6 +132,7 @@ class _FakeCommunityRepository implements CommunityRepository {
   final bool failLike;
   int likeCalls = 0;
   int lastPhotoCount = 0;
+  Comment? lastComment;
 
   @override
   Future<Result<CommunityPage, AppError>> getPosts({int page = 1}) async =>
@@ -150,8 +168,10 @@ class _FakeCommunityRepository implements CommunityRepository {
 
   @override
   Future<Result<Post, AppError>> addComment(
-          String postId, Comment comment) async =>
-      Success(initial);
+      String postId, Comment comment) async {
+    lastComment = comment;
+    return Success(initial);
+  }
   @override
   Future<Result<void, AppError>> deletePost(String postId) async =>
       const Success(null);

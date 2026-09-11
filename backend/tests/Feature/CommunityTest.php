@@ -26,6 +26,7 @@ class CommunityTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.per_page', 15)
             ->assertJsonPath('data.data.0.id', (string) $latest->id)
+            ->assertJsonPath('data.data.0.author_name', $user->username)
             ->assertJsonPath('data.data.0.comment_count', 0);
     }
 
@@ -78,7 +79,9 @@ class CommunityTest extends TestCase
         $url = "/api/community/posts/{$post->id}/comments";
 
         $this->actingAs($user)->postJson($url, ['content' => ''])->assertUnprocessable();
-        $first = $this->postJson($url, ['content' => 'First'])->assertCreated()->json('data.id');
+        $firstResponse = $this->postJson($url, ['content' => 'First'])->assertCreated();
+        $firstResponse->assertJsonPath('data.author_name', $user->username);
+        $first = $firstResponse->json('data.id');
         $second = $this->postJson($url, ['content' => 'Second'])->assertCreated()->json('data.id');
 
         $this->getJson($url)->assertOk()

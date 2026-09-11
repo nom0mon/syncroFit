@@ -11,6 +11,12 @@ final communityUserIdProvider = Provider<String?>((ref) {
   return ref.watch(authStateProvider.select((auth) => auth.user?.id));
 });
 
+final communityUsernameProvider = Provider<String>((ref) {
+  return ref.watch(
+    authStateProvider.select((auth) => auth.user?.username.trim() ?? ''),
+  );
+});
+
 /// Provides the [CommunityRepository] instance used by the community module.
 final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
   final userId = ref.watch(communityUserIdProvider) ?? 'anonymous';
@@ -146,7 +152,9 @@ class CommunityNotifier extends AsyncNotifier<CommunityState> {
     final comment = Comment(
       id: 'comment_${DateTime.now().millisecondsSinceEpoch}',
       postId: postId,
-      authorName: 'You',
+      authorName: ref.read(communityUsernameProvider).isEmpty
+          ? 'You'
+          : ref.read(communityUsernameProvider),
       text: text,
       timestamp: DateTime.now(),
     );

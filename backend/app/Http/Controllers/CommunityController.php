@@ -18,7 +18,7 @@ class CommunityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $posts = Post::query()
-            ->with(['user:id,first_name,last_name', 'media'])
+            ->with(['user:id,username', 'media'])
             ->withCount(['likes', 'comments'])
             ->withExists(['likes as is_liked_by_current_user' => fn ($query) => $query->where('user_id', $request->user()->id)])
             ->latest('created_at')->latest('id')->paginate(15);
@@ -89,7 +89,7 @@ class CommunityController extends Controller
 
     public function comments(Request $request, Post $post): JsonResponse
     {
-        $comments = $post->comments()->with('user:id,first_name,last_name')
+        $comments = $post->comments()->with('user:id,username')
             ->oldest('created_at')->oldest('id')->paginate(50);
         $comments->setCollection(
             $comments->getCollection()->map(fn (Comment $comment) => $this->commentData($comment, $request))
@@ -104,7 +104,7 @@ class CommunityController extends Controller
             'user_id' => $request->user()->id,
             'content' => trim($validated['content']),
         ]);
-        $comment->load('user:id,first_name,last_name');
+        $comment->load('user:id,username');
         return response()->json(['success' => true, 'data' => $this->commentData($comment, $request)], 201);
     }
 
@@ -136,10 +136,10 @@ class CommunityController extends Controller
 
     private function loadPost(Post $post, Request $request, bool $comments = false): array
     {
-        $post->load(['user:id,first_name,last_name', 'media'])->loadCount(['likes', 'comments']);
+        $post->load(['user:id,username', 'media'])->loadCount(['likes', 'comments']);
         $post->setAttribute('is_liked_by_current_user', $post->likes()->where('user_id', $request->user()->id)->exists());
         if ($comments) {
-            $post->load(['comments' => fn ($query) => $query->with('user:id,first_name,last_name')->oldest('created_at')->oldest('id')]);
+            $post->load(['comments' => fn ($query) => $query->with('user:id,username')->oldest('created_at')->oldest('id')]);
         }
         return $this->postData($post, $request, $comments);
     }
@@ -149,7 +149,7 @@ class CommunityController extends Controller
         return [
             'id' => (string) $post->id,
             'author_id' => (string) $post->user_id,
-            'author_name' => $post->user->full_name,
+            'author_name' => $post->user->username,
             'content' => $post->content,
             'created_at' => $post->created_at->toISOString(),
             'like_count' => (int) $post->likes_count,
@@ -174,7 +174,7 @@ class CommunityController extends Controller
             'id' => (string) $comment->id,
             'post_id' => (string) $comment->post_id,
             'author_id' => (string) $comment->user_id,
-            'author_name' => $comment->user->full_name,
+            'author_name' => $comment->user->username,
             'content' => $comment->content,
             'created_at' => $comment->created_at->toISOString(),
             'is_owned_by_current_user' => $comment->user_id === $request->user()->id,
