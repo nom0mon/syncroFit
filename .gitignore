@@ -42,6 +42,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+
+# Local editor and legacy assistant workspace state
+/.vscode/
+/.kiro/
+
+# Local command output and distributable installers
+/*_out.txt
+/*_err.txt
+/*_output.txt
+/analyze_output.txt
+/analyze_result.txt
+/output*.txt
+/test_ex.txt
+/flutter_*.log
+/*.apk
 
 # Android release signing material is injected by protected CI/environment only
 /android/key.properties
