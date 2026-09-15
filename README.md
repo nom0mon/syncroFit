@@ -9,15 +9,28 @@ SyncroFit is an Android fitness application built with Flutter and a Laravel RES
 
 - Authentication with unique usernames and Laravel Sanctum tokens.
 - Fitness profiles with goals, level, measurements, preferences, and workout availability.
-- Exercise library with filtering, instructions, and consistently formatted names.
-- Profile-aware weekly workout generation with an explicit accept-plan step.
+- Exercise library with filtering, instructions, sourced movement illustrations, and consistently formatted names.
+- Standalone exercise sessions with user-selected sets, repetitions or timed sets, and rest periods.
+- Profile-aware weekly workout generation for Home, Gym, or Outdoor training, with an explicit accept-plan step.
 - Workout customization that lets users add, remove, and reorder exercises while the server derives safe sets, repetitions, duration, and rest periods.
 - Active per-set workouts, rest timers, completion summaries, and workout-history synchronization.
-- Dashboard schedule calendar, weekly progress, goal progress, streak, and weekly load.
+- Dashboard schedule calendar, availability-aware weekly progress, goal progress, streak, and weekly load.
 - Progress module with profile-derived BMI, workout history with exercise details, and private photo progress logs grouped by month.
 - Community feed with text/photo posts, likes, and comments. Reposts and sharing are intentionally excluded.
 - Account-scoped SQLite caching, retained offline sessions, and queued synchronization where supported.
 - Offline-capable Android reminders for accepted workout days, managed through Android system settings.
+
+## Recommendation approach
+
+SyncroFit does not use a generative AI model to create workout plans. Its recommendation engine is deterministic and rule-based. It selects exercises using the member's fitness goal, fitness level, available workout days, training environment, exercise difficulty, equipment requirements, and movement-pattern balance.
+
+- **Home** plans use equipment-free movements appropriate for limited indoor space.
+- **Gym** plans may use bodyweight, dumbbells, kettlebells, resistance bands, barbells, and machines.
+- **Outdoor** plans use equipment-free movements and emphasize open-space conditioning such as walking, running-in-place, and jumping movements.
+
+Sets, repetitions, timed durations, and rest periods are assigned by the server's prescription policy. Users may add, remove, and reorder exercises in recommended plans, but the safety-related prescription remains server-controlled. Standalone library sessions are intentionally user-configurable.
+
+Exercise identity and taxonomy are cross-checked against [Free Exercise DB](https://github.com/yuhonas/free-exercise-db). Programming principles are documented in [Resistance Training Prescription Policy](docs/resistance-training-prescription-policy.md), and third-party asset notices are provided in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Catalog validation does not guarantee individual safety or outcomes.
 
 The implementation status and feature decisions are tracked in [CODEX_SPEC.md](CODEX_SPEC.md). The development timeline, sprint outcomes, defect feedback, and release-readiness assessment are documented in the [Agile Sprint Progress Report](docs/agile-sprint-progress-report.md).
 
@@ -36,9 +49,9 @@ The implementation status and feature decisions are tracked in [CODEX_SPEC.md](C
 ### Backend and hosting
 
 - Laravel 12 with Sanctum
-- MySQL-compatible production database and SQLite tests
+- PostgreSQL production database and isolated SQLite tests
 - Render API: `https://syncrofit-api.onrender.com`
-- Private S3-compatible media storage
+- Private Supabase S3-compatible storage for Community and progress photos
 - PHPUnit and Eris tests
 
 The production health endpoint is `https://syncrofit-api.onrender.com/api/health`.
@@ -47,18 +60,23 @@ The production health endpoint is `https://syncrofit-api.onrender.com/api/health
 
 ```text
 syncroFit/
-├── android/                 # Android runner and release configuration
-├── backend/                 # Laravel API, migrations, seeders, and tests
-├── docs/                    # Development, responsive-layout, and QA guides
-├── lib/
-│   ├── core/                # Routing, networking, notifications, and theme
-│   ├── data/                # Remote/local repositories, cache, and sync
-│   ├── features/            # Product feature modules
-│   └── shared/              # Shared models and widgets
-├── test/                    # Flutter tests
-├── CODEX_SPEC.md            # Feature contract and progress tracker
-└── pubspec.yaml
+|-- .github/workflows/       # Continuous integration and release jobs
+|-- android/                 # Android runner and release configuration
+|-- assets/                  # Application icon and exercise artwork
+|-- backend/                 # Laravel API, migrations, seeders, and tests
+|-- docs/                    # Development, responsive-layout, and QA guides
+|-- lib/
+|   |-- core/                # Routing, networking, notifications, and theme
+|   |-- data/                # Remote/local repositories, cache, and sync
+|   |-- features/            # Product feature modules
+|   `-- shared/              # Shared models and widgets
+|-- test/                    # Flutter tests
+|-- CODEX_SPEC.md            # Feature contract and progress tracker
+|-- THIRD_PARTY_NOTICES.md   # Dataset and artwork licensing notices
+`-- pubspec.yaml
 ```
+
+Generated builds, APK installers, local databases, uploaded development media, compiled Laravel views, dependency folders, logs, IDE settings, and signing credentials are intentionally excluded from version control.
 
 ## Requirements
 
@@ -66,7 +84,7 @@ syncroFit/
 - Android Studio, Android SDK command-line tools, and Platform 35 or newer
 - JDK 17
 - ADB for physical-device installation
-- PHP 8.4.1 or newer, Composer 2, and MySQL 8 for local backend development
+- PHP 8.4.1 or newer, Composer 2, and PostgreSQL or MySQL for local backend development
 
 Validate the Android toolchain:
 
@@ -189,7 +207,7 @@ Protected routes require a Sanctum bearer token. Major routes include:
 - Authentication: register, login, logout, forgot password, and password change
 - Profile: `GET|POST|PUT /api/profile`
 - Exercise library: `GET /api/exercises` and `GET /api/exercises/{exercise}`
-- Workouts: list, create, generate, accept plan, and customize exercises
+- Workouts: list, create, generate using profile/environment rules, accept plan, and customize exercises
 - Workout history: create, list, and statistics
 - Private progress logs: list, create, show, retrieve image, and delete
 - Community: posts, photos, likes, comments, and owner-authorized deletion
