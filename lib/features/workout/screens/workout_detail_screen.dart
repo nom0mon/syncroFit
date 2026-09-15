@@ -86,28 +86,6 @@ class _WorkoutDetailContent extends ConsumerWidget {
                       style: theme.textTheme.headlineSmall,
                     ),
                   ),
-                  if (workout.isGenerated)
-                    Semantics(
-                      label: 'AI Generated workout',
-                      child: Chip(
-                        avatar: Icon(
-                          Icons.auto_awesome,
-                          size: 16,
-                          color: theme.colorScheme.onTertiaryContainer,
-                        ),
-                        label: Text(
-                          'AI Generated',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onTertiaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        backgroundColor: theme.colorScheme.tertiaryContainer,
-                        side: BorderSide.none,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xs),
