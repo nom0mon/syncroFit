@@ -362,6 +362,9 @@ posts, like/unlike posts, and comment. Reposts and sharing are not included.
 - [x] Add Community photo upload, storage metadata, previews, rendering,
       cleanup, and validation tests.
 
+**Checkpoint:** Approved after device testing of text/photo posts, feed and
+detail rendering, likes, comments, validation, and deployed media storage.
+
 ---
 
 ## Cross-feature verification
@@ -481,8 +484,8 @@ No unresolved decisions currently block implementation.
 | BMI Calculator | Complete — approved | 5 | 5 |
 | Workout Customization | Complete — awaiting user review | 7 | 7 |
 | Progress Logging | Complete — approved | 6 | 6 |
-| Community | Complete — photo extension awaiting user review | 8 | 8 |
-| Cross-feature verification | Not started | 0 | 10 |
+| Community | Complete — approved | 8 | 8 |
+| Cross-feature verification | Complete except manual device smoke test | 9 | 10 |
 
 ## Update protocol for Codex
 

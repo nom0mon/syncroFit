@@ -59,20 +59,27 @@ class _StandaloneExerciseSetupScreenState
           children: [
             Center(child: ExerciseIllustration(exercise: exercise, size: 160)),
             const SizedBox(height: AppSpacing.md),
-            Text(exercise.displayName,
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center),
+            Text(
+              exercise.displayName,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSpacing.lg),
             _NumberControl(
-              label: 'Sets', value: sets, min: 1, max: 20,
+              label: 'Sets',
+              value: sets,
+              min: 1,
+              max: 20,
               onChanged: (value) => setState(() => sets = value),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Use exercise timer'),
-              subtitle: Text(timed
-                  ? 'Complete each set for a chosen duration'
-                  : 'Complete a chosen number of repetitions'),
+              subtitle: Text(
+                timed
+                    ? 'Complete each set for a chosen duration'
+                    : 'Complete a chosen number of repetitions',
+              ),
               value: timed,
               onChanged: (value) => setState(() => timed = value),
             ),
@@ -92,7 +99,10 @@ class _StandaloneExerciseSetupScreenState
             ),
             _NumberControl(
               label: 'Rest after each set (seconds)',
-              value: restSeconds, min: 10, max: 300, step: 5,
+              value: restSeconds,
+              min: 10,
+              max: 300,
+              step: 5,
               onChanged: (value) => setState(() => restSeconds = value),
             ),
             const SizedBox(height: AppSpacing.xl),
@@ -128,17 +138,21 @@ class _StandaloneExerciseSetupScreenState
       ],
     );
     ref.read(workoutProvider.notifier).prepareStandaloneWorkout(
-          workout,
-          exercise.displayName,
-        );
+      workout,
+      exercise.displayName,
+    );
     context.go('/dashboard/workout/$workoutId/active');
   }
 }
 
 class _NumberControl extends StatelessWidget {
   const _NumberControl({
-    required this.label, required this.value, required this.min,
-    required this.max, required this.onChanged, this.step = 1,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.step = 1,
   });
 
   final String label;
@@ -154,20 +168,27 @@ class _NumberControl extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(children: [
-          Expanded(child: Text(label)),
-          IconButton(
-            onPressed: value > min
-                ? () => onChanged((value - step).clamp(min, max)) : null,
-            icon: const Icon(Icons.remove_circle_outline),
-          ),
-          SizedBox(width: 48, child: Text('$value', textAlign: TextAlign.center)),
-          IconButton(
-            onPressed: value < max
-                ? () => onChanged((value + step).clamp(min, max)) : null,
-            icon: const Icon(Icons.add_circle_outline),
-          ),
-        ]),
+        child: Row(
+          children: [
+            Expanded(child: Text(label)),
+            IconButton(
+              onPressed: value > min
+                  ? () => onChanged((value - step).clamp(min, max))
+                  : null,
+              icon: const Icon(Icons.remove_circle_outline),
+            ),
+            SizedBox(
+              width: 48,
+              child: Text('$value', textAlign: TextAlign.center),
+            ),
+            IconButton(
+              onPressed: value < max
+                  ? () => onChanged((value + step).clamp(min, max))
+                  : null,
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+          ],
+        ),
       ),
     );
   }

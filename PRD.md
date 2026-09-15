@@ -4,9 +4,9 @@
 
 Deliver a production-ready, Android-only SyncroFit release by removing unsupported platform distribution, making every supported screen usable on Android phones and tablets, adding photo-based progress tracking, replacing the mock community feature with a real backend, and closing or explicitly retiring incomplete features discovered in the repository audit.
 
-## Context and current state
+## Delivered state
 
-The Flutter client currently contains Android, iOS, web, Windows, Linux, and macOS targets. The Android project is functional, but the repository and documentation still present this as a cross-platform mobile/web product. Community is routed in the app, yet `communityRepositoryProvider` uses `MockCommunityRepository`; Laravel has no community routes, models, migrations, or controllers. Progress is derived only from `workout_history` and has no progress-photo entity, media picker, device/cloud storage, or sharing capability.
+SyncroFit is an Android-focused Flutter application backed by a deployed Laravel API. The Community module is complete: production wiring uses the remote, cache-aware repository and Laravel provides authenticated posts, photo media, likes, comments, ownership enforcement, validation, pagination, and storage integration. Progress logging is also complete with private photo capture/gallery upload, dated entries, monthly grouping, and synchronized storage. Mock repositories remain test fixtures only.
 
 ## Goals
 

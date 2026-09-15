@@ -8,7 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        (new ExerciseSeeder())->run();
+        // Upgrade an existing deployed catalog in place. On a fresh database,
+        // DatabaseSeeder remains responsible for populating exercises; seeding
+        // inside a migration would pollute isolated tests that use factories.
+        if (DB::table('exercises')->exists()) {
+            (new ExerciseSeeder())->run();
+        }
 
         $outdoor = ['Walking Lunge', 'Mountain Climber', 'Jumping Jack', 'High Knees', 'Broad Jump'];
         DB::table('exercises')->whereIn('name', $outdoor)
