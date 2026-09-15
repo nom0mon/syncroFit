@@ -67,6 +67,25 @@ class SettingsMainScreen extends ConsumerWidget {
                 value: isDarkMode,
                 onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
               ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Open-source licenses'),
+                subtitle: const Text('Exercise artwork attribution'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showAboutDialog(
+                  context: context,
+                  applicationName: 'SyncroFit',
+                  applicationVersion: '1.0.0',
+                  applicationLegalese:
+                      'Exercise illustrations: Workout Guide by Bryl Lim, '
+                      'including artwork derived from Everkinetic. Licensed '
+                      'under CC BY-SA 4.0.\n\n'
+                      'https://github.com/bryllim/workout-guide\n'
+                      'https://creativecommons.org/licenses/by-sa/4.0/\n\n'
+                      'Supplementary exercise artwork: Exercise data by '
+                      'RepDB (repdb.co).',
+                ),
+              ),
               const Divider(),
               ListTile(
                 leading: Icon(

@@ -5,13 +5,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/models/exercise.dart';
-import '../../../shared/widgets/body_silhouette_widget.dart';
+import '../../../shared/widgets/exercise_illustration.dart';
 
 /// A single exercise row for the Exercise Library list.
 ///
 /// Displays the exercise name in bold Geist on the left, a subtitle showing
 /// muscle group and equipment type at secondary opacity, and a
-/// [BodySilhouetteWidget] on the right highlighting the targeted muscles.
+/// a movement-specific illustration on the right when licensed artwork exists.
 ///
 /// Includes a bottom divider as part of the widget. Tapping the row navigates
 /// to the exercise detail screen (or invokes [onTap] if provided).
@@ -85,22 +85,7 @@ class ExerciseRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  BodySilhouetteWidget(
-                    targetedMuscleGroups: [exercise.muscleGroup],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'TARGET',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ),
+              ExerciseIllustration(exercise: exercise),
             ],
           ),
         ),

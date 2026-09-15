@@ -5,7 +5,7 @@ import 'package:synchrofit/core/theme/app_colors.dart';
 import 'package:synchrofit/features/exercise_library/widgets/exercise_row.dart';
 import 'package:synchrofit/shared/models/enums.dart';
 import 'package:synchrofit/shared/models/exercise.dart';
-import 'package:synchrofit/shared/widgets/body_silhouette_widget.dart';
+import 'package:synchrofit/shared/widgets/exercise_illustration.dart';
 
 void main() {
   setUpAll(() {
@@ -54,6 +54,31 @@ void main() {
   }
 
   group('ExerciseRow', () {
+    test('all SyncroFit catalog exercises have illustration mappings', () {
+      const names = [
+        'Push-Up', 'Dumbbell Bench Press', 'Barbell Bench Press',
+        'Cable Chest Fly', 'Pull-Up', 'Barbell Bent-Over Row',
+        'Dumbbell Single-Arm Row', 'Resistance Band Pull-Apart',
+        'Dumbbell Overhead Press', 'Pike Push-Up', 'Kettlebell Press',
+        'Dumbbell Bicep Curl', 'Barbell Curl', 'Chin-Up',
+        'Resistance Band Curl', 'Tricep Dip',
+        'Dumbbell Overhead Tricep Extension', 'Cable Tricep Pushdown',
+        'Bodyweight Squat', 'Barbell Back Squat', 'Kettlebell Goblet Squat',
+        'Leg Press', 'Dumbbell Romanian Deadlift', 'Plank',
+        'Hanging Leg Raise', 'Kettlebell Russian Twist', 'Cable Woodchop',
+        'Burpee', 'Kettlebell Swing', 'Barbell Deadlift',
+        'Resistance Band Thruster', 'Dumbbell Clean and Press',
+        'Resistance Band Lateral Raise', 'Close-Grip Barbell Bench Press',
+      ];
+
+      expect(
+        names.where(
+          (name) => !ExerciseIllustration.hasIllustrationForName(name),
+        ),
+        isEmpty,
+      );
+    });
+
     testWidgets('displays exercise name text', (tester) async {
       await tester.pumpWidget(buildSubject());
 
@@ -109,10 +134,10 @@ void main() {
       expect(subtitleWidget.style?.color, AppColors.textSecondary);
     });
 
-    testWidgets('contains a BodySilhouetteWidget', (tester) async {
+    testWidgets('contains a movement illustration', (tester) async {
       await tester.pumpWidget(buildSubject());
 
-      expect(find.byType(BodySilhouetteWidget), findsOneWidget);
+      expect(find.byType(ExerciseIllustration), findsOneWidget);
     });
 
     testWidgets('calls onTap callback when tapped', (tester) async {
