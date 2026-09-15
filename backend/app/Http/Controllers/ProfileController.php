@@ -69,6 +69,12 @@ class ProfileController extends Controller
         $data = $request->validated();
         $identity = Arr::only($data, ['first_name', 'last_name', 'username']);
         $data = Arr::except($data, ['first_name', 'last_name', 'username']);
+        $recommendationContextChanged = collect([
+            'workout_preference',
+            'availability_days',
+        ])->contains(fn (string $field): bool =>
+            array_key_exists($field, $data) && $data[$field] != $profile->{$field}
+        );
 
         // Recompute BMI if height or weight changed
         $heightCm = $data['height_cm'] ?? $profile->height_cm;
@@ -86,7 +92,16 @@ class ProfileController extends Controller
         });
         $profile->refresh();
 
-        if (array_key_exists('fitness_level', $data) || array_key_exists('goal', $data)) {
+        // A plan generated for another environment or weekly schedule is no
+        // longer safe to present as personalized. Require a fresh generation.
+        if ($recommendationContextChanged) {
+            Workout::where('user_id', $profile->user_id)
+                ->where('is_generated', true)
+                ->delete();
+        }
+
+        if (!$recommendationContextChanged &&
+            (array_key_exists('fitness_level', $data) || array_key_exists('goal', $data))) {
             $policy = app(WorkoutPrescriptionPolicy::class);
             Workout::where('user_id', $profile->user_id)
                 ->where('is_generated', true)

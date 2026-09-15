@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Workout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -155,6 +156,28 @@ class ProfileTest extends TestCase
             ->assertJsonPath('data.height_cm', '175.00')
             ->assertJsonPath('data.weight_kg', '70.00')
             ->assertJsonPath('data.bmi', '22.86');
+    }
+
+    public function test_changing_environment_invalidates_an_existing_generated_plan(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $user->profile()->create(array_merge($this->validProfileData(), ['bmi' => 22.86]));
+        Workout::create([
+            'user_id' => $user->id,
+            'name' => 'Gym plan',
+            'day_of_week' => 1,
+            'estimated_duration_minutes' => 20,
+            'exercises' => [],
+            'is_generated' => true,
+        ]);
+
+        $this->putJson('/api/profile', ['workout_preference' => 'home'])->assertOk();
+
+        $this->assertDatabaseMissing('workouts', [
+            'user_id' => $user->id,
+            'is_generated' => true,
+        ]);
     }
 
     public function test_user_can_customize_a_unique_username_with_profile(): void

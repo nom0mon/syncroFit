@@ -74,7 +74,7 @@ void main() {
         buildSubject(exercise: testExerciseNoEquipment),
       );
 
-      expect(find.text('Chest'), findsOneWidget);
+      expect(find.text('Target: Chest'), findsOneWidget);
       expect(find.textContaining('·'), findsNothing);
     });
 
@@ -97,7 +97,7 @@ void main() {
         buildSubject(exercise: exerciseEmptyEquipment),
       );
 
-      expect(find.text('Abs'), findsOneWidget);
+      expect(find.text('Target: Abs'), findsOneWidget);
       expect(find.textContaining('·'), findsNothing);
     });
 

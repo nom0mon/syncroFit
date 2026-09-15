@@ -41,11 +41,11 @@ class WeeklyLoadChartWidget extends StatelessWidget {
 
     // Calculate volumes for each week.
     final volumes = weekRanges
-        .map((range) => calculateWeeklyVolume(sessions, range.start))
+        .map((range) => calculateVolumeInRange(sessions, range))
         .toList();
     final weeksWithSessions = weekRanges
         .map((range) => sessions.any(
-              (session) => isInWeek(session.effectiveCompletedAt, range.start),
+              (session) => isInRange(session.effectiveCompletedAt, range),
             ))
         .toList();
 
@@ -57,13 +57,22 @@ class WeeklyLoadChartWidget extends StatelessWidget {
       children: [
         const SectionHeader(
           title: 'WEEKLY LOAD',
-          trailingLabel: '[LAST 4]',
+          trailingLabel: '[THIS MONTH]',
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Completed repetitions by date range. Scale: 0–'
+          '${volumes.fold<int>(0, (max, value) => value > max ? value : max)} reps.',
+          style: AppTextStyles.caption.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
           height: maxChartHeight + AppSpacing.xxl,
           child: BarChart(
-            _buildChartData(volumes, barHeights, weeksWithSessions, theme),
+            _buildChartData(
+              volumes, barHeights, weeksWithSessions, weekRanges, theme),
             duration: Duration.zero,
           ),
         ),
@@ -75,6 +84,7 @@ class WeeklyLoadChartWidget extends StatelessWidget {
     List<int> volumes,
     List<double> barHeights,
     List<bool> weeksWithSessions,
+    List<WeekRange> weekRanges,
     ThemeData theme,
   ) {
     final maxY = barHeights.isEmpty
@@ -114,24 +124,26 @@ class WeeklyLoadChartWidget extends StatelessWidget {
             showTitles: true,
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
-              if (index < 0 || index > 3) return const SizedBox.shrink();
+              if (index < 0 || index >= weekRanges.length) {
+                return const SizedBox.shrink();
+              }
               return Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
-                  'W${index + 1}',
+                  'W${index + 1}\n${weekRanges[index].start.day}-${weekRanges[index].end.day}',
                   style: AppTextStyles.caption.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               );
             },
-            reservedSize: 24,
+            reservedSize: 38,
           ),
         ),
       ),
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
-      barGroups: List.generate(4, (index) {
+      barGroups: List.generate(weekRanges.length, (index) {
         final height = index < barHeights.length ? barHeights[index] : 4.0;
         final hasSession =
             index < weeksWithSessions.length && weeksWithSessions[index];

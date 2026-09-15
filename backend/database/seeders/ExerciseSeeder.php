@@ -597,7 +597,6 @@ class ExerciseSeeder extends Seeder
     {
         return match ($equipment) {
             'bodyweight' => ['home', 'gym', 'outdoor'],
-            'dumbbell', 'kettlebell', 'resistance_band' => ['home', 'gym'],
             default => ['gym'],
         };
     }

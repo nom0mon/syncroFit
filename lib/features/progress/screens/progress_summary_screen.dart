@@ -123,7 +123,10 @@ class _ProgressContent extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                _WeeklyStatsChart(data: state.weeklyStats),
+                _WeeklyStatsChart(
+                  data: state.weeklyStats,
+                  weeklyGoal: state.plannedThisWeek,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 _RecentWorkouts(history: state.recentHistory),
               ],
@@ -386,9 +389,10 @@ class _StatCard extends StatelessWidget {
 }
 
 class _WeeklyStatsChart extends StatelessWidget {
-  const _WeeklyStatsChart({required this.data});
+  const _WeeklyStatsChart({required this.data, required this.weeklyGoal});
 
   final List<WeeklyStat> data;
+  final int weeklyGoal;
 
   String _labelFor(String label, ChartLabelDensity density) {
     if (density == ChartLabelDensity.full) return label;
@@ -402,10 +406,12 @@ class _WeeklyStatsChart extends StatelessWidget {
 
     if (data.isEmpty) return const SizedBox.shrink();
 
-    final maxWorkouts = data
+    final observedMax = data
         .map((entry) => entry.workoutsCompleted)
         .reduce((a, b) => a > b ? a : b)
         .toDouble();
+    final maxWorkouts =
+        observedMax > weeklyGoal ? observedMax : weeklyGoal.toDouble();
     final semanticSummary = data
         .map((entry) =>
             '${entry.weekLabel}: ${entry.workoutsCompleted} workouts')
@@ -415,6 +421,10 @@ class _WeeklyStatsChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Weekly Statistics', style: theme.textTheme.titleLarge),
+        Text(
+          'Completed workouts per week • Goal: $weeklyGoal workouts',
+          style: theme.textTheme.bodySmall,
+        ),
         const SizedBox(height: AppSpacing.sm),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -434,7 +444,23 @@ class _WeeklyStatsChart extends StatelessWidget {
                   height: 220,
                   child: BarChart(
                     BarChartData(
-                      maxY: maxWorkouts + 2,
+                      maxY: maxWorkouts + 1,
+                      extraLinesData: weeklyGoal > 0
+                          ? ExtraLinesData(horizontalLines: [
+                              HorizontalLine(
+                                y: weeklyGoal.toDouble(),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.55),
+                                strokeWidth: 1,
+                                dashArray: [5, 4],
+                                label: HorizontalLineLabel(
+                                  show: true,
+                                  labelResolver: (_) => 'Goal $weeklyGoal',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ])
+                          : const ExtraLinesData(),
                       gridData: const FlGridData(show: true),
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(

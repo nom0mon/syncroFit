@@ -16,29 +16,25 @@ void main() {
     /// ending on the Sunday of or before the reference date's week.
 
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
-      'computeWeekRanges returns exactly 4 ranges for any reference date',
+      'computeWeekRanges covers the reference month in 4 or 5 ranges',
       (year, dayOfYear) {
         final referenceDate =
             DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
-        expect(ranges.length, 4);
+        expect(ranges.length, inInclusiveRange(4, 5));
       },
     );
 
     Glados2(any.intInRange(2000, 2101), any.intInRange(1, 366)).test(
-      'each range spans exactly 7 days (Monday 00:00 to Sunday 23:59)',
+      'each range spans at most 7 days within the same month',
       (year, dayOfYear) {
         final referenceDate =
             DateTime(year, 1, 1).add(Duration(days: dayOfYear - 1));
         final ranges = computeWeekRanges(referenceDate);
 
         for (final range in ranges) {
-          // Start is Monday
-          expect(range.start.weekday, DateTime.monday,
-              reason: 'Range start should be Monday');
-          // End is Sunday
-          expect(range.end.weekday, DateTime.sunday,
-              reason: 'Range end should be Sunday');
+          expect(range.start.month, referenceDate.month);
+          expect(range.end.month, referenceDate.month);
           // Start is at 00:00:00
           expect(range.start.hour, 0);
           expect(range.start.minute, 0);
@@ -49,8 +45,7 @@ void main() {
           expect(range.end.second, 59);
           // Span is exactly 6 days apart (Mon to Sun = 7 days inclusive)
           final daysDifference = range.end.difference(range.start).inDays;
-          expect(daysDifference, 6,
-              reason: 'Range should span 6 days (Mon to Sun)');
+          expect(daysDifference, inInclusiveRange(0, 6));
         }
       },
     );

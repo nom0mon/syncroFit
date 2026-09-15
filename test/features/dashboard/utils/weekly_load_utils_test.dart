@@ -5,39 +5,37 @@ import 'package:synchrofit/shared/models/completed_exercise.dart';
 
 void main() {
   group('computeWeekRanges', () {
-    test('returns exactly 4 week ranges', () {
+    test('returns five buckets for a 31-day month', () {
       final ranges = computeWeekRanges(DateTime(2025, 1, 15)); // Wednesday
-      expect(ranges.length, 4);
+      expect(ranges.length, 5);
     });
 
-    test('each range starts on Monday and ends on Sunday', () {
+    test('uses stable date ranges within the month', () {
       final ranges = computeWeekRanges(DateTime(2025, 6, 18)); // Wednesday
-      for (final range in ranges) {
-        expect(range.start.weekday, DateTime.monday);
-        expect(range.end.weekday, DateTime.sunday);
-      }
+      expect(ranges.first.start, DateTime(2025, 6, 1));
+      expect(ranges.first.end.day, 7);
+      expect(ranges.last.start.day, 29);
+      expect(ranges.last.end.day, 30);
     });
 
     test('ranges are chronologically ordered W1 oldest to W4 most recent', () {
       final ranges = computeWeekRanges(DateTime(2025, 3, 20)); // Thursday
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < ranges.length - 1; i++) {
         expect(ranges[i].start.isBefore(ranges[i + 1].start), isTrue);
         expect(ranges[i].end.isBefore(ranges[i + 1].end), isTrue);
       }
     });
 
-    test('W4 Sunday is the Sunday of or before reference date week', () {
-      // Reference is Wednesday Jan 15, 2025. Its week's Sunday is Jan 19.
+    test('W2 always represents days 8 through 14', () {
       final ranges = computeWeekRanges(DateTime(2025, 1, 15));
-      final w4End = ranges[3].end;
-      expect(w4End.weekday, DateTime.sunday);
-      expect(w4End, DateTime(2025, 1, 19, 23, 59, 59));
+      expect(ranges[1].start, DateTime(2025, 1, 8));
+      expect(ranges[1].end, DateTime(2025, 1, 14, 23, 59, 59));
     });
 
     test('covers exactly 28 consecutive days', () {
       final ranges = computeWeekRanges(DateTime(2025, 2, 10)); // Monday
       final firstDay = ranges[0].start;
-      final lastDay = ranges[3].end;
+      final lastDay = ranges.last.end;
       final difference = lastDay.difference(firstDay).inDays;
       // From Monday 00:00 to Sunday 23:59:59 is 27 days apart (28 days total)
       expect(difference, 27);
@@ -45,25 +43,22 @@ void main() {
 
     test('ranges are non-overlapping', () {
       final ranges = computeWeekRanges(DateTime(2025, 4, 25)); // Friday
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < ranges.length - 1; i++) {
         expect(ranges[i].end.isBefore(ranges[i + 1].start), isTrue);
       }
     });
 
-    test('reference date on Sunday makes that Sunday the W4 end', () {
-      // Sunday Jan 19, 2025
+    test('reference weekday does not shift buckets', () {
       final ranges = computeWeekRanges(DateTime(2025, 1, 19));
-      final w4End = ranges[3].end;
-      expect(w4End, DateTime(2025, 1, 19, 23, 59, 59));
-      expect(ranges[3].start, DateTime(2025, 1, 13));
+      expect(ranges[2].start, DateTime(2025, 1, 15));
+      expect(ranges[2].end, DateTime(2025, 1, 21, 23, 59, 59));
     });
 
     test('reference date on Monday makes same week Sunday the W4 end', () {
       // Monday Jan 13, 2025 — its week's Sunday is Jan 19
       final ranges = computeWeekRanges(DateTime(2025, 1, 13));
-      final w4End = ranges[3].end;
-      expect(w4End, DateTime(2025, 1, 19, 23, 59, 59));
-      expect(ranges[3].start, DateTime(2025, 1, 13));
+      expect(ranges[4].start, DateTime(2025, 1, 29));
+      expect(ranges[4].end, DateTime(2025, 1, 31, 23, 59, 59));
     });
   });
 

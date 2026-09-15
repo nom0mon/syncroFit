@@ -303,6 +303,12 @@ class RecommendationEngine
         foreach ($slot['patterns'] as $pattern) {
             $candidates = Exercise::where('movement_pattern', $pattern)
                 ->whereJsonContains('environments', $workoutEnvironment)
+                // Home/outdoor plans are deliberately equipment-free. Keep
+                // this hard guard even if old deployment metadata is stale.
+                ->when(
+                    in_array($workoutEnvironment, ['home', 'outdoor'], true),
+                    fn ($query) => $query->where('equipment', 'bodyweight')
+                )
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get();
 
@@ -433,6 +439,10 @@ class RecommendationEngine
 
             // Find an exercise covering this muscle that respects filters.
             $replacement = Exercise::whereJsonContains('environments', $workoutEnvironment)
+                ->when(
+                    in_array($workoutEnvironment, ['home', 'outdoor'], true),
+                    fn ($query) => $query->where('equipment', 'bodyweight')
+                )
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get()
                 ->reject(fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true))

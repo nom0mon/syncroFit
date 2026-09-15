@@ -74,4 +74,22 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
 
         $this->assertSame(['bodyweight'], Exercise::whereIn('id', $exerciseIds)->pluck('equipment')->unique()->values()->all());
     }
+
+    public function test_home_plan_is_equipment_free(): void
+    {
+        $this->seed(ExerciseSeeder::class);
+        $user = User::factory()->create();
+        $user->profile()->create([
+            'age' => 25, 'height_cm' => 175, 'weight_kg' => 70,
+            'gender' => 'prefer_not_to_say', 'goal' => 'stay_fit',
+            'fitness_level' => 'intermediate', 'workout_preference' => 'home',
+            'availability_days' => ['monday'],
+        ]);
+
+        $result = app(RecommendationEngine::class)->generate($user->load('profile'));
+        $ids = collect($result['workouts'])->pluck('exercises')->flatten(1)->pluck('exercise_id');
+
+        $this->assertNotEmpty($ids);
+        $this->assertSame(['bodyweight'], Exercise::whereIn('id', $ids)->pluck('equipment')->unique()->values()->all());
+    }
 }

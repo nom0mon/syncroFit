@@ -25,15 +25,15 @@
   ],
   "environment_policy": {
     "bodyweight": ["home", "gym", "outdoor"],
-    "dumbbell": ["home", "gym"],
-    "kettlebell": ["home", "gym"],
-    "resistance_band": ["home", "gym"],
+    "dumbbell": ["gym"],
+    "kettlebell": ["gym"],
+    "resistance_band": ["gym"],
     "barbell": ["gym"],
     "machine": ["gym"],
     "pull_up_bar": ["gym"]
   },
   "limitations": [
-    "A selected environment does not prove ownership of optional portable equipment.",
+    "Home and outdoor recommendations use bodyweight only under the conservative equipment-free policy.",
     "Outdoor recommendations use bodyweight only under the conservative policy.",
     "Catalog verification does not guarantee effectiveness or safety for a particular person."
   ]

@@ -85,8 +85,21 @@ class ExerciseRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              BodySilhouetteWidget(
-                targetedMuscleGroups: [exercise.muscleGroup],
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BodySilhouetteWidget(
+                    targetedMuscleGroups: [exercise.muscleGroup],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'TARGET',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -100,7 +113,7 @@ class ExerciseRow extends StatelessWidget {
   String _buildSubtitle() {
     final equipment = exercise.displayEquipment;
     if (equipment == null || equipment.isEmpty) {
-      return exercise.displayMuscleGroup;
+      return 'Target: ${exercise.displayMuscleGroup}';
     }
     return '${exercise.displayMuscleGroup} · $equipment';
   }

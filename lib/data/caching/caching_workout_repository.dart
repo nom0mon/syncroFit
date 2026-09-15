@@ -65,6 +65,9 @@ class CachingWorkoutRepository
 
       final result = await _remote.getAll();
       if (result is Success<List<Workout>, AppError>) {
+        // Reconcile removals too (for example, a plan invalidated after the
+        // user changes environment). Upsert alone leaves stale rows offline.
+        await _dao.deleteGeneratedByUser(_userId);
         await _dao.upsertAll(result.value);
         await _cacheMetadataDao.updateLastSynced(
           _entityType,

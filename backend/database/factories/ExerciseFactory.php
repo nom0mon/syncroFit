@@ -69,7 +69,6 @@ class ExerciseFactory extends Factory
             'equipment' => $equipment,
             'environments' => match ($equipment) {
                 'bodyweight' => ['home', 'gym', 'outdoor'],
-                'dumbbell', 'kettlebell', 'resistance_band' => ['home', 'gym'],
                 default => ['gym'],
             },
             'verification_status' => 'catalog_cross_checked',
