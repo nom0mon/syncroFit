@@ -8,6 +8,8 @@ import '../../../shared/widgets/safe_layout.dart';
 import '../providers/profile_edit_notifier.dart';
 import '../providers/profile_provider.dart';
 import '../../workout/providers/workout_scheduler_provider.dart';
+import '../../dashboard/providers/dashboard_provider.dart';
+import '../../progress/providers/progress_provider.dart';
 import '../widgets/profile_form.dart'
     show
         GenderLabel,
@@ -162,6 +164,8 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
         // throughout the app immediately.
         ref.invalidate(profileProvider);
         ref.invalidate(workoutSchedulerProvider);
+        ref.invalidate(dashboardProvider);
+        ref.invalidate(progressProvider);
         ref.read(authStateProvider.notifier).updateCachedIdentity(
               firstName: _firstNameController.text.trim(),
               lastName: _lastNameController.text.trim(),

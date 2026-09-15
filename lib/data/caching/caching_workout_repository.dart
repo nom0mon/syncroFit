@@ -55,14 +55,8 @@ class CachingWorkoutRepository
   @override
   Future<Result<List<Workout>, AppError>> getAll() async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
-      if (await _isCacheFresh()) {
-        final cached = await _cachedForUser();
-        // Freshness metadata without account-scoped rows can remain after an
-        // account transition or an older cache write. Fetch instead of
-        // treating that inconsistent state as a real empty workout plan.
-        if (cached.isNotEmpty) return Success(cached);
-      }
-
+      // Reconcile immediately after profile schedule changes instead of
+      // serving a fresh-but-stale accepted plan.
       final result = await _remote.getAll();
       if (result is Success<List<Workout>, AppError>) {
         // Reconcile removals too (for example, a plan invalidated after the
@@ -118,14 +112,6 @@ class CachingWorkoutRepository
   @override
   Future<Result<Workout?, AppError>> getTodaysWorkout() async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
-      if (await _isCacheFresh()) {
-        // Try to find today's workout from the cache
-        final todayWorkout = await _getTodaysWorkoutFromCache();
-        if (todayWorkout != null) {
-          return Success(todayWorkout);
-        }
-      }
-
       final result = await _remote.getTodaysWorkout();
       if (result is Success<Workout?, AppError> && result.value != null) {
         await _dao.upsert(result.value!);

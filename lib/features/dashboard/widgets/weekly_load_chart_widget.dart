@@ -61,8 +61,8 @@ class WeeklyLoadChartWidget extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Completed repetitions by date range. Scale: 0–'
-          '${volumes.fold<int>(0, (max, value) => value > max ? value : max)} reps.',
+          'Highest weekly load: '
+          '${volumes.fold<int>(0, (max, value) => value > max ? value : max)} total reps',
           style: AppTextStyles.caption.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),

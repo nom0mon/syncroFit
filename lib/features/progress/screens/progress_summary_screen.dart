@@ -422,7 +422,8 @@ class _WeeklyStatsChart extends StatelessWidget {
       children: [
         Text('Weekly Statistics', style: theme.textTheme.titleLarge),
         Text(
-          'Completed workouts per week • Goal: $weeklyGoal workouts',
+          'Bars and vertical numbers show completed workouts per week. '
+          'Goal: $weeklyGoal workouts.',
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -444,7 +445,7 @@ class _WeeklyStatsChart extends StatelessWidget {
                   height: 220,
                   child: BarChart(
                     BarChartData(
-                      maxY: maxWorkouts + 1,
+                      maxY: maxWorkouts > 0 ? maxWorkouts : 1,
                       extraLinesData: weeklyGoal > 0
                           ? ExtraLinesData(horizontalLines: [
                               HorizontalLine(
@@ -498,15 +499,13 @@ class _WeeklyStatsChart extends StatelessWidget {
                           ),
                         ),
                         leftTitles: AxisTitles(
-                          axisNameWidget: showAxisNames
-                              ? Text(
-                                  'Workouts',
-                                  style: theme.textTheme.bodySmall,
-                                )
-                              : null,
+                          axisNameWidget: Text(
+                            'Completed',
+                            style: theme.textTheme.bodySmall,
+                          ),
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: showAxisNames ? 38 : 28,
+                            reservedSize: 46,
                             getTitlesWidget: (value, meta) {
                               if (value % 1 != 0) {
                                 return const SizedBox.shrink();

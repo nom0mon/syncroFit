@@ -69,12 +69,15 @@ class ProfileController extends Controller
         $data = $request->validated();
         $identity = Arr::only($data, ['first_name', 'last_name', 'username']);
         $data = Arr::except($data, ['first_name', 'last_name', 'username']);
-        $recommendationContextChanged = collect([
-            'workout_preference',
-            'availability_days',
-        ])->contains(fn (string $field): bool =>
-            array_key_exists($field, $data) && $data[$field] != $profile->{$field}
-        );
+        $preferenceChanged = array_key_exists('workout_preference', $data)
+            && $data['workout_preference'] !== $profile->workout_preference;
+        $oldAvailability = collect($profile->availability_days ?? [])->map('strtolower');
+        $newAvailability = collect($data['availability_days'] ?? $profile->availability_days ?? [])->map('strtolower');
+        $availabilityChanged = $oldAvailability->sort()->values()->all()
+            !== $newAvailability->sort()->values()->all();
+        $availabilityOnlyRemoved = $availabilityChanged
+            && $newAvailability->diff($oldAvailability)->isEmpty();
+        $recommendationContextChanged = $preferenceChanged || $availabilityChanged;
 
         // Recompute BMI if height or weight changed
         $heightCm = $data['height_cm'] ?? $profile->height_cm;
@@ -92,11 +95,26 @@ class ProfileController extends Controller
         });
         $profile->refresh();
 
-        // A plan generated for another environment or weekly schedule is no
-        // longer safe to present as personalized. Require a fresh generation.
-        if ($recommendationContextChanged) {
+        // Removing days can safely prune the accepted schedule. Environment
+        // changes or added days require a newly generated recommendation.
+        if ($preferenceChanged || ($availabilityChanged && !$availabilityOnlyRemoved)) {
             Workout::where('user_id', $profile->user_id)
                 ->where('is_generated', true)
+                ->delete();
+        } elseif ($availabilityOnlyRemoved) {
+            $dayNumbers = $newAvailability->map(fn (string $day): ?int => match ($day) {
+                'monday' => 1,
+                'tuesday' => 2,
+                'wednesday' => 3,
+                'thursday' => 4,
+                'friday' => 5,
+                'saturday' => 6,
+                'sunday' => 7,
+                default => null,
+            })->filter()->values()->all();
+            Workout::where('user_id', $profile->user_id)
+                ->where('is_generated', true)
+                ->whereNotIn('day_of_week', $dayNumbers)
                 ->delete();
         }
 

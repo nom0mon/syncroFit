@@ -180,6 +180,32 @@ class ProfileTest extends TestCase
         ]);
     }
 
+    public function test_removing_availability_prunes_only_that_scheduled_day(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $user->profile()->create(array_merge($this->validProfileData(), ['bmi' => 22.86]));
+
+        foreach ([1, 3, 5] as $day) {
+            Workout::create([
+                'user_id' => $user->id,
+                'name' => "Workout $day",
+                'day_of_week' => $day,
+                'estimated_duration_minutes' => 20,
+                'exercises' => [],
+                'is_generated' => true,
+                'is_accepted' => true,
+            ]);
+        }
+
+        $this->putJson('/api/profile', [
+            'availability_days' => ['monday', 'wednesday'],
+        ])->assertOk();
+
+        $this->assertSame(['1', '3'], Workout::where('user_id', $user->id)
+            ->orderBy('day_of_week')->pluck('day_of_week')->all());
+    }
+
     public function test_user_can_customize_a_unique_username_with_profile(): void
     {
         $user = User::factory()->create();
