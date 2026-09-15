@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": "2026-09-11",
+  "catalog_version": "2026-09-15",
   "status_meaning": {
     "catalog_cross_checked": "Exercise identity and taxonomy were cross-checked against the named open catalog; this is not a clinical claim or an individual outcome guarantee."
   },
@@ -24,17 +24,21 @@
     }
   ],
   "environment_policy": {
-    "bodyweight": ["home", "gym", "outdoor"],
+    "bodyweight": ["home", "gym"],
     "dumbbell": ["gym"],
     "kettlebell": ["gym"],
     "resistance_band": ["gym"],
     "barbell": ["gym"],
     "machine": ["gym"],
-    "pull_up_bar": ["gym"]
+    "pull_up_bar": ["gym"],
+    "named_environment_overrides": {
+      "shared_home_outdoor": ["Push-Up", "Bodyweight Squat", "Plank", "Burpee"],
+      "outdoor_open_space": ["Walking Lunge", "Mountain Climber", "Jumping Jack", "High Knees", "Broad Jump"]
+    }
   },
   "limitations": [
-    "Home and outdoor recommendations use bodyweight only under the conservative equipment-free policy.",
-    "Outdoor recommendations use bodyweight only under the conservative policy.",
+    "Home recommendations prioritize equipment-free movements suitable for limited indoor space.",
+    "Outdoor recommendations remain equipment-free and add traveling, jumping, and conditioning movements that benefit from open space.",
     "Catalog verification does not guarantee effectiveness or safety for a particular person."
   ]
 }

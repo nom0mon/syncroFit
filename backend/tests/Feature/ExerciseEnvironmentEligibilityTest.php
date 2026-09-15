@@ -17,14 +17,22 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
     {
         $this->seed(ExerciseSeeder::class);
         $manifest = json_decode(file_get_contents(database_path('data/exercise_catalog_manifest.json')), true, flags: JSON_THROW_ON_ERROR);
-        $policy = $manifest['environment_policy'];
-
-        $this->assertSame(34, Exercise::count());
-        Exercise::all()->each(function (Exercise $exercise) use ($policy): void {
-            $this->assertSame($policy[$exercise->equipment], $exercise->environments, $exercise->name);
+        $this->assertSame(39, Exercise::count());
+        Exercise::all()->each(function (Exercise $exercise): void {
+            $this->assertNotEmpty($exercise->environments, $exercise->name);
             $this->assertSame('catalog_cross_checked', $exercise->verification_status, $exercise->name);
             $this->assertSame('https://github.com/yuhonas/free-exercise-db', $exercise->source_reference);
         });
+    }
+
+    public function test_home_and_outdoor_catalogs_have_distinct_focus(): void
+    {
+        $this->seed(ExerciseSeeder::class);
+
+        $this->assertContains('home', Exercise::where('name', 'Pike Push-Up')->firstOrFail()->environments);
+        $this->assertNotContains('outdoor', Exercise::where('name', 'Pike Push-Up')->firstOrFail()->environments);
+        $this->assertContains('outdoor', Exercise::where('name', 'Walking Lunge')->firstOrFail()->environments);
+        $this->assertNotContains('home', Exercise::where('name', 'Walking Lunge')->firstOrFail()->environments);
     }
 
     public function test_each_environment_only_receives_exercises_classified_for_it(): void

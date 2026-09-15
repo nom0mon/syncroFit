@@ -22,6 +22,7 @@ import '../../features/settings/screens/change_password_screen.dart';
 import '../../features/settings/screens/settings_main_screen.dart';
 import '../../features/community/screens/post_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
+import '../../features/exercise_library/screens/standalone_exercise_setup_screen.dart';
 import '../../features/exercise_library/screens/exercise_and_recommendations_screen.dart';
 import '../../features/progress/screens/progress_summary_screen.dart';
 import '../../features/progress/screens/progress_log_create_screen.dart';
@@ -216,6 +217,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       final id = state.pathParameters['id'] ?? '';
                       return ExerciseDetailScreen(exerciseId: id);
                     },
+                    routes: [
+                      GoRoute(
+                        path: 'start',
+                        builder: (context, state) =>
+                            StandaloneExerciseSetupScreen(
+                          exerciseId: state.pathParameters['id'] ?? '',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

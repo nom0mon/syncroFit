@@ -69,6 +69,8 @@ void main() {
         'Burpee', 'Kettlebell Swing', 'Barbell Deadlift',
         'Resistance Band Thruster', 'Dumbbell Clean and Press',
         'Resistance Band Lateral Raise', 'Close-Grip Barbell Bench Press',
+        'Walking Lunge', 'Mountain Climber', 'Jumping Jack', 'High Knees',
+        'Broad Jump',
       ];
 
       expect(

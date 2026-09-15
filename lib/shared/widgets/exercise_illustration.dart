@@ -52,6 +52,11 @@ class ExerciseIllustration extends StatelessWidget {
         'repdb-double-kettlebell-clean-and-press.webp',
     'resistance band lateral raise': 'lateral-raise',
     'close-grip barbell bench press': 'close-grip-bench-press',
+    'walking lunge': 'walking-lunge',
+    'mountain climber': 'mountain-climber',
+    'jumping jack': 'jumping-jack',
+    'high knees': 'high-knees',
+    'broad jump': 'broad-jump',
   };
 
   static bool hasIllustrationForName(String name) =>

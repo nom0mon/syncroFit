@@ -166,6 +166,17 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
     _exerciseNames = names;
   }
 
+  /// Loads an in-memory, single-exercise workout created from the library.
+  /// It intentionally bypasses the scheduled-plan repository while reusing
+  /// the normal active/rest/summary flow and workout-history synchronization.
+  void prepareStandaloneWorkout(Workout workout, String exerciseName) {
+    state = WorkoutSessionState(workout: workout);
+    final exerciseId = workout.exercises.firstOrNull?.exerciseId;
+    if (exerciseId != null) {
+      _exerciseNames = {..._exerciseNames, exerciseId: exerciseName};
+    }
+  }
+
   /// Resolves the display name for a [WorkoutExercise].
   String nameFor(WorkoutExercise exercise) {
     return _exerciseNames[exercise.exerciseId] ??

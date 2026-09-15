@@ -15,10 +15,6 @@ class ExerciseSeeder extends Seeder
     {
         // Render may restart the service, so production startup seeding must be
         // safe to repeat without duplicating the exercise library.
-        if (DB::table('exercises')->exists()) {
-            return;
-        }
-
         $exercises = [
             // ===== CHEST =====
             [
@@ -573,14 +569,64 @@ class ExerciseSeeder extends Seeder
                 'exercise_type' => 'compound',
                 'goals' => ['muscle_gain', 'strength', 'general_fitness'],
             ],
+            // ===== OUTDOOR / LARGE-SPACE CONDITIONING =====
+            [
+                'name' => 'Walking Lunge',
+                'description' => 'A traveling lower-body exercise suited to an open outdoor space.',
+                'instructions' => json_encode(['Stand tall with room ahead.', 'Step forward and lower both knees with control.', 'Drive through the front foot and bring the rear leg forward.', 'Continue alternating legs.']),
+                'muscle_group' => 'legs', 'equipment' => 'bodyweight', 'difficulty' => 'beginner',
+                'default_sets' => 3, 'default_reps' => 12, 'default_duration_seconds' => 0,
+                'movement_pattern' => 'knee_dominant', 'primary_muscles' => ['quadriceps', 'glutes'],
+                'secondary_muscles' => ['hamstrings'], 'exercise_type' => 'compound',
+                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
+            ],
+            [
+                'name' => 'Mountain Climber',
+                'description' => 'A dynamic bodyweight conditioning drill for the core and total body.',
+                'instructions' => json_encode(['Begin in a high plank.', 'Drive one knee toward the chest.', 'Switch legs while keeping the hips stable.', 'Continue at a controlled pace.']),
+                'muscle_group' => 'full_body', 'equipment' => 'bodyweight', 'difficulty' => 'intermediate',
+                'default_sets' => 3, 'default_reps' => 20, 'default_duration_seconds' => 0,
+                'movement_pattern' => 'full_body', 'primary_muscles' => ['core', 'quadriceps'],
+                'secondary_muscles' => ['shoulders'], 'exercise_type' => 'compound',
+                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
+            ],
+            [
+                'name' => 'Jumping Jack',
+                'description' => 'A rhythmic full-body cardio movement suited to an open area.',
+                'instructions' => json_encode(['Stand with feet together and arms at your sides.', 'Jump the feet outward while raising the arms overhead.', 'Land softly.', 'Jump back to the starting position.']),
+                'muscle_group' => 'full_body', 'equipment' => 'bodyweight', 'difficulty' => 'beginner',
+                'default_sets' => 3, 'default_reps' => 20, 'default_duration_seconds' => 0,
+                'movement_pattern' => 'full_body', 'primary_muscles' => ['quadriceps', 'shoulders'],
+                'secondary_muscles' => ['calves'], 'exercise_type' => 'compound',
+                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
+            ],
+            [
+                'name' => 'High Knees',
+                'description' => 'A running-in-place conditioning drill that benefits from open space.',
+                'instructions' => json_encode(['Stand tall.', 'Drive one knee toward hip height.', 'Quickly switch legs.', 'Stay light on the feet and keep the torso upright.']),
+                'muscle_group' => 'full_body', 'equipment' => 'bodyweight', 'difficulty' => 'intermediate',
+                'default_sets' => 3, 'default_reps' => 1, 'default_duration_seconds' => 30,
+                'movement_pattern' => 'full_body', 'primary_muscles' => ['quadriceps', 'core'],
+                'secondary_muscles' => ['calves'], 'exercise_type' => 'compound',
+                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
+            ],
+            [
+                'name' => 'Broad Jump',
+                'description' => 'An explosive forward jump requiring a clear outdoor landing area.',
+                'instructions' => json_encode(['Stand with feet shoulder-width apart.', 'Swing the arms back and bend the hips and knees.', 'Jump forward explosively.', 'Land softly with the knees aligned over the feet.']),
+                'muscle_group' => 'legs', 'equipment' => 'bodyweight', 'difficulty' => 'advanced',
+                'default_sets' => 4, 'default_reps' => 6, 'default_duration_seconds' => 0,
+                'movement_pattern' => 'hip_dominant', 'primary_muscles' => ['glutes', 'quadriceps'],
+                'secondary_muscles' => ['hamstrings', 'calves'], 'exercise_type' => 'compound',
+                'goals' => ['strength', 'general_fitness', 'fat_loss'],
+            ],
         ];
-        DB::table('exercises')->insert(
-            array_map(function ($exercise) {
+        $rows = array_map(function ($exercise) {
                 $snakeName = Str::snake(str_replace('-', ' ', $exercise['name']));
 
                 return array_merge($exercise, [
                     'video_path' => 'assets/videos/' . $snakeName . '.mp4',
-                    'environments' => json_encode($this->environmentsFor($exercise['equipment'])),
+                    'environments' => json_encode($this->environmentsFor($exercise['equipment'], $exercise['name'])),
                     'verification_status' => 'catalog_cross_checked',
                     'source_reference' => self::SOURCE_REFERENCE,
                     'primary_muscles' => json_encode($exercise['primary_muscles']),
@@ -589,14 +635,26 @@ class ExerciseSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            }, $exercises)
-        );
+            }, $exercises);
+
+        foreach ($rows as $row) {
+            DB::table('exercises')->updateOrInsert(
+                ['name' => $row['name']],
+                $row
+            );
+        }
     }
 
-    private function environmentsFor(string $equipment): array
+    private function environmentsFor(string $equipment, string $name): array
     {
+        $outdoorFocused = ['Walking Lunge', 'Mountain Climber', 'Jumping Jack', 'High Knees', 'Broad Jump'];
+        if (in_array($name, $outdoorFocused, true)) {
+            return ['gym', 'outdoor'];
+        }
         return match ($equipment) {
-            'bodyweight' => ['home', 'gym', 'outdoor'],
+            'bodyweight' => in_array($name, ['Push-Up', 'Bodyweight Squat', 'Plank', 'Burpee'], true)
+                ? ['home', 'gym', 'outdoor']
+                : ['home', 'gym'],
             default => ['gym'],
         };
     }

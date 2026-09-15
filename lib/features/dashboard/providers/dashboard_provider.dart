@@ -5,6 +5,7 @@ import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../workout/providers/workout_history_refresh_provider.dart';
 
 /// Provides the [WorkoutRepository] instance used by the dashboard.
@@ -91,6 +92,7 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     // Keep mounted dashboard tabs in sync with newly completed workouts.
     ref.watch(workoutHistoryRefreshProvider);
     final userId = ref.watch(authStateProvider).user?.id;
+    final profile = ref.watch(profileProvider).valueOrNull;
 
     // Fetch data concurrently for efficiency
     final results = await Future.wait([
@@ -123,6 +125,8 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
       history: history,
       workouts: scheduledWorkouts,
       now: DateTime.now(),
+      fallbackWeekdays:
+          profile?.workoutAvailability.map((day) => day.index + 1) ?? const [],
     );
 
     // Calculate goal percentage based on workouts completed.
@@ -186,18 +190,22 @@ class WeeklyProgress {
   const WeeklyProgress({required this.completed, required this.planned});
 }
 
-/// Calculates progress only for days represented by the accepted schedule.
+/// Calculates progress for days represented by the current generated schedule.
+/// If no plan has been generated yet, profile availability supplies the goal.
 /// Multiple completed sessions on one day count as one completed workout day.
 WeeklyProgress calculateWeeklyProgress({
   required List<WorkoutHistory> history,
   required List<Workout> workouts,
   required DateTime now,
+  Iterable<int> fallbackWeekdays = const [],
 }) {
-  final scheduledWeekdays = workouts
-      .where((workout) => workout.isAccepted)
+  final planWeekdays = workouts
       .map((workout) => _parseScheduledWeekday(workout.dayOfWeek))
       .whereType<int>()
       .toSet();
+  final scheduledWeekdays = planWeekdays.isNotEmpty
+      ? planWeekdays
+      : fallbackWeekdays.where((day) => day >= 1 && day <= 7).toSet();
   final planned = scheduledWeekdays.length;
   if (planned == 0) return const WeeklyProgress(completed: 0, planned: 0);
 

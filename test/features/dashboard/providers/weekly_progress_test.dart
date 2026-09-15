@@ -23,7 +23,7 @@ WorkoutHistory completed(String id, DateTime date) => WorkoutHistory(
     );
 
 void main() {
-  test('uses unique days from the accepted schedule as the planned total', () {
+  test('uses unique days from the generated schedule as the planned total', () {
     final progress = calculateWeeklyProgress(
       now: DateTime(2026, 9, 9),
       workouts: [
@@ -36,7 +36,7 @@ void main() {
       history: const [],
     );
 
-    expect(progress.planned, 3);
+    expect(progress.planned, 4);
     expect(progress.completed, 0);
   });
 
@@ -62,14 +62,26 @@ void main() {
     expect(progress.planned, 3);
   });
 
-  test('returns zero of zero when there is no accepted schedule', () {
+  test('uses a generated draft plan before it is accepted', () {
     final progress = calculateWeeklyProgress(
       now: DateTime(2026, 9, 9),
       workouts: [scheduled('draft', 'monday', accepted: false)],
       history: [completed('1', DateTime(2026, 9, 7))],
     );
 
+    expect(progress.completed, 1);
+    expect(progress.planned, 1);
+  });
+
+  test('uses profile availability when there is no generated plan', () {
+    final progress = calculateWeeklyProgress(
+      now: DateTime(2026, 9, 9),
+      workouts: const [],
+      history: const [],
+      fallbackWeekdays: const [1, 3, 5, 7],
+    );
+
     expect(progress.completed, 0);
-    expect(progress.planned, 0);
+    expect(progress.planned, 4);
   });
 }

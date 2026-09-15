@@ -99,6 +99,7 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     // on login, logout, and account switch. Any change to the authenticated
     // user rebuilds this notifier with the correct user-scoped data.
     final authState = ref.watch(authStateProvider);
+    final profile = ref.watch(profileProvider).valueOrNull;
     final userId = authState.user?.id;
 
     // When unauthenticated (or the id is missing/empty), return an empty state
@@ -146,6 +147,8 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
       history: history,
       workouts: workouts,
       now: DateTime.now(),
+      fallbackWeekdays:
+          profile?.workoutAvailability.map((day) => day.index + 1) ?? const [],
     );
 
     return ProgressState(

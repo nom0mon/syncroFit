@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../shared/models/enums.dart';
@@ -125,6 +126,15 @@ class _ExerciseInformation extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         _EquipmentSection(equipment: exercise.displayEquipment),
+        const SizedBox(height: AppSpacing.lg),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => context.push('/exercises/${exercise.id}/start'),
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('Perform This Exercise'),
+          ),
+        ),
         const SizedBox(height: AppSpacing.lg),
         _InstructionsSection(instructions: exercise.instructions),
       ],
