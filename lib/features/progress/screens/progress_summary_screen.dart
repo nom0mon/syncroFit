@@ -617,7 +617,8 @@ class _WorkoutHistoryTile extends StatelessWidget {
                   label: 'Duration',
                   value: formatDuration(record.totalDurationSeconds),
                 ),
-                _HistoryMetric(label: 'Exercises', value: '${exercises.length}'),
+                _HistoryMetric(
+                    label: 'Exercises', value: '${exercises.length}'),
               ],
             ),
             if (exercises.isNotEmpty) ...[

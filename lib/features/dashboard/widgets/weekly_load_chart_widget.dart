@@ -72,7 +72,7 @@ class WeeklyLoadChartWidget extends StatelessWidget {
           height: maxChartHeight + AppSpacing.xxl,
           child: BarChart(
             _buildChartData(
-              volumes, barHeights, weeksWithSessions, weekRanges, theme),
+                volumes, barHeights, weeksWithSessions, weekRanges, theme),
             duration: Duration.zero,
           ),
         ),

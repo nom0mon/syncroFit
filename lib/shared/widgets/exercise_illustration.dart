@@ -32,8 +32,7 @@ class ExerciseIllustration extends StatelessWidget {
     'chin-up': 'chin-up',
     'resistance band curl': 'bicep-curl',
     'tricep dip': 'dip',
-    'dumbbell overhead tricep extension':
-        'dumbbell-overhead-tricep-extension',
+    'dumbbell overhead tricep extension': 'dumbbell-overhead-tricep-extension',
     'cable tricep pushdown': 'tricep-pushdown',
     'bodyweight squat': 'bodyweight-squat',
     'barbell back squat': 'squat',
@@ -48,8 +47,7 @@ class ExerciseIllustration extends StatelessWidget {
     'kettlebell swing': 'kettlebell-swing',
     'barbell deadlift': 'deadlift',
     'resistance band thruster': 'repdb-thruster.webp',
-    'dumbbell clean and press':
-        'repdb-double-kettlebell-clean-and-press.webp',
+    'dumbbell clean and press': 'repdb-double-kettlebell-clean-and-press.webp',
     'resistance band lateral raise': 'lateral-raise',
     'close-grip barbell bench press': 'close-grip-bench-press',
     'walking lunge': 'walking-lunge',

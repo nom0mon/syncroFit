@@ -100,16 +100,16 @@ class ConnectivityMonitorImpl implements ConnectivityMonitor {
     _isChecking = true;
 
     try {
-    final hasNoInterface = await _hasNoNetworkInterface();
-    if (hasNoInterface) {
-      _updateStatus(ConnectivityStatus.offline);
-      return;
-    }
+      final hasNoInterface = await _hasNoNetworkInterface();
+      if (hasNoInterface) {
+        _updateStatus(ConnectivityStatus.offline);
+        return;
+      }
 
-    final reachable = await checkServerReachability();
-    _updateStatus(
-      reachable ? ConnectivityStatus.online : ConnectivityStatus.offline,
-    );
+      final reachable = await checkServerReachability();
+      _updateStatus(
+        reachable ? ConnectivityStatus.online : ConnectivityStatus.offline,
+      );
     } finally {
       _isChecking = false;
     }

@@ -18,9 +18,8 @@ class ValidationError extends AppError {
   ValidationError({required this.fieldErrors});
 
   @override
-  String get message => fieldErrors.isEmpty
-      ? 'Validation failed'
-      : fieldErrors.values.first;
+  String get message =>
+      fieldErrors.isEmpty ? 'Validation failed' : fieldErrors.values.first;
 }
 
 class AuthError extends AppError {

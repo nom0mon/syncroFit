@@ -138,9 +138,9 @@ class _StandaloneExerciseSetupScreenState
       ],
     );
     ref.read(workoutProvider.notifier).prepareStandaloneWorkout(
-      workout,
-      exercise.displayName,
-    );
+          workout,
+          exercise.displayName,
+        );
     context.go('/dashboard/workout/$workoutId/active');
   }
 }

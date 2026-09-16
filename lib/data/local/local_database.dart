@@ -92,9 +92,10 @@ class LocalDatabaseImpl implements LocalDatabase {
       await db.execute('DROP TABLE IF EXISTS exercises');
       await _createExercisesTable(db);
 
-      final profileColumns = (await db.rawQuery('PRAGMA table_info(user_profile)'))
-          .map((row) => row['name'] as String)
-          .toSet();
+      final profileColumns =
+          (await db.rawQuery('PRAGMA table_info(user_profile)'))
+              .map((row) => row['name'] as String)
+              .toSet();
       if (!profileColumns.contains('first_name')) {
         await db.execute(
             "ALTER TABLE user_profile ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");

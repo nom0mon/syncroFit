@@ -99,7 +99,6 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     // on login, logout, and account switch. Any change to the authenticated
     // user rebuilds this notifier with the correct user-scoped data.
     final authState = ref.watch(authStateProvider);
-    final profile = ref.watch(profileProvider).valueOrNull;
     final userId = authState.user?.id;
 
     // When unauthenticated (or the id is missing/empty), return an empty state
@@ -108,6 +107,8 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     if (!authState.isAuthenticated || userId == null || userId.isEmpty) {
       return const ProgressState();
     }
+
+    final profile = ref.read(profileProvider).valueOrNull;
 
     final historyResult = await _historyRepo.getAll(userId);
 

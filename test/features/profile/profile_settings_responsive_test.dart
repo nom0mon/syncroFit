@@ -79,7 +79,6 @@ void main() {
         expect(find.text('Change Password'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
-
     }
   });
 

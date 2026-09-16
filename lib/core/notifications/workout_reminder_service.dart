@@ -56,15 +56,16 @@ class WorkoutReminderService {
     );
     await _androidPlugin?.createNotificationChannel(channel);
 
-    final launchDetails = await _notifications.getNotificationAppLaunchDetails();
+    final launchDetails =
+        await _notifications.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       _pendingWorkoutId = launchDetails?.notificationResponse?.payload;
     }
     _initialized = true;
   }
 
-  AndroidFlutterLocalNotificationsPlugin? get _androidPlugin => _notifications
-      .resolvePlatformSpecificImplementation<
+  AndroidFlutterLocalNotificationsPlugin? get _androidPlugin =>
+      _notifications.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
   void setWorkoutNavigationHandler(void Function(String workoutId) handler) {

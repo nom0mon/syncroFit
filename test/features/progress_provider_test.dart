@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:synchrofit/core/network/api_client.dart';
 import 'package:synchrofit/core/network/token_storage.dart';
+import 'package:synchrofit/data/repositories/profile_repository.dart';
 import 'package:synchrofit/data/repositories/workout_history_repository.dart';
 import 'package:synchrofit/data/repositories/workout_repository.dart';
 import 'package:synchrofit/features/auth/providers/auth_provider.dart';
+import 'package:synchrofit/features/profile/providers/profile_provider.dart';
 import 'package:synchrofit/features/progress/providers/progress_provider.dart';
 import 'package:synchrofit/features/workout/providers/workout_provider.dart';
 import 'package:synchrofit/shared/models/models.dart';
@@ -78,6 +80,23 @@ class _StubWorkoutRepository implements WorkoutRepository {
       const Success(null);
 }
 
+class _StubProfileRepository implements ProfileRepository {
+  @override
+  Future<Result<UserProfile, AppError>> getProfile(String userId) async =>
+      Failure(NotFoundError(entityType: 'Profile', id: userId));
+
+  @override
+  Future<Result<UserProfile, AppError>> saveProfile(
+          UserProfile profile) async =>
+      Success(profile);
+
+  @override
+  Future<Result<UserProfile, AppError>> updateProfile(
+    UserProfile profile,
+  ) async =>
+      Success(profile);
+}
+
 User _user(String id) => User(
       id: id,
       firstName: 'User',
@@ -105,6 +124,7 @@ void main() {
         tokenStorageProvider.overrideWithValue(_EmptyTokenStorage()),
         progressWorkoutHistoryRepositoryProvider.overrideWithValue(historyRepo),
         workoutRepositoryProvider.overrideWithValue(_StubWorkoutRepository()),
+        profileRepositoryProvider.overrideWithValue(_StubProfileRepository()),
         // The notifier now needs a Ref, so construct it inside the override
         // and capture it for the tests to drive.
         authStateProvider.overrideWith((ref) {

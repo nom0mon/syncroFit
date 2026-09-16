@@ -30,7 +30,8 @@ class _WorkoutCustomizeScreenState
   Widget build(BuildContext context) {
     final workoutAsync = ref.watch(workoutByIdProvider(widget.workoutId));
     final library = ref.watch(exerciseProvider);
-    final environment = ref.watch(profileProvider).valueOrNull?.workoutPreference.name;
+    final environment =
+        ref.watch(profileProvider).valueOrNull?.workoutPreference.name;
     return Scaffold(
       appBar: AppBar(title: const Text('Customize Workout')),
       body: workoutAsync.when(
@@ -118,8 +119,8 @@ class _WorkoutCustomizeScreenState
   Future<void> _pick(List<Exercise> exercises, String? environment) async {
     final available = exercises
         .where((exercise) => !_ids!.contains(int.tryParse(exercise.id)))
-        .where((exercise) => environment == null ||
-            exercise.environments.contains(environment))
+        .where((exercise) =>
+            environment == null || exercise.environments.contains(environment))
         .toList();
     final selected = await showModalBottomSheet<int>(
       context: context,

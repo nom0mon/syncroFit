@@ -172,6 +172,7 @@ class _FakeCommunityRepository implements CommunityRepository {
     lastComment = comment;
     return Success(initial);
   }
+
   @override
   Future<Result<void, AppError>> deletePost(String postId) async =>
       const Success(null);
