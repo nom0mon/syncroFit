@@ -76,6 +76,11 @@ void main() {
         );
 
         expect(find.text('App Notifications'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('Change Password'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(find.text('Change Password'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
@@ -154,7 +159,11 @@ void main() {
       settle: true,
     );
 
-    await tester.ensureVisible(find.text('Sign Out'));
+    await tester.scrollUntilVisible(
+      find.text('Sign Out'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign Out'));
     await tester.pumpAndSettle();

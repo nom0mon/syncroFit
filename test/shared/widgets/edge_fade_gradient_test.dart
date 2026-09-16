@@ -25,7 +25,7 @@ void main() {
       expect(ignorePointerFinder, findsOneWidget);
     });
 
-    testWidgets('renders nothing in light mode', (tester) async {
+    testWidgets('renders a fade in light mode', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.lightTheme,
@@ -39,7 +39,7 @@ void main() {
         of: find.byType(EdgeFadeGradient),
         matching: find.byType(Container),
       );
-      expect(containerFinder, findsNothing);
+      expect(containerFinder, findsOneWidget);
     });
 
     testWidgets('uses default height of 32 when not specified', (tester) async {

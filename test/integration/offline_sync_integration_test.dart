@@ -84,6 +84,7 @@ Future<Database> _createInMemoryDatabase() async {
             difficulty TEXT NOT NULL,
             instructions TEXT NOT NULL,
             equipment TEXT,
+            environments TEXT NOT NULL DEFAULT '[]',
             default_duration_seconds INTEGER NOT NULL,
             default_sets INTEGER NOT NULL,
             default_reps INTEGER NOT NULL,
