@@ -142,63 +142,6 @@ php artisan test
 
 Do not distribute an artifact produced by a command that exits unsuccessfully.
 
-## Create the tester installer
-
-The release APK is the direct-install Android installer:
-
-```powershell
-Set-Location C:\repos\synchrofit\syncroFit
-flutter clean
-flutter pub get
-flutter build apk --release --dart-define=API_BASE_URL=https://syncrofit-api.onrender.com
-Copy-Item .\build\app\outputs\flutter-apk\app-release.apk .\SyncroFit-Tester.apk
-```
-
-The finished installer is:
-
-```text
-C:\repos\synchrofit\syncroFit\SyncroFit-Tester.apk
-```
-
-Transfer it by USB or a trusted file-sharing service. On the tester's phone, open the APK and allow installation from the selected browser or file manager when Android requests it.
-
-### Clean-install verification
-
-1. Confirm pending offline changes have synchronized.
-2. Uninstall existing development copies of SyncroFit.
-3. Disconnect USB.
-4. Transfer and install `SyncroFit-Tester.apk`.
-5. Sign in and allow camera and notification permissions when needed.
-6. Confirm the offline banner disappears after Render wakes.
-7. Confirm the profile, accepted workouts, dashboard progress, Community photos, progress logs, camera/gallery, and test workout reminder.
-8. Close and reopen the application and confirm the session and cached data remain available.
-
-Uninstalling clears the device's cached session/data, pending offline mutations, permissions, and scheduled reminders. Data already synchronized to the backend remains available after signing in again.
-
-## Updating the installer
-
-Every update must retain:
-
-- Application ID: `com.nom0mon.synchrofit`
-- The same permanent signing key
-- A higher build number in `pubspec.yaml`
-
-For example:
-
-```yaml
-version: 1.0.1+2
-```
-
-Rebuild and distribute the replacement APK. Android can install it over the previous version without clearing local data when the application ID and signing certificate match.
-
-For Google Play, build an Android App Bundle with the protected production signing configuration:
-
-```powershell
-flutter build appbundle --release --dart-define=API_BASE_URL=https://syncrofit-api.onrender.com
-```
-
-See [docs/android-qa-release.md](docs/android-qa-release.md) for release gates, signing constraints, and the device QA matrix.
-
 ## API overview
 
 Protected routes require a Sanctum bearer token. Major routes include:
