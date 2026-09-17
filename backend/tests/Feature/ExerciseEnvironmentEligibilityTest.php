@@ -100,4 +100,39 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
         $this->assertNotEmpty($ids);
         $this->assertSame(['bodyweight'], Exercise::whereIn('id', $ids)->pluck('equipment')->unique()->values()->all());
     }
+
+    public function test_home_and_outdoor_fill_every_available_day_without_same_session_duplicates(): void
+    {
+        $this->seed(ExerciseSeeder::class);
+        $availableDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+        foreach (['home', 'outdoor'] as $environment) {
+            foreach (range(1, 6) as $dayCount) {
+                $user = User::factory()->create();
+                $user->profile()->create([
+                    'age' => 25,
+                    'height_cm' => 175,
+                    'weight_kg' => 70,
+                    'gender' => 'prefer_not_to_say',
+                    'goal' => 'stay_fit',
+                    'fitness_level' => 'intermediate',
+                    'workout_preference' => $environment,
+                    'availability_days' => array_slice($availableDays, 0, $dayCount),
+                ]);
+
+                $result = app(RecommendationEngine::class)->generate($user->load('profile'));
+
+                $this->assertCount($dayCount, $result['workouts'], "{$environment} {$dayCount}-day plan");
+                foreach ($result['workouts'] as $workout) {
+                    $exerciseIds = collect($workout['exercises'])->pluck('exercise_id');
+                    $this->assertNotEmpty($exerciseIds, "{$environment} day {$workout['day_of_week']}");
+                    $this->assertSame(
+                        $exerciseIds->count(),
+                        $exerciseIds->unique()->count(),
+                        "{$environment} day {$workout['day_of_week']} contains a duplicate exercise"
+                    );
+                }
+            }
+        }
+    }
 }

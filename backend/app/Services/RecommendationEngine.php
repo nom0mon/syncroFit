@@ -133,12 +133,14 @@ class RecommendationEngine
             $slots = $this->slotsForWorkoutType($workoutType);
 
             $selectedExercises = [];
+            $workoutExerciseIds = [];
             foreach ($slots as $slotIndex => $slot) {
                 $candidate = $this->selectExerciseForSlot(
                     $slot,
                     $workoutEnvironment,
                     $allowedDifficulties,
                     $mappedGoal,
+                    $workoutExerciseIds,
                     $usedExerciseIds,
                     $includedExerciseIds,
                     $excludedExerciseIds
@@ -154,6 +156,7 @@ class RecommendationEngine
                     continue;
                 }
 
+                $workoutExerciseIds[] = $candidate->id;
                 $usedExerciseIds[] = $candidate->id;
                 $selectedExercises[] = $candidate;
             }
@@ -288,13 +291,15 @@ class RecommendationEngine
      * Select the best exercise for a single slot.
      *
      * Follows the rule pipeline: pattern match (pools tried in order) ->
-     * exclude -> equipment -> difficulty -> variety -> score -> pick highest.
+     * exclude -> equipment -> difficulty -> prevent same-session duplicates ->
+     * prefer weekly variety -> score -> pick highest.
      */
     private function selectExerciseForSlot(
         array $slot,
         string $workoutEnvironment,
         array $allowedDifficulties,
         string $mappedGoal,
+        array $workoutExerciseIds,
         array $usedExerciseIds,
         array $includedExerciseIds,
         array $excludedExerciseIds
@@ -317,10 +322,12 @@ class RecommendationEngine
                 fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true)
             );
 
-            // Variety: drop already-used exercises unless explicitly included.
+            // Never prescribe the same movement twice in one session. Exercises
+            // used on an earlier day remain eligible: Home and Outdoor have
+            // deliberately smaller equipment-free pools, so a week-wide hard
+            // exclusion can exhaust the catalog and create empty workouts.
             $candidates = $candidates->reject(
-                fn (Exercise $e) => in_array($e->id, $usedExerciseIds, true)
-                    && !in_array($e->id, $includedExerciseIds, true)
+                fn (Exercise $e) => in_array($e->id, $workoutExerciseIds, true)
             );
 
             if ($candidates->isEmpty()) {
