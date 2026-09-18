@@ -88,6 +88,9 @@ void main() {
         expect(find.text('Future progress photo grid'), findsOneWidget);
         expect(find.text('22.9'), findsOneWidget);
         expect(find.text('Healthy'), findsOneWidget);
+        expect(find.byKey(const Key('weekly-goal-legend')), findsOneWidget);
+        expect(find.text('Weekly goal: 12 workouts'), findsOneWidget);
+        expect(find.text('Goal 12'), findsNothing);
         expect(tester.takeException(), isNull);
       });
     }

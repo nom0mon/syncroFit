@@ -159,6 +159,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   /// A map of exercise id → display name, used to resolve human-readable
   /// exercise names for the active session. Populated via [setExerciseNames].
   Map<int, String> _exerciseNames = const {};
+  String? _completionMutationId;
 
   /// Provides a lookup of exercise id → name so completed records and the
   /// active screen can show real exercise names instead of "Exercise {id}".
@@ -186,6 +187,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   /// Starts the workout session, marking it as in progress.
   void startWorkout() {
     if (state.workout == null) return;
+    _completionMutationId = null;
     state = state.copyWith(
       isInProgress: true,
       startedAt: DateTime.now(),
@@ -333,8 +335,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   Future<WorkoutHistory?> saveCompletedSession() async {
     if (!state.isCompleted || state.workout == null) return null;
 
+    final mutationId = _completionMutationId ??=
+        'history-${DateTime.now().millisecondsSinceEpoch}';
     final record = WorkoutHistory(
-      id: 'history-${DateTime.now().millisecondsSinceEpoch}',
+      id: mutationId,
       // Keeping the local record user-scoped is essential for offline mode:
       // Progress and Dashboard query history using the authenticated id.
       userId: _ref.read(authStateProvider).user?.id ?? '',
@@ -358,6 +362,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Resets the workout session state completely.
   void resetSession() {
+    _completionMutationId = null;
     state = const WorkoutSessionState();
   }
 }

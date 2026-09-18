@@ -422,10 +422,32 @@ class _WeeklyStatsChart extends StatelessWidget {
       children: [
         Text('Weekly Statistics', style: theme.textTheme.titleLarge),
         Text(
-          'Bars and vertical numbers show completed workouts per week. '
-          'Goal: $weeklyGoal workouts.',
+          'Bars and vertical numbers show completed workouts per week.',
           style: theme.textTheme.bodySmall,
         ),
+        if (weeklyGoal > 0) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            key: const Key('weekly-goal-legend'),
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.xs,
+            children: [
+              SizedBox(
+                width: 24,
+                child: Divider(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                  thickness: 1,
+                ),
+              ),
+              Text(
+                'Weekly goal: $weeklyGoal workouts',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.sm),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -454,11 +476,6 @@ class _WeeklyStatsChart extends StatelessWidget {
                                     .withValues(alpha: 0.55),
                                 strokeWidth: 1,
                                 dashArray: [5, 4],
-                                label: HorizontalLineLabel(
-                                  show: true,
-                                  labelResolver: (_) => 'Goal $weeklyGoal',
-                                  style: theme.textTheme.bodySmall,
-                                ),
                               ),
                             ])
                           : const ExtraLinesData(),

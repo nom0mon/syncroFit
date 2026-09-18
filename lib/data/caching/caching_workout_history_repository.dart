@@ -107,11 +107,28 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
       if (result is Success<WorkoutHistory, AppError>) {
         // Persist the saved record locally
         await _dao.insertRecord(result.value);
+        return result;
       }
+
+      // A connected Wi-Fi/mobile interface does not guarantee that the API
+      // is reachable. Preserve a completed workout and queue it when the
+      // request times out or the server has a transient 5xx failure.
+      if (result case Failure(error: final error)
+          when error is NetworkError ||
+              (error is ServerError && error.statusCode >= 500)) {
+        return _saveLocallyAndQueue(record);
+      }
+
       return result;
     }
 
-    // Offline: save locally and enqueue for sync
+    return _saveLocallyAndQueue(record);
+  }
+
+  /// Saves a completion locally and queues an idempotent remote mutation.
+  Future<Result<WorkoutHistory, AppError>> _saveLocallyAndQueue(
+    WorkoutHistory record,
+  ) async {
     await _dao.insertRecord(record);
 
     final mutation = SyncMutation(
