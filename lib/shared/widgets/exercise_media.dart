@@ -98,6 +98,7 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
     try {
       await controller.initialize();
       await controller.setLooping(true);
+      await controller.setVolume(0);
       await controller.play();
       if (!mounted) {
         await controller.dispose();
@@ -120,7 +121,9 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
   Future<void> _togglePlayback() async {
     final controller = _controller;
     if (controller == null) return;
-    controller.value.isPlaying ? await controller.pause() : await controller.play();
+    controller.value.isPlaying
+        ? await controller.pause()
+        : await controller.play();
     if (mounted) setState(() {});
   }
 
@@ -140,9 +143,8 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final controller = _controller;
-    final semanticsBase = _hasVideo
-        ? 'Exercise video available'
-        : 'No video available';
+    final semanticsBase =
+        _hasVideo ? 'Exercise video available' : 'No video available';
     final semanticsLabel = widget.exerciseName == null
         ? semanticsBase
         : '$semanticsBase for ${widget.exerciseName}';
@@ -195,7 +197,8 @@ class _VideoPrompt extends StatelessWidget {
     if (isLoading) return const Center(child: CircularProgressIndicator());
 
     final canOpen = hasVideo;
-    final label = error ?? (canOpen ? 'Play video guide' : 'No video available');
+    final label =
+        error ?? (canOpen ? 'Play video guide' : 'No video available');
     final icon = error != null
         ? Icons.refresh
         : canOpen
@@ -258,6 +261,27 @@ class _VideoPlayback extends StatelessWidget {
             onPressed: onTogglePlayback,
             icon: Icon(
               controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+            ),
+          ),
+        ),
+        const Positioned(
+          top: AppSpacing.sm,
+          right: AppSpacing.sm,
+          child: Tooltip(
+            message: 'Video is muted',
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xs),
+                child: Icon(
+                  Icons.volume_off,
+                  size: 18,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ),
