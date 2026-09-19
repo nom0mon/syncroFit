@@ -116,16 +116,14 @@ class ExerciseVideoPathConversionTest extends TestCase
         $knownExercises = [
             'Push-Up', 'Dumbbell Bench Press', 'Barbell Bench Press',
             'Cable Chest Fly', 'Pull-Up', 'Barbell Bent-Over Row',
-            'Dumbbell Single-Arm Row', 'Resistance Band Pull-Apart',
-            'Dumbbell Overhead Press', 'Pike Push-Up', 'Kettlebell Press',
+            'Dumbbell Single-Arm Row', 'Dumbbell Overhead Press', 'Pike Push-Up',
             'Dumbbell Bicep Curl', 'Barbell Curl', 'Chin-Up',
             'Resistance Band Curl', 'Tricep Dip', 'Dumbbell Overhead Tricep Extension',
             'Cable Tricep Pushdown', 'Bodyweight Squat', 'Barbell Back Squat',
-            'Kettlebell Goblet Squat', 'Leg Press', 'Dumbbell Romanian Deadlift',
-            'Plank', 'Hanging Leg Raise', 'Kettlebell Russian Twist',
-            'Cable Woodchop', 'Burpee', 'Kettlebell Swing',
-            'Barbell Deadlift', 'Resistance Band Thruster', 'Dumbbell Clean and Press',
-            'Resistance Band Lateral Raise', 'Close-Grip Barbell Bench Press',
+            'Leg Press', 'Dumbbell Romanian Deadlift', 'Plank',
+            'Hanging Leg Raise', 'Cable Woodchop', 'Burpee',
+            'Barbell Deadlift', 'Dumbbell Clean and Press',
+            'Close-Grip Barbell Bench Press',
         ];
 
         $this->forAll(

@@ -132,8 +132,12 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     // Calculate goal percentage based on workouts completed.
     final goalPercentage = _calculateGoalPercentage(history.length);
 
-    // Calculate streak from history
-    final streak = _calculateStreak(history);
+    // A dashboard streak only represents consecutive completion days from the
+    // current week. Older history must not carry a streak into a new week.
+    final streak = calculateCurrentWeekStreak(
+      history: history,
+      now: DateTime.now(),
+    );
 
     return DashboardState(
       todaysWorkout: todaysWorkout,
@@ -154,33 +158,40 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     return percentage.clamp(0, 100);
   }
 
-  /// Calculates the current consecutive workout day streak from history.
-  int _calculateStreak(List<WorkoutHistory> history) {
-    if (history.isEmpty) return 0;
+}
 
-    // Get unique dates sorted descending
-    final dates = history
-        .map((h) {
-          final local = h.effectiveCompletedAt;
-          return DateTime(local.year, local.month, local.day);
-        })
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+/// Returns the latest run of consecutive, distinct workout dates in the
+/// current Monday-to-Sunday week. A single completion is progress, but is not
+/// considered a consecutive streak until a second adjacent day is completed.
+int calculateCurrentWeekStreak({
+  required List<WorkoutHistory> history,
+  required DateTime now,
+}) {
+  final weekStartValue = now.subtract(Duration(days: now.weekday - 1));
+  final weekStart = DateTime(
+    weekStartValue.year,
+    weekStartValue.month,
+    weekStartValue.day,
+  );
+  final nextWeek = weekStart.add(const Duration(days: 7));
+  final dates = history
+      .map((record) {
+        final completedAt = record.effectiveCompletedAt;
+        return DateTime(completedAt.year, completedAt.month, completedAt.day);
+      })
+      .where((date) => !date.isBefore(weekStart) && date.isBefore(nextWeek))
+      .toSet()
+      .toList()
+    ..sort((a, b) => b.compareTo(a));
 
-    if (dates.isEmpty) return 0;
+  if (dates.length < 2) return 0;
 
-    int streak = 1;
-    for (int i = 1; i < dates.length; i++) {
-      final diff = dates[i - 1].difference(dates[i]).inDays;
-      if (diff == 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak;
+  var streak = 1;
+  for (var index = 1; index < dates.length; index++) {
+    if (dates[index - 1].difference(dates[index]).inDays != 1) break;
+    streak++;
   }
+  return streak < 2 ? 0 : streak;
 }
 
 class WeeklyProgress {

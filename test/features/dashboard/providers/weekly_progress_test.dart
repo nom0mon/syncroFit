@@ -23,6 +23,54 @@ WorkoutHistory completed(String id, DateTime date) => WorkoutHistory(
     );
 
 void main() {
+  group('current-week streak', () {
+    test('does not carry a streak over from an earlier week', () {
+      final streak = calculateCurrentWeekStreak(
+        now: DateTime(2026, 9, 9),
+        history: [
+          completed('1', DateTime(2026, 9, 3)),
+          completed('2', DateTime(2026, 9, 4)),
+        ],
+      );
+
+      expect(streak, 0);
+    });
+
+    test('requires at least two consecutive days in the current week', () {
+      expect(
+        calculateCurrentWeekStreak(
+          now: DateTime(2026, 9, 9),
+          history: [completed('1', DateTime(2026, 9, 8))],
+        ),
+        0,
+      );
+      expect(
+        calculateCurrentWeekStreak(
+          now: DateTime(2026, 9, 9),
+          history: [
+            completed('1', DateTime(2026, 9, 7)),
+            completed('2', DateTime(2026, 9, 9)),
+          ],
+        ),
+        0,
+      );
+    });
+
+    test('counts distinct consecutive completion days in the current week', () {
+      final streak = calculateCurrentWeekStreak(
+        now: DateTime(2026, 9, 10),
+        history: [
+          completed('1', DateTime(2026, 9, 8, 8)),
+          completed('duplicate', DateTime(2026, 9, 8, 18)),
+          completed('2', DateTime(2026, 9, 9)),
+          completed('3', DateTime(2026, 9, 10)),
+        ],
+      );
+
+      expect(streak, 3);
+    });
+  });
+
   test('uses unique days from the generated schedule as the planned total', () {
     final progress = calculateWeeklyProgress(
       now: DateTime(2026, 9, 9),

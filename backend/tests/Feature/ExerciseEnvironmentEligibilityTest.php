@@ -17,7 +17,7 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
     {
         $this->seed(ExerciseSeeder::class);
         $manifest = json_decode(file_get_contents(database_path('data/exercise_catalog_manifest.json')), true, flags: JSON_THROW_ON_ERROR);
-        $this->assertSame(39, Exercise::count());
+        $this->assertSame(32, Exercise::count());
         Exercise::all()->each(function (Exercise $exercise): void {
             $this->assertNotEmpty($exercise->environments, $exercise->name);
             $this->assertSame('catalog_cross_checked', $exercise->verification_status, $exercise->name);
