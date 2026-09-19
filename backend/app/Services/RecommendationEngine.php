@@ -88,13 +88,18 @@ class RecommendationEngine
      * @param  int[]  $excludedExerciseIds  Exercise IDs to never include.
      * @return array{workouts: array<int, array>, meta: array{coverage: array<string, float>, unresolved_slots: array}}
      */
-    public function generate(User $user, array $includedExerciseIds = [], array $excludedExerciseIds = []): array
+    public function generate(
+        User $user,
+        array $includedExerciseIds = [],
+        array $excludedExerciseIds = [],
+        array $profileOverrides = []
+    ): array
     {
         $profile = $user->profile;
 
-        $goal = $profile->goal;
-        $fitnessLevel = $profile->fitness_level;
-        $workoutPreference = $profile->workout_preference;
+        $goal = $profileOverrides['goal'] ?? $profile->goal;
+        $fitnessLevel = $profileOverrides['fitness_level'] ?? $profile->fitness_level;
+        $workoutPreference = $profileOverrides['workout_preference'] ?? $profile->workout_preference;
         $availabilityDays = $profile->availability_days ?? [];
 
         $includedExerciseIds = array_map('intval', $includedExerciseIds);

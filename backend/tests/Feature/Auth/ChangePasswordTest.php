@@ -27,8 +27,8 @@ class ChangePasswordTest extends TestCase
         $response = $this->withHeaders(['Authorization' => "Bearer {$token}"])
             ->putJson('/api/user/password', [
                 'current_password' => 'password123',
-                'new_password' => 'new-password456',
-                'new_password_confirmation' => 'new-password456',
+                'new_password' => 'New-password456!',
+                'new_password_confirmation' => 'New-password456!',
             ]);
 
         $response->assertStatus(200)
@@ -39,7 +39,7 @@ class ChangePasswordTest extends TestCase
 
         // The new password must now be accepted for login.
         $user->refresh();
-        $this->assertTrue(Hash::check('new-password456', $user->password));
+        $this->assertTrue(Hash::check('New-password456!', $user->password));
         $this->assertFalse(Hash::check('password123', $user->password));
     }
 
@@ -51,8 +51,8 @@ class ChangePasswordTest extends TestCase
         $response = $this->withHeaders(['Authorization' => "Bearer {$token}"])
             ->putJson('/api/user/password', [
                 'current_password' => 'wrong-password',
-                'new_password' => 'new-password456',
-                'new_password_confirmation' => 'new-password456',
+                'new_password' => 'New-password456!',
+                'new_password_confirmation' => 'New-password456!',
             ]);
 
         $response->assertStatus(422)
@@ -165,8 +165,8 @@ class ChangePasswordTest extends TestCase
         $this->withHeaders(['Authorization' => "Bearer {$token}"])
             ->putJson('/api/user/password', [
                 'current_password' => 'password123',
-                'new_password' => 'new-password456',
-                'new_password_confirmation' => 'new-password456',
+                'new_password' => 'New-password456!',
+                'new_password_confirmation' => 'New-password456!',
             ])->assertStatus(200);
 
         // The current token should still authenticate a subsequent request.
@@ -186,8 +186,8 @@ class ChangePasswordTest extends TestCase
         $this->withHeaders(['Authorization' => "Bearer {$currentToken}"])
             ->putJson('/api/user/password', [
                 'current_password' => 'password123',
-                'new_password' => 'new-password456',
-                'new_password_confirmation' => 'new-password456',
+                'new_password' => 'New-password456!',
+                'new_password_confirmation' => 'New-password456!',
             ])->assertStatus(200);
 
         // Only the current token remains.

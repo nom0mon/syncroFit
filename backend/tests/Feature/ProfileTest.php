@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Workout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -156,6 +158,30 @@ class ProfileTest extends TestCase
             ->assertJsonPath('data.height_cm', '175.00')
             ->assertJsonPath('data.weight_kg', '70.00')
             ->assertJsonPath('data.bmi', '22.86');
+    }
+
+    public function test_user_can_upload_and_publicly_display_profile_picture(): void
+    {
+        Storage::fake('local');
+        config(['filesystems.community_media_disk' => 'local']);
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->post('/api/profile/avatar', [
+            'avatar' => UploadedFile::fake()->createWithContent(
+                'avatar.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+            ),
+        ])->assertOk();
+
+        $user->refresh();
+        Storage::disk('local')->assertExists($user->avatar_path);
+        $this->assertNotNull($response->json('data.avatar_url'));
+
+        auth()->forgetGuards();
+        $this->get("/api/community/users/{$user->id}/avatar")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
     }
 
     public function test_changing_environment_invalidates_an_existing_generated_plan(): void

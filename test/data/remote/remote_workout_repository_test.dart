@@ -49,6 +49,33 @@ void main() {
             fromJson: any(named: 'fromJson'),
           )).called(1);
     });
+
+    test('sends temporary generator options and save preference', () async {
+      when(() => mockApiClient.post<List<Workout>>(
+                '/api/workouts/generate',
+                body: any(named: 'body'),
+                fromJson: any(named: 'fromJson'),
+              ))
+          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+
+      await repository.generateRecommendation(
+        fitnessLevel: FitnessLevel.advanced,
+        fitnessGoal: FitnessGoal.buildMuscle,
+        workoutPreference: WorkoutPreference.home,
+        saveOptionsToProfile: true,
+      );
+
+      verify(() => mockApiClient.post<List<Workout>>(
+            '/api/workouts/generate',
+            body: {
+              'fitness_level': 'advanced',
+              'goal': 'build_muscle',
+              'workout_preference': 'home',
+              'save_options_to_profile': true,
+            },
+            fromJson: any(named: 'fromJson'),
+          )).called(1);
+    });
   });
 
   group('RemoteWorkoutRepository - getGenerated', () {

@@ -85,6 +85,10 @@ class RemoteWorkoutRepository
   Future<Result<List<Workout>, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    FitnessLevel? fitnessLevel,
+    FitnessGoal? fitnessGoal,
+    WorkoutPreference? workoutPreference,
+    bool saveOptionsToProfile = false,
   }) async {
     return _apiClient.post<List<Workout>>(
       '/api/workouts/generate',
@@ -93,6 +97,17 @@ class RemoteWorkoutRepository
           'included_exercises': includedExercises,
         if (excludedExercises.isNotEmpty)
           'excluded_exercises': excludedExercises,
+        if (fitnessLevel != null) 'fitness_level': fitnessLevel.name,
+        if (fitnessGoal != null)
+          'goal': switch (fitnessGoal) {
+            FitnessGoal.loseWeight => 'lose_weight',
+            FitnessGoal.buildMuscle => 'build_muscle',
+            FitnessGoal.maintainFitness => 'stay_fit',
+            FitnessGoal.improveEndurance => 'increase_stamina',
+          },
+        if (workoutPreference != null)
+          'workout_preference': workoutPreference.name,
+        'save_options_to_profile': saveOptionsToProfile,
       },
       fromJson: (json) => _parseWorkoutsList(json),
     );

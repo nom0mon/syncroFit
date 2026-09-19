@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/safe_layout.dart';
@@ -79,6 +84,10 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
   late TextEditingController _weightController;
 
   bool _initialized = false;
+  final _imagePicker = ImagePicker();
+  Uint8List? _avatarBytes;
+  String? _avatarFilename;
+  bool _isUploadingAvatar = false;
 
   @override
   void dispose() {
@@ -145,7 +154,54 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
   }
 
   Future<void> _handleSave() async {
+    if (_avatarBytes != null && _avatarFilename != null) {
+      setState(() => _isUploadingAvatar = true);
+      final extension = _avatarFilename!.split('.').last.toLowerCase();
+      final mimeType = extension == 'png'
+          ? 'image/png'
+          : extension == 'webp'
+              ? 'image/webp'
+              : 'image/jpeg';
+      final result = await ref.read(apiClientProvider).postForm<User>(
+            '/api/profile/avatar',
+            formData: FormData.fromMap({
+              'avatar': MultipartFile.fromBytes(
+                _avatarBytes!,
+                filename: _avatarFilename,
+                contentType: DioMediaType.parse(mimeType),
+              ),
+            }),
+            fromJson: (json) => User.fromJson(json as Map<String, dynamic>),
+          );
+      if (!mounted) return;
+      setState(() => _isUploadingAvatar = false);
+      switch (result) {
+        case Success(value: final user):
+          await ref.read(authStateProvider.notifier).updateCachedUser(user);
+        case Failure(error: final error):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.message)),
+          );
+          return;
+      }
+    }
     await ref.read(profileEditNotifierProvider.notifier).save();
+  }
+
+  Future<void> _pickAvatar() async {
+    final file = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 88,
+    );
+    if (file == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _avatarBytes = bytes;
+      _avatarFilename = file.name;
+    });
   }
 
   @override
@@ -153,6 +209,12 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
     final state = ref.watch(profileEditNotifierProvider);
     final notifier = ref.read(profileEditNotifierProvider.notifier);
     final profile = notifier.originalProfile;
+    final avatarUrl = ref.watch(authStateProvider).user?.avatarUrl;
+    final ImageProvider<Object>? avatarImage = _avatarBytes != null
+        ? MemoryImage(_avatarBytes!) as ImageProvider<Object>
+        : avatarUrl != null && avatarUrl.isNotEmpty
+            ? NetworkImage(avatarUrl) as ImageProvider<Object>
+            : null;
 
     _initControllers(profile);
 
@@ -201,6 +263,25 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Center(
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 48,
+                              foregroundImage: avatarImage,
+                              child: const Icon(Icons.person, size: 42),
+                            ),
+                            IconButton.filled(
+                              key: const Key('pick-profile-picture'),
+                              onPressed: _pickAvatar,
+                              tooltip: 'Choose profile picture',
+                              icon: const Icon(Icons.photo_camera),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
                       // First Name field
                       TextField(
                         controller: _firstNameController,
@@ -441,8 +522,9 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
               width: double.infinity,
               child: FilledButton.icon(
                 key: const Key('profile-edit-save'),
-                onPressed: state.isSaving ? null : _handleSave,
-                icon: state.isSaving
+                onPressed:
+                    state.isSaving || _isUploadingAvatar ? null : _handleSave,
+                icon: state.isSaving || _isUploadingAvatar
                     ? const SizedBox(
                         width: 20,
                         height: 20,

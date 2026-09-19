@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ProgressLog;
+use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -65,5 +66,38 @@ class ProgressLogTest extends TestCase
             'title' => '', 'description' => str_repeat('x', 1001),
             'weight_kg' => 5, 'image' => UploadedFile::fake()->create('bad.txt', 1),
         ])->assertUnprocessable()->assertJsonValidationErrors(['title', 'description', 'weight_kg', 'image']);
+    }
+
+    public function test_logged_weight_updates_profile_weight_and_bmi(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $profile = Profile::create([
+            'user_id' => $user->id,
+            'age' => 30,
+            'height_cm' => 180,
+            'weight_kg' => 80,
+            'bmi' => 24.69,
+            'gender' => 'male',
+            'goal' => 'general_fitness',
+            'fitness_level' => 'beginner',
+            'workout_preference' => 'home',
+            'availability_days' => ['monday'],
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->post('/api/progress-logs', [
+            'title' => 'Updated weight',
+            'description' => 'Monthly check-in.',
+            'weight_kg' => 75.6,
+            'image' => UploadedFile::fake()->createWithContent(
+                'progress.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+            ),
+        ])->assertCreated();
+
+        $profile->refresh();
+        $this->assertEqualsWithDelta(75.6, $profile->weight_kg, 0.001);
+        $this->assertEqualsWithDelta(23.33, $profile->bmi, 0.001);
     }
 }

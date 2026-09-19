@@ -5,6 +5,7 @@ import '../../../shared/models/models.dart';
 import 'workout_scheduler_provider.dart';
 import 'workout_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 /// The lifecycle status of the workout generator flow.
 enum WorkoutGeneratorStatus {
@@ -26,6 +27,10 @@ class WorkoutGeneratorState {
   final List<Workout> generatedWorkouts;
   final Set<int> includedExerciseIds;
   final Set<int> excludedExerciseIds;
+  final FitnessLevel? fitnessLevel;
+  final FitnessGoal? fitnessGoal;
+  final WorkoutPreference? workoutPreference;
+  final bool saveOptionsToProfile;
   final String? errorMessage;
 
   const WorkoutGeneratorState({
@@ -33,6 +38,10 @@ class WorkoutGeneratorState {
     this.generatedWorkouts = const [],
     this.includedExerciseIds = const {},
     this.excludedExerciseIds = const {},
+    this.fitnessLevel,
+    this.fitnessGoal,
+    this.workoutPreference,
+    this.saveOptionsToProfile = false,
     this.errorMessage,
   });
 
@@ -41,6 +50,10 @@ class WorkoutGeneratorState {
     List<Workout>? generatedWorkouts,
     Set<int>? includedExerciseIds,
     Set<int>? excludedExerciseIds,
+    FitnessLevel? fitnessLevel,
+    FitnessGoal? fitnessGoal,
+    WorkoutPreference? workoutPreference,
+    bool? saveOptionsToProfile,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -49,6 +62,10 @@ class WorkoutGeneratorState {
       generatedWorkouts: generatedWorkouts ?? this.generatedWorkouts,
       includedExerciseIds: includedExerciseIds ?? this.includedExerciseIds,
       excludedExerciseIds: excludedExerciseIds ?? this.excludedExerciseIds,
+      fitnessLevel: fitnessLevel ?? this.fitnessLevel,
+      fitnessGoal: fitnessGoal ?? this.fitnessGoal,
+      workoutPreference: workoutPreference ?? this.workoutPreference,
+      saveOptionsToProfile: saveOptionsToProfile ?? this.saveOptionsToProfile,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -66,6 +83,18 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
   final Ref _ref;
 
   WorkoutGeneratorNotifier(this._ref) : super(const WorkoutGeneratorState());
+
+  void setFitnessLevel(FitnessLevel value) =>
+      state = state.copyWith(fitnessLevel: value);
+
+  void setFitnessGoal(FitnessGoal value) =>
+      state = state.copyWith(fitnessGoal: value);
+
+  void setWorkoutPreference(WorkoutPreference value) =>
+      state = state.copyWith(workoutPreference: value);
+
+  void setSaveOptionsToProfile(bool value) =>
+      state = state.copyWith(saveOptionsToProfile: value);
 
   /// Toggles an exercise in the included set.
   ///
@@ -132,10 +161,17 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     final result = await generationRepository.generateRecommendation(
       includedExercises: [...state.includedExerciseIds],
       excludedExercises: [...state.excludedExerciseIds],
+      fitnessLevel: state.fitnessLevel,
+      fitnessGoal: state.fitnessGoal,
+      workoutPreference: state.workoutPreference,
+      saveOptionsToProfile: state.saveOptionsToProfile,
     );
 
     switch (result) {
       case Success(value: final workouts):
+        if (state.saveOptionsToProfile) {
+          _ref.invalidate(profileProvider);
+        }
         state = state.copyWith(
           status: WorkoutGeneratorStatus.generated,
           generatedWorkouts: workouts,

@@ -97,14 +97,28 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const ExerciseMedia(
-            videoPath: 'assets/videos/plank.mp4',
-            exerciseName: 'Plank',
+            videoPath: 'assets/videos/dumbbell_bench_press.mp4',
+            exerciseName: 'Dumbbell Bench Press',
           ),
         ),
       );
 
       expect(find.text('No video available'), findsOneWidget);
       expect(find.byIcon(Icons.videocam_off_outlined), findsOneWidget);
+    });
+
+    testWidgets('supports the supplied plural tricep dip filename',
+        (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const ExerciseMedia(
+            videoPath: 'assets/videos/tricep_dip.mp4',
+            exerciseName: 'Tricep Dip',
+          ),
+        ),
+      );
+
+      expect(find.text('Play video guide'), findsOneWidget);
     });
 
     testWidgets('exposes an accessible semantics label', (tester) async {

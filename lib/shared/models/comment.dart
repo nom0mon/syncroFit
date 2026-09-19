@@ -3,6 +3,7 @@ class Comment {
   final String postId;
   final String authorName;
   final String authorId;
+  final String? authorAvatarUrl;
   final String text;
   final DateTime timestamp;
   final bool isOwnedByCurrentUser;
@@ -12,6 +13,7 @@ class Comment {
     required this.postId,
     required this.authorName,
     this.authorId = '',
+    this.authorAvatarUrl,
     required this.text,
     required this.timestamp,
     this.isOwnedByCurrentUser = false,
@@ -21,6 +23,7 @@ class Comment {
         id: json['id'].toString(),
         postId: json['post_id'].toString(),
         authorId: json['author_id']?.toString() ?? '',
+        authorAvatarUrl: json['author_avatar_url'] as String?,
         authorName: json['author_name'] as String? ?? 'Unknown user',
         text: json['content'] as String,
         timestamp: DateTime.parse(json['created_at'] as String),
@@ -33,6 +36,7 @@ class Comment {
         'post_id': postId,
         'author_id': authorId,
         'author_name': authorName,
+        'author_avatar_url': authorAvatarUrl,
         'content': text,
         'created_at': timestamp.toIso8601String(),
         'is_owned_by_current_user': isOwnedByCurrentUser,

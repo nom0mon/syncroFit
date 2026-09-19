@@ -78,13 +78,27 @@ class WorkoutController extends Controller
             'included_exercises.*' => 'integer',
             'excluded_exercises' => 'nullable|array',
             'excluded_exercises.*' => 'integer',
+            'fitness_level' => 'nullable|in:beginner,intermediate,advanced',
+            'goal' => 'nullable|in:lose_weight,build_muscle,stay_fit,increase_stamina',
+            'workout_preference' => 'nullable|in:home,gym,outdoor',
+            'save_options_to_profile' => 'sometimes|boolean',
         ]);
 
         $included = $validated['included_exercises'] ?? [];
         $excluded = $validated['excluded_exercises'] ?? [];
+        $overrides = array_filter([
+            'fitness_level' => $validated['fitness_level'] ?? null,
+            'goal' => $validated['goal'] ?? null,
+            'workout_preference' => $validated['workout_preference'] ?? null,
+        ], fn ($value) => $value !== null);
+
+        if (($validated['save_options_to_profile'] ?? false) && $overrides !== []) {
+            $profile->update($overrides);
+            $profile->refresh();
+        }
 
         $engine = new RecommendationEngine();
-        $result = $engine->generate($user, $included, $excluded);
+        $result = $engine->generate($user, $included, $excluded, $overrides);
 
         // Replace any abandoned draft, while preserving the accepted plan
         // until the user explicitly approves this new one.

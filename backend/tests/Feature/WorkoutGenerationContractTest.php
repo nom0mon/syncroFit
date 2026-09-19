@@ -98,4 +98,41 @@ class WorkoutGenerationContractTest extends TestCase
             'is_accepted' => true,
         ]);
     }
+
+    public function test_generator_options_can_be_temporary_or_saved_to_profile(): void
+    {
+        $user = User::factory()->create();
+        $profile = $user->profile()->create([
+            'age' => 25,
+            'height_cm' => 175,
+            'weight_kg' => 70,
+            'gender' => 'male',
+            'goal' => 'stay_fit',
+            'fitness_level' => 'beginner',
+            'workout_preference' => 'gym',
+            'availability_days' => ['monday'],
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/workouts/generate', [
+            'fitness_level' => 'advanced',
+            'goal' => 'build_muscle',
+            'workout_preference' => 'home',
+            'save_options_to_profile' => false,
+        ])->assertCreated();
+        $profile->refresh();
+        $this->assertSame('beginner', $profile->fitness_level);
+        $this->assertSame('gym', $profile->workout_preference);
+
+        $this->postJson('/api/workouts/generate', [
+            'fitness_level' => 'intermediate',
+            'goal' => 'increase_stamina',
+            'workout_preference' => 'outdoor',
+            'save_options_to_profile' => true,
+        ])->assertCreated();
+        $profile->refresh();
+        $this->assertSame('intermediate', $profile->fitness_level);
+        $this->assertSame('increase_stamina', $profile->goal);
+        $this->assertSame('outdoor', $profile->workout_preference);
+    }
 }

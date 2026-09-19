@@ -80,6 +80,20 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       ),
       body: SafeScrollableForm(
         includeKeyboardInset: true,
+        bottomAction: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            key: const Key('change-password-submit'),
+            onPressed: state.isLoading ? null : _handleSubmit,
+            child: state.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Change Password'),
+          ),
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -150,23 +164,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ),
               ],
             ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeBottomActionBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            key: const Key('change-password-submit'),
-            onPressed: state.isLoading ? null : _handleSubmit,
-            child: state.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Change Password'),
           ),
         ),
       ),

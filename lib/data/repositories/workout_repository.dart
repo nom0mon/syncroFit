@@ -25,6 +25,10 @@ abstract class WorkoutGenerationRepository {
   Future<Result<List<Workout>, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    FitnessLevel? fitnessLevel,
+    FitnessGoal? fitnessGoal,
+    WorkoutPreference? workoutPreference,
+    bool saveOptionsToProfile = false,
   });
 }
 

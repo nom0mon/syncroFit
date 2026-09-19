@@ -18,6 +18,7 @@ class WorkoutReminderService {
   static const _permissionRequestedKey = 'workout_notification_requested';
   static const _testNotificationId = 8199;
   static const _weeklyNotificationBaseId = 8200;
+  static const _unfinishedNotificationBaseId = 8300;
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -115,6 +116,26 @@ class WorkoutReminderService {
           matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
           payload: workout.workoutId,
         );
+        await _notifications.zonedSchedule(
+          id: _unfinishedNotificationBaseId + workout.dayOfWeek.index,
+          title: 'Scheduled workout not completed',
+          body:
+              '${workout.workoutName} is still waiting. Finish today’s workout when you are ready.',
+          scheduledDate: _nextOccurrence(weekday, 19),
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              _channelId,
+              'Scheduled workouts',
+              channelDescription:
+                  'Reminders for workout days in your accepted weekly plan.',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+          payload: workout.workoutId,
+        );
       }
     } catch (error, stack) {
       debugPrint('Unable to schedule workout reminders: $error');
@@ -154,7 +175,40 @@ class WorkoutReminderService {
     if (!_initialized || kIsWeb) return;
     for (var day = 0; day < 7; day++) {
       await _notifications.cancel(id: _weeklyNotificationBaseId + day);
+      await _notifications.cancel(id: _unfinishedNotificationBaseId + day);
     }
+  }
+
+  /// Prevents the evening reminder from appearing after today's scheduled
+  /// workout has been saved. A one-time reminder is restored for next week;
+  /// opening the app or refreshing the plan restores normal weekly scheduling.
+  Future<void> markWorkoutCompleted({
+    required int weekday,
+    required String workoutId,
+    required String workoutName,
+  }) async {
+    if (!_initialized || kIsWeb || weekday < 1 || weekday > 7) return;
+    final id = _unfinishedNotificationBaseId + weekday - 1;
+    await _notifications.cancel(id: id);
+    await _notifications.zonedSchedule(
+      id: id,
+      title: 'Scheduled workout not completed',
+      body:
+          '$workoutName is still waiting. Finish today’s workout when you are ready.',
+      scheduledDate: _nextOccurrence(weekday, 19),
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          'Scheduled workouts',
+          channelDescription:
+              'Reminders for workout days in your accepted weekly plan.',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: workoutId,
+    );
   }
 
   Future<bool> _requestPermissionOnce() async {

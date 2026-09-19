@@ -84,9 +84,13 @@ class RemoteAuthRepository implements AuthRepository {
     String currentPassword,
     String newPassword,
   ) async {
-    // Not implemented in the backend yet — return a stub error.
-    return Failure(
-      ServerError(statusCode: 501, serverMessage: 'Not implemented'),
+    return _apiClient.put<void>(
+      '/api/user/password',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPassword,
+      },
     );
   }
 }

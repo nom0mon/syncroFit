@@ -72,6 +72,8 @@ void main() {
         settle: true,
       );
 
+      await tester.ensureVisible(find.text('Preferred (0)'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Preferred (0)'));
       await tester.pumpAndSettle();
 

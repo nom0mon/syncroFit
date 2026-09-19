@@ -19,6 +19,7 @@ Route::get('/health', fn () => response()->json(['status' => 'ok']));
 Route::post('/register', [\App\Http\Controllers\Auth\RegisterController::class, 'register']);
 Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);
 Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLink']);
+Route::get('/community/users/{user}/avatar', [\App\Http\Controllers\ProfileController::class, 'avatar']);
 
 // Protected routes (require Sanctum token)
 Route::middleware('auth:sanctum')->group(function () {
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show']);
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'store']);
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [\App\Http\Controllers\ProfileController::class, 'updateAvatar']);
 
     // Legacy user identity update
     Route::put('/user/name', function (\Illuminate\Http\Request $request) {

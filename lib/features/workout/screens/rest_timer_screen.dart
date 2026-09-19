@@ -123,14 +123,36 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
             ),
             SafeBottomActionBar(
               avoidKeyboard: false,
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('skip-rest-action'),
-                  onPressed: _onSkipRest,
-                  icon: const Icon(Icons.skip_next),
-                  label: const Text('Skip Rest'),
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('pause-rest-action'),
+                      onPressed: restTimerState.state == TimerState.paused
+                          ? () => ref
+                              .read(restTimerControllerProvider.notifier)
+                              .resume()
+                          : () => ref
+                              .read(restTimerControllerProvider.notifier)
+                              .pause(),
+                      icon: Icon(restTimerState.state == TimerState.paused
+                          ? Icons.play_arrow
+                          : Icons.pause),
+                      label: Text(restTimerState.state == TimerState.paused
+                          ? 'Resume Rest'
+                          : 'Pause Rest'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('skip-rest-action'),
+                      onPressed: _onSkipRest,
+                      icon: const Icon(Icons.skip_next),
+                      label: const Text('Skip Rest'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

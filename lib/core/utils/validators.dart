@@ -26,7 +26,37 @@ String? validatePassword(String? value) {
   if (value.length < 8) {
     return 'Password must be at least 8 characters';
   }
+  if (!RegExp(r'[a-z]').hasMatch(value)) {
+    return 'Add at least one lowercase letter';
+  }
+  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+    return 'Add at least one uppercase letter';
+  }
+  if (!RegExp(r'[0-9]').hasMatch(value)) {
+    return 'Add at least one number';
+  }
+  if (!RegExp(r'[!@#$%^&*()_+\-=\[\]{};:\\|,.<>\/?]').hasMatch(value)) {
+    return 'Add a special character such as ! @ # \$ % & *';
+  }
   return null;
+}
+
+/// Login accepts existing accounts created before strong-password rules were
+/// introduced. Strength is enforced only when creating or changing passwords.
+String? validateLoginPassword(String? value) {
+  if (value == null || value.isEmpty) return 'Password is required';
+  if (value.length < 8) return 'Password must be at least 8 characters';
+  return null;
+}
+
+int passwordStrengthScore(String value) {
+  return [
+    value.length >= 8,
+    RegExp(r'[a-z]').hasMatch(value),
+    RegExp(r'[A-Z]').hasMatch(value),
+    RegExp(r'[0-9]').hasMatch(value),
+    RegExp(r'[!@#$%^&*()_+\-=\[\]{};:\\|,.<>\/?]').hasMatch(value),
+  ].where((met) => met).length;
 }
 
 /// Validates that the name is non-empty. Names are intentionally not capped.

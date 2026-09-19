@@ -27,6 +27,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmation = true;
 
   @override
   void dispose() {
@@ -142,23 +144,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
                           controller: _passwordController,
-                          decoration:
-                              const InputDecoration(hintText: 'Password'),
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'Password',
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword),
+                              icon: Icon(_obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                            ),
+                          ),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           textInputAction: TextInputAction.next,
                           validator: validatePassword,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _PasswordStrengthIndicator(
+                          password: _passwordController.text,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
                           controller: _confirmPasswordController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Confirm Password',
+                            suffixIcon: IconButton(
+                              tooltip: _obscureConfirmation
+                                  ? 'Show confirmation'
+                                  : 'Hide confirmation',
+                              onPressed: () => setState(() =>
+                                  _obscureConfirmation = !_obscureConfirmation),
+                              icon: Icon(_obscureConfirmation
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                            ),
                           ),
                           style: const TextStyle(color: Colors.black),
                           cursorColor: Colors.black,
-                          obscureText: true,
+                          obscureText: _obscureConfirmation,
                           textInputAction: TextInputAction.next,
                           validator: (value) => validatePasswordMatch(
                             _passwordController.text,
@@ -204,6 +232,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PasswordStrengthIndicator extends StatelessWidget {
+  const _PasswordStrengthIndicator({required this.password});
+
+  final String password;
+
+  @override
+  Widget build(BuildContext context) {
+    final score = passwordStrengthScore(password);
+    final label = password.isEmpty
+        ? 'Password requirements'
+        : score <= 2
+            ? 'Weak password'
+            : score < 5
+                ? 'Moderate password'
+                : 'Strong password';
+    final color = score == 5
+        ? Colors.green.shade700
+        : score >= 3
+            ? Colors.orange.shade800
+            : Colors.red.shade700;
+    final requirements = <(String, bool)>[
+      ('8 or more characters', password.length >= 8),
+      (
+        'Uppercase and lowercase letters',
+        RegExp(r'[A-Z]').hasMatch(password) &&
+            RegExp(r'[a-z]').hasMatch(password)
+      ),
+      ('At least one number', RegExp(r'[0-9]').hasMatch(password)),
+      (
+        'Special character: ! @ # \$ % ^ & * and similar',
+        RegExp(r'[!@#$%^&*()_+\-=\[\]{};:\\|,.<>\/?]').hasMatch(password)
+      ),
+    ];
+
+    return Semantics(
+      liveRegion: true,
+      label: label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: color)),
+          const SizedBox(height: AppSpacing.xs),
+          LinearProgressIndicator(value: score / 5, color: color),
+          const SizedBox(height: AppSpacing.xs),
+          ...requirements.map((item) => Text(
+                '${item.$2 ? '✓' : '○'} ${item.$1}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color:
+                          item.$2 ? Colors.green.shade700 : AppColors.grey600,
+                    ),
+              )),
+        ],
       ),
     );
   }

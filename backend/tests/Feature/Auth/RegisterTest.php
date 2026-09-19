@@ -15,7 +15,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/register', [
             'username' => 'John.Doe',
             'email' => 'john@example.com',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ]);
 
         $response->assertStatus(201)
@@ -50,13 +50,13 @@ class RegisterTest extends TestCase
         $this->postJson('/api/register', [
             'username' => 'unique.person',
             'email' => 'long-one@example.com',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ])->assertCreated();
 
         $this->postJson('/api/register', [
             'username' => 'UNIQUE.PERSON',
             'email' => 'long-two@example.com',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ])->assertStatus(422)->assertJsonValidationErrors(['username']);
     }
 
@@ -67,7 +67,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/register', [
             'username' => 'another.user',
             'email' => 'existing@example.com',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ]);
 
         $response->assertStatus(422)
@@ -80,7 +80,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/register', [
             'username' => '',
             'email' => 'valid@example.com',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ]);
 
         $response->assertStatus(422)
@@ -93,7 +93,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/register', [
             'username' => 'john.doe',
             'email' => 'not-an-email',
-            'password' => 'password123',
+            'password' => 'Password123!',
         ]);
 
         $response->assertStatus(422)

@@ -7,6 +7,7 @@ import '../../../data/remote/providers.dart';
 import '../../../data/repositories/progress_log_repository.dart';
 import '../../../shared/models/models.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 final progressLogRepositoryProvider = Provider<ProgressLogRepository>((ref) {
   final userId = ref.watch(authStateProvider).user?.id ?? 'anonymous';
@@ -57,6 +58,7 @@ class ProgressLogsNotifier extends AsyncNotifier<List<ProgressLog>> {
     switch (result) {
       case Success(value: final log):
         state = AsyncData([log, ...state.valueOrNull ?? const []]);
+        ref.invalidate(profileProvider);
         return null;
       case Failure(error: final error):
         return error;

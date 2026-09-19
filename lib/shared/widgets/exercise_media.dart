@@ -91,9 +91,12 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
       _error = null;
     });
 
-    final controller = _isNetworkVideo(path)
-        ? VideoPlayerController.networkUrl(Uri.parse(path))
-        : VideoPlayerController.asset(path);
+    final playablePath = _isNetworkVideo(path)
+        ? path
+        : resolvedBundledExerciseVideoPath(path) ?? path;
+    final controller = _isNetworkVideo(playablePath)
+        ? VideoPlayerController.networkUrl(Uri.parse(playablePath))
+        : VideoPlayerController.asset(playablePath);
 
     try {
       await controller.initialize();
@@ -152,6 +155,7 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
     return Semantics(
       label: semanticsLabel,
       container: true,
+      explicitChildNodes: true,
       button: _hasVideo && controller == null,
       child: AspectRatio(
         key: const Key('exercise-media'),
@@ -241,56 +245,69 @@ class _VideoPlayback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
+    return Column(
       children: [
-        ColoredBox(
-          color: Colors.black,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: controller.value.size.width,
-              height: controller.value.size.height,
-              child: VideoPlayer(controller),
-            ),
-          ),
-        ),
-        Center(
-          child: IconButton.filledTonal(
-            tooltip: controller.value.isPlaying ? 'Pause video' : 'Play video',
-            onPressed: onTogglePlayback,
-            icon: Icon(
-              controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-            ),
-          ),
-        ),
-        const Positioned(
-          top: AppSpacing.sm,
-          right: AppSpacing.sm,
-          child: Tooltip(
-            message: 'Video is muted',
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.xs),
-                child: Icon(
-                  Icons.volume_off,
-                  size: 18,
-                  color: Colors.white,
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(
+                color: Colors.black,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: controller.value.size.width,
+                    height: controller.value.size.height,
+                    child: VideoPlayer(controller),
+                  ),
                 ),
               ),
-            ),
+              const Positioned(
+                top: AppSpacing.sm,
+                right: AppSpacing.sm,
+                child: Tooltip(
+                  message: 'Video is muted',
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacing.xs),
+                      child: Icon(
+                        Icons.volume_off,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: VideoProgressIndicator(
-            controller,
-            allowScrubbing: true,
-            padding: EdgeInsets.zero,
+        ColoredBox(
+          color: Colors.black87,
+          child: Row(
+            children: [
+              IconButton(
+                tooltip:
+                    controller.value.isPlaying ? 'Pause video' : 'Play video',
+                onPressed: onTogglePlayback,
+                color: Colors.white,
+                icon: Icon(controller.value.isPlaying
+                    ? Icons.pause
+                    : Icons.play_arrow),
+              ),
+              Expanded(
+                child: VideoProgressIndicator(
+                  controller,
+                  allowScrubbing: true,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
           ),
         ),
       ],

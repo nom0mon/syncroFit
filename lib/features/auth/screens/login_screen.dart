@@ -113,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       cursorColor: Colors.black,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
-                      validator: validatePassword,
+                      validator: validateLoginPassword,
                       onFieldSubmitted: (_) => _submit(),
                     ),
                     Align(

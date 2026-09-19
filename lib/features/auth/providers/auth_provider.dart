@@ -158,9 +158,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       lastName: lastName,
       username: username,
       email: current.email,
+      avatarUrl: current.avatarUrl,
       createdAt: current.createdAt,
     );
     await _ref.read(tokenStorageProvider).saveUser(updated);
     state = state.copyWith(user: updated);
+  }
+
+  Future<void> updateCachedUser(User user) async {
+    await _ref.read(tokenStorageProvider).saveUser(user);
+    state = state.copyWith(user: user);
   }
 }

@@ -155,6 +155,10 @@ class CachingWorkoutRepository
   Future<Result<List<Workout>, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    FitnessLevel? fitnessLevel,
+    FitnessGoal? fitnessGoal,
+    WorkoutPreference? workoutPreference,
+    bool saveOptionsToProfile = false,
   }) async {
     if (_connectivity.currentStatus != ConnectivityStatus.online) {
       return Failure(NetworkError());
@@ -170,6 +174,10 @@ class CachingWorkoutRepository
     final result = await generationRepository.generateRecommendation(
       includedExercises: includedExercises,
       excludedExercises: excludedExercises,
+      fitnessLevel: fitnessLevel,
+      fitnessGoal: fitnessGoal,
+      workoutPreference: workoutPreference,
+      saveOptionsToProfile: saveOptionsToProfile,
     );
     // Generated workouts remain server-side drafts until explicitly accepted.
     return result;

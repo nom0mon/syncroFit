@@ -10,9 +10,51 @@ use App\Services\WorkoutPrescriptionPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProfileController extends Controller
 {
+    public function updateAvatar(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=4096,max_height=4096'],
+        ]);
+        $user = $request->user();
+        $disk = (string) config('filesystems.community_media_disk', 'public');
+        $file = $validated['avatar'];
+        $path = $file->store("avatars/{$user->id}", $disk);
+
+        if ($user->avatar_path) {
+            Storage::disk($user->avatar_disk ?: $disk)->delete($user->avatar_path);
+        }
+        $user->forceFill([
+            'avatar_disk' => $disk,
+            'avatar_path' => $path,
+            'avatar_mime_type' => $file->getMimeType(),
+        ])->save();
+
+        return $this->successResponse($user->fresh());
+    }
+
+    public function avatar(\App\Models\User $user): Response
+    {
+        abort_if(!$user->avatar_path, 404);
+        $disk = Storage::disk($user->avatar_disk ?: config('filesystems.community_media_disk', 'public'));
+        abort_unless($disk->exists($user->avatar_path), 404);
+
+        return response()->stream(function () use ($disk, $user): void {
+            $stream = $disk->readStream($user->avatar_path);
+            abort_if($stream === false, 404);
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $user->avatar_mime_type ?: 'image/jpeg',
+            'Content-Length' => (string) $disk->size($user->avatar_path),
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
     /**
      * Display the authenticated user's profile.
      */

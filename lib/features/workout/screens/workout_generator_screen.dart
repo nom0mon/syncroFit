@@ -8,6 +8,8 @@ import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../profile/widgets/profile_form.dart'
+    show FitnessGoalLabel, FitnessLevelLabel, WorkoutPreferenceLabel;
 import '../providers/workout_generator_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
 
@@ -24,6 +26,7 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
     final state = ref.watch(workoutGeneratorProvider);
     final notifier = ref.read(workoutGeneratorProvider.notifier);
     final exerciseState = ref.watch(exerciseProvider);
+    final profile = ref.watch(profileProvider).valueOrNull;
 
     final exerciseNames = <int, String>{};
     for (final exercise in exerciseState.allExercises) {
@@ -55,6 +58,7 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
                     children: [
                       _PreferencesSection(
                         state: state,
+                        profile: profile,
                         exercises: exerciseState.allExercises,
                         notifier: notifier,
                       ),
@@ -129,11 +133,13 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
 class _PreferencesSection extends StatelessWidget {
   const _PreferencesSection({
     required this.state,
+    required this.profile,
     required this.exercises,
     required this.notifier,
   });
 
   final WorkoutGeneratorState state;
+  final UserProfile? profile;
   final List<Exercise> exercises;
   final WorkoutGeneratorNotifier notifier;
 
@@ -153,11 +159,71 @@ class _PreferencesSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Optionally choose exercises to prefer or exclude before generating.',
+          'Use profile defaults or adjust this plan without opening your profile.',
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: AppSpacing.md),
+        DropdownButtonFormField<FitnessLevel>(
+          key: const Key('generator-fitness-level'),
+          initialValue: state.fitnessLevel ?? profile?.fitnessLevel,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Fitness level'),
+          items: FitnessLevel.values
+              .map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.label),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) notifier.setFitnessLevel(value);
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<FitnessGoal>(
+          key: const Key('generator-fitness-goal'),
+          initialValue: state.fitnessGoal ?? profile?.fitnessGoal,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Fitness goal'),
+          items: FitnessGoal.values
+              .map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.label),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) notifier.setFitnessGoal(value);
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<WorkoutPreference>(
+          key: const Key('generator-workout-preference'),
+          initialValue: state.workoutPreference ?? profile?.workoutPreference,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Training location'),
+          items: WorkoutPreference.values
+              .map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.label),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) notifier.setWorkoutPreference(value);
+          },
+        ),
+        CheckboxListTile(
+          key: const Key('generator-save-options'),
+          contentPadding: EdgeInsets.zero,
+          value: state.saveOptionsToProfile,
+          title: const Text('Save these options to my profile'),
+          subtitle: const Text(
+            'Leave off to use them only for this generated plan.',
+          ),
+          controlAffinity: ListTileControlAffinity.leading,
+          onChanged: (value) =>
+              notifier.setSaveOptionsToProfile(value ?? false),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         AdaptiveGridList(
           minItemWidth: 220,
           maxColumns: 2,

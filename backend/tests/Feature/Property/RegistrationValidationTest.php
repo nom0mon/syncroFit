@@ -24,7 +24,8 @@ class RegistrationValidationTest extends TestCase
      * Verify the errors object only contains keys for the invalid fields.
      *
      * Valid ranges: username is 3-30 allowed characters and unique,
-     * email is valid+unique+<=254, password is 8-128 chars.
+     * email is valid+unique+<=254, password is 8-128 chars with mixed case,
+     * a number, and a symbol.
      *
      * **Validates: Requirements 1.3**
      */
@@ -151,8 +152,8 @@ class RegistrationValidationTest extends TestCase
 
     private function generateValidPassword(): string
     {
-        $length = mt_rand(8, 128);
-        return $this->randomAlphanumeric($length);
+        $length = mt_rand(8, 124);
+        return 'Aa1!'.$this->randomAlphanumeric($length - 4);
     }
 
     private function generateInvalidPassword(): string

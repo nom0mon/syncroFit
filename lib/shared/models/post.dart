@@ -37,6 +37,7 @@ class Post {
   final String id;
   final String authorName;
   final String authorId;
+  final String? authorAvatarUrl;
   final String content;
   final DateTime timestamp;
   final int likeCount;
@@ -50,6 +51,7 @@ class Post {
     required this.id,
     required this.authorName,
     this.authorId = '',
+    this.authorAvatarUrl,
     required this.content,
     required this.timestamp,
     required this.likeCount,
@@ -63,6 +65,7 @@ class Post {
   factory Post.fromJson(Map<String, dynamic> json) => Post(
         id: json['id'].toString(),
         authorId: json['author_id']?.toString() ?? '',
+        authorAvatarUrl: json['author_avatar_url'] as String?,
         authorName: json['author_name'] as String? ?? 'Unknown user',
         content: json['content'] as String,
         timestamp: DateTime.parse(json['created_at'] as String),
@@ -85,6 +88,7 @@ class Post {
         'id': id,
         'author_id': authorId,
         'author_name': authorName,
+        'author_avatar_url': authorAvatarUrl,
         'content': content,
         'created_at': timestamp.toIso8601String(),
         'like_count': likeCount,
@@ -104,6 +108,7 @@ class Post {
         id: id,
         authorId: authorId,
         authorName: authorName,
+        authorAvatarUrl: authorAvatarUrl,
         content: content,
         timestamp: timestamp,
         likeCount: likeCount ?? this.likeCount,

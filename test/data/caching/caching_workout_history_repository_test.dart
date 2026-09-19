@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:synchrofit/core/models/workout_history.dart';
 import 'package:synchrofit/core/network/connectivity_monitor.dart';
 import 'package:synchrofit/data/caching/caching_workout_history_repository.dart';
 import 'package:synchrofit/data/local/daos/cache_metadata_dao.dart';

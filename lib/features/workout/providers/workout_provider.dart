@@ -4,6 +4,7 @@ import '../../../data/caching/caching_providers.dart';
 import '../../../data/repositories/workout_history_repository.dart';
 import '../../../data/repositories/workout_repository.dart';
 import '../../../shared/models/models.dart';
+import '../../../core/notifications/workout_reminder_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'workout_history_refresh_provider.dart';
 
@@ -354,6 +355,14 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
       case Success(value: final saved):
         final refresh = _ref.read(workoutHistoryRefreshProvider.notifier);
         refresh.state = refresh.state + 1;
+        final weekday = _workoutWeekday(state.workout!.dayOfWeek);
+        if (weekday != null) {
+          await WorkoutReminderService.instance.markWorkoutCompleted(
+            weekday: weekday,
+            workoutId: state.workout!.id,
+            workoutName: state.workout!.name,
+          );
+        }
         return saved;
       case Failure():
         return null;
@@ -364,6 +373,23 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   void resetSession() {
     _completionMutationId = null;
     state = const WorkoutSessionState();
+  }
+
+  int? _workoutWeekday(String? value) {
+    if (value == null) return null;
+    final number = int.tryParse(value);
+    if (number != null && number >= 1 && number <= 7) return number;
+    const names = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ];
+    final index = names.indexOf(value.trim().toLowerCase());
+    return index < 0 ? null : index + 1;
   }
 }
 

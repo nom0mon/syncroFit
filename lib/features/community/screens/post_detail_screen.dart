@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/community_avatar.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
@@ -240,13 +241,25 @@ class _PostDetailBody extends StatelessWidget {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               children: [
-                Text(
-                  post.authorName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    CommunityAvatar(
+                      name: post.authorName,
+                      imageUrl: post.authorAvatarUrl,
+                      radius: 23,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        post.authorName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -372,13 +385,26 @@ class _CommentCard extends StatelessWidget {
                     constraints.maxWidth,
                   ) ==
                   AppWidthClass.compact;
-              final name = Text(
-                comment.authorName,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              final name = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CommunityAvatar(
+                    name: comment.authorName,
+                    imageUrl: comment.authorAvatarUrl,
+                    radius: 15,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: Text(
+                      comment.authorName,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               );
               final timestamp = Text(
                 formatRelativeTimestamp(comment.timestamp),

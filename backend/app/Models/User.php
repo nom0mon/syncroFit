@@ -29,7 +29,14 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $appends = ['full_name'];
+    protected $appends = ['full_name', 'avatar_url'];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if ($this->avatar_path === null) return null;
+        $version = $this->updated_at?->getTimestamp() ?? 0;
+        return rtrim((string) config('app.url'), '/') . "/api/community/users/{$this->id}/avatar?v={$version}";
+    }
 
     /**
      * Get the user's full name.
@@ -46,6 +53,9 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'avatar_disk',
+        'avatar_path',
+        'avatar_mime_type',
     ];
 
     /**

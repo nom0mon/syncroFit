@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProgressLog;
+use App\Models\Profile;
 use App\Services\ProgressImageStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,16 @@ class ProgressLogController extends Controller
             'weight_kg' => $validated['weight_kg'],
             ...$paths,
         ]);
+
+        $profile = Profile::where('user_id', $request->user()->id)->first();
+        if ($profile !== null) {
+            $profile->weight_kg = $validated['weight_kg'];
+            $profile->bmi = round(
+                ((float) $validated['weight_kg']) / pow(((float) $profile->height_cm) / 100, 2),
+                2
+            );
+            $profile->save();
+        }
 
         return response()->json(['success' => true, 'data' => $log], 201);
     }

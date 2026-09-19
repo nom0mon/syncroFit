@@ -22,10 +22,13 @@ class ResetPasswordController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
         $credentials = $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)->max(72)],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()->max(72)],
         ]);
 
         $status = Password::reset(
@@ -38,7 +41,7 @@ class ResetPasswordController extends Controller
 
         if ($status !== Password::PASSWORD_RESET) {
             return back()->withInput($request->only('email'))->withErrors([
-                'email' => __($status),
+                'email' => 'This reset link is invalid or expired. Request a new link and use the newest email you receive.',
             ]);
         }
 

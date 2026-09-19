@@ -4,6 +4,7 @@ class User {
   final String lastName;
   final String username;
   final String email;
+  final String? avatarUrl;
   final DateTime createdAt;
 
   const User({
@@ -12,6 +13,7 @@ class User {
     required this.lastName,
     this.username = '',
     required this.email,
+    this.avatarUrl,
     required this.createdAt,
   });
 
@@ -30,6 +32,7 @@ class User {
         lastName: parts.length > 1 ? parts.sublist(1).join(' ') : '',
         username: json['username'] as String? ?? '',
         email: json['email'] as String,
+        avatarUrl: json['avatar_url'] as String?,
         createdAt: json['created_at'] != null
             ? DateTime.parse(json['created_at'] as String)
             : DateTime.now(),
@@ -41,6 +44,7 @@ class User {
       lastName: lastName,
       username: json['username'] as String? ?? '',
       email: json['email'] as String,
+      avatarUrl: json['avatar_url'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -53,6 +57,7 @@ class User {
         'last_name': lastName,
         'username': username,
         'email': email,
+        'avatar_url': avatarUrl,
         'created_at': createdAt.toIso8601String(),
       };
 }

@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/profile_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../widgets/profile_form.dart'
     show
         GenderLabel,
@@ -24,6 +25,7 @@ class ProfileViewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
+    final avatarUrl = ref.watch(authStateProvider).user?.avatarUrl;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,7 +99,7 @@ class ProfileViewScreen extends ConsumerWidget {
               ),
             );
           }
-          return _ProfileContent(profile: profile);
+          return _ProfileContent(profile: profile, avatarUrl: avatarUrl);
         },
       ),
     );
@@ -105,9 +107,10 @@ class ProfileViewScreen extends ConsumerWidget {
 }
 
 class _ProfileContent extends StatelessWidget {
-  const _ProfileContent({required this.profile});
+  const _ProfileContent({required this.profile, this.avatarUrl});
 
   final UserProfile profile;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +130,10 @@ class _ProfileContent extends StatelessWidget {
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: theme.colorScheme.primaryContainer,
+                      foregroundImage:
+                          avatarUrl != null && avatarUrl!.isNotEmpty
+                              ? NetworkImage(avatarUrl!)
+                              : null,
                       child: Text(
                         profile.name.isNotEmpty
                             ? profile.name[0].toUpperCase()
