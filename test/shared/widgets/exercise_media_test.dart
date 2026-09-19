@@ -81,8 +81,8 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const ExerciseMedia(
-            videoPath: 'assets/videos/plank.mp4',
-            exerciseName: 'Plank',
+            videoPath: 'assets/videos/pull_up.mp4',
+            exerciseName: 'Pull-Up',
           ),
         ),
       );
@@ -90,6 +90,21 @@ void main() {
       expect(find.text('Play video guide'), findsOneWidget);
       expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
       expect(find.byIcon(Icons.videocam_off_outlined), findsNothing);
+    });
+
+    testWidgets('does not offer an unbundled generated video path',
+        (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const ExerciseMedia(
+            videoPath: 'assets/videos/plank.mp4',
+            exerciseName: 'Plank',
+          ),
+        ),
+      );
+
+      expect(find.text('No video available'), findsOneWidget);
+      expect(find.byIcon(Icons.videocam_off_outlined), findsOneWidget);
     });
 
     testWidgets('exposes an accessible semantics label', (tester) async {
