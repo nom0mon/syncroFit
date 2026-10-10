@@ -85,16 +85,38 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
   WorkoutGeneratorNotifier(this._ref) : super(const WorkoutGeneratorState());
 
   void setFitnessLevel(FitnessLevel value) =>
-      state = state.copyWith(fitnessLevel: value);
+      state = _withClearedStaleDraft(state.copyWith(fitnessLevel: value));
 
   void setFitnessGoal(FitnessGoal value) =>
-      state = state.copyWith(fitnessGoal: value);
+      state = _withClearedStaleDraft(state.copyWith(fitnessGoal: value));
 
   void setWorkoutPreference(WorkoutPreference value) =>
-      state = state.copyWith(workoutPreference: value);
+      state = _withClearedStaleDraft(state.copyWith(workoutPreference: value));
 
   void setSaveOptionsToProfile(bool value) =>
       state = state.copyWith(saveOptionsToProfile: value);
+
+  /// Discards any already-generated draft when a generation input changes.
+  ///
+  /// A generated plan is tied to the exact fitness level, goal, and workout
+  /// environment it was produced for. If the user changes any of those after
+  /// generating, the on-screen draft (and its server-side plan_id) becomes
+  /// stale: accepting or customizing it can hit a 404 (the server pruned the
+  /// draft when the profile changed) or a 422 (an exercise is no longer valid
+  /// for the new environment). Returning to [WorkoutGeneratorStatus.idle]
+  /// forces an explicit regenerate before the plan can be accepted, keeping
+  /// the client and server consistent.
+  WorkoutGeneratorState _withClearedStaleDraft(WorkoutGeneratorState next) {
+    final hasDraft = next.status == WorkoutGeneratorStatus.generated ||
+        next.status == WorkoutGeneratorStatus.accepting ||
+        next.generatedWorkouts.isNotEmpty;
+    if (!hasDraft) return next;
+    return next.copyWith(
+      status: WorkoutGeneratorStatus.idle,
+      generatedWorkouts: const [],
+      clearError: true,
+    );
+  }
 
   /// Toggles an exercise in the included set.
   ///
@@ -215,10 +237,26 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
         await _ref.read(workoutSchedulerProvider.notifier).refresh();
         return true;
       case Failure(error: final error):
-        state = state.copyWith(
-          status: WorkoutGeneratorStatus.generated,
-          errorMessage: error.message,
-        );
+        // A 404 (server already pruned this draft) or a 422 (the draft is no
+        // longer valid for the current profile/environment) means the plan on
+        // screen is stale. Returning to idle forces an explicit regenerate
+        // rather than letting the user re-accept a dead draft in a loop.
+        final isStaleDraft = error is NotFoundError ||
+            (error is ServerError &&
+                (error.statusCode == 404 || error.statusCode == 422));
+        if (isStaleDraft) {
+          state = state.copyWith(
+            status: WorkoutGeneratorStatus.idle,
+            generatedWorkouts: const [],
+            errorMessage:
+                'This plan is no longer available. Please generate a new one.',
+          );
+        } else {
+          state = state.copyWith(
+            status: WorkoutGeneratorStatus.generated,
+            errorMessage: error.message,
+          );
+        }
         return false;
     }
   }

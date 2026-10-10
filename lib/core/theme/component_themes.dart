@@ -9,12 +9,12 @@ import 'app_text_styles.dart';
 /// Auth screens: clean thin borders on white. Dashboard: bordered dark cards.
 /// Bottom nav: rounded pill shape with dark background.
 abstract final class ComponentThemes {
-  /// Elevated button — dark charcoal background, full-width, rounded.
+  /// Elevated button — brand blue background, full-width, rounded.
   static ElevatedButtonThemeData elevatedButtonTheme(ColorScheme colorScheme) {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: AppColors.grey900,
+        backgroundColor: AppColors.brandBlue,
         minimumSize: const Size(double.infinity, 52),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -50,7 +50,7 @@ abstract final class ComponentThemes {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(8)),
-        borderSide: BorderSide(color: AppColors.grey900, width: 1.5),
+        borderSide: BorderSide(color: AppColors.brandBlue, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(8)),
@@ -80,14 +80,14 @@ abstract final class ComponentThemes {
     );
   }
 
-  /// Card theme for dark mode — lighter fill with visible border for readability.
+  /// Card theme for dark mode — navy fill with a visible border for readability.
   static CardThemeData cardThemeDark() {
     return CardThemeData(
-      color: const Color(0xFF262626),
+      color: AppColors.navyCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFF3D3D3D), width: 1),
+        side: const BorderSide(color: AppColors.navyBorder, width: 1),
       ),
       margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,

@@ -6,16 +6,21 @@ import 'component_themes.dart';
 
 /// Provides the light and dark [ThemeData] objects for the SyncroFit app.
 ///
-/// Light theme: clean white auth screens. Dark theme: black dashboard with
-/// white text — pure monochrome, high contrast.
+/// Brand palette: navy `#142D4E`, blue `#3478F6`, lime `#C6F135`.
+/// Light theme: white surfaces, navy text, blue interactive elements.
+/// Dark theme: navy scaffold, white text, blue primary actions, lime accent.
 abstract final class AppTheme {
-  /// Light theme — white background, dark text, used for auth/onboarding.
+  /// Light theme — white background, navy text, blue primary actions.
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+      seedColor: AppColors.brandBlue,
       brightness: Brightness.light,
-      primary: AppColors.primary,
+      primary: AppColors.brandBlue,
       onPrimary: Colors.white,
+      secondary: AppColors.brandNavy,
+      onSecondary: Colors.white,
+      tertiary: AppColors.brandLime,
+      onTertiary: AppColors.brandNavy,
       surface: AppColors.surfaceLight,
       onSurface: AppColors.onSurfaceLight,
     );
@@ -33,14 +38,15 @@ abstract final class AppTheme {
     );
   }
 
-  /// Dark theme — jet black background, white text, bordered cards.
-  /// Pure monochrome Geist-inspired aesthetic with zero elevation.
+  /// Dark theme — navy background, white text, blue primary, lime accent.
   static ThemeData get darkTheme {
     const colorScheme = ColorScheme.dark(
-      primary: AppColors.textPrimary,
-      onPrimary: AppColors.scaffoldBlack,
-      secondary: AppColors.textSecondary,
-      onSecondary: AppColors.scaffoldBlack,
+      primary: AppColors.brandBlue,
+      onPrimary: Colors.white,
+      secondary: AppColors.brandLime,
+      onSecondary: AppColors.brandNavy,
+      tertiary: AppColors.brandLime,
+      onTertiary: AppColors.brandNavy,
       surface: AppColors.scaffoldBlack,
       onSurface: AppColors.textPrimary,
       surfaceContainerHighest: AppColors.cardFill,

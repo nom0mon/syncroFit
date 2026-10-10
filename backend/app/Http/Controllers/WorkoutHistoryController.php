@@ -19,7 +19,12 @@ class WorkoutHistoryController extends Controller
             'workout_name' => 'required|string|max:255',
             'completed_at' => 'required|date',
             'total_duration_seconds' => 'required|integer|min:0',
-            'exercises_completed' => 'required|array',
+            // A completed session may legitimately contain zero exercises when
+            // the user skips every exercise. The field must be present, but an
+            // empty array is valid. Using `present|array` instead of
+            // `required|array` accepts `[]` while still rejecting a missing key
+            // or a non-array value.
+            'exercises_completed' => 'present|array',
         ]);
 
         $attributes = [

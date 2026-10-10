@@ -111,7 +111,7 @@ void main() {
     );
 
     testWidgets(
-      'LoginScreen TextFormField focused border color equals AppColors.grey900',
+      'LoginScreen TextFormField focused border color equals AppColors.focusBorder',
       (tester) async {
         await tester
             .pumpWidget(buildAuthScreenWithDarkTheme(const LoginScreen()));
@@ -132,8 +132,8 @@ void main() {
         final borderSide = (focusedBorder as OutlineInputBorder).borderSide;
         expect(
           borderSide.color,
-          equals(AppColors.grey900),
-          reason: 'Focused border color should be AppColors.grey900 '
+          equals(AppColors.focusBorder),
+          reason: 'Focused border color should be AppColors.focusBorder '
               'but got ${borderSide.color}',
         );
       },

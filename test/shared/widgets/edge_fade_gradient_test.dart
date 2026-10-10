@@ -97,8 +97,11 @@ void main() {
       final decoration = container.decoration as BoxDecoration;
       final gradient = decoration.gradient as LinearGradient;
 
-      expect(gradient.colors[0], AppTheme.darkTheme.scaffoldBackgroundColor);
-      expect(gradient.colors[1], Colors.transparent);
+      final scaffold = AppTheme.darkTheme.scaffoldBackgroundColor;
+      expect(gradient.colors[0], scaffold);
+      // The widget fades to a fully-transparent version of the scaffold color
+      // (not transparent black) to avoid a grey/colored band during blending.
+      expect(gradient.colors[1], scaffold.withValues(alpha: 0));
       expect(gradient.begin, Alignment.topCenter);
       expect(gradient.end, Alignment.bottomCenter);
     });
@@ -123,8 +126,9 @@ void main() {
       final decoration = container.decoration as BoxDecoration;
       final gradient = decoration.gradient as LinearGradient;
 
-      expect(gradient.colors[0], Colors.transparent);
-      expect(gradient.colors[1], AppTheme.darkTheme.scaffoldBackgroundColor);
+      final scaffold = AppTheme.darkTheme.scaffoldBackgroundColor;
+      expect(gradient.colors[0], scaffold.withValues(alpha: 0));
+      expect(gradient.colors[1], scaffold);
       expect(gradient.begin, Alignment.topCenter);
       expect(gradient.end, Alignment.bottomCenter);
     });
