@@ -65,7 +65,8 @@ ProviderContainer _containerWith(_FakeWorkoutRepository repo) {
 
 void main() {
   group('D3: changing a generation input clears a stale draft', () {
-    test('changing workout preference after generating returns to idle', () async {
+    test('changing workout preference after generating returns to idle',
+        () async {
       final repo = _FakeWorkoutRepository(acceptResult: const Success([]));
       final container = _containerWith(repo);
       final notifier = container.read(workoutGeneratorProvider.notifier);

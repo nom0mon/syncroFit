@@ -86,6 +86,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Default small icon for flutter_local_notifications. Also creates a
+             static resource reference so the shrinker never strips the icon
+             that is otherwise only referenced by name at runtime. -->
+        <meta-data
+            android:name="com.dexterous.flutterlocalnotifications.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

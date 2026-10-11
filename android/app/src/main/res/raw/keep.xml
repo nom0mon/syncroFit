@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The notification small icon is referenced only by name at runtime (from Dart
+  via flutter_local_notifications), so Android's resource shrinker cannot see
+  the reference and would strip it from release builds. Explicitly keeping it
+  ensures the icon ships in the APK and notifications render.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_notify" />

@@ -157,7 +157,6 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
     final percentage = ((totalWorkouts / monthlyTarget) * 100).round();
     return percentage.clamp(0, 100);
   }
-
 }
 
 /// Returns the latest run of consecutive, distinct workout dates in the

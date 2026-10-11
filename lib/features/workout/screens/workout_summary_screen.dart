@@ -48,9 +48,8 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
     setState(() {
       _isSaving = false;
       _isSaved = saved != null;
-      _saveError = saved == null
-          ? 'Could not save this workout. Please retry.'
-          : null;
+      _saveError =
+          saved == null ? 'Could not save this workout. Please retry.' : null;
     });
   }
 

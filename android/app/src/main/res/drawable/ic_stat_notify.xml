@@ -1,0 +1,18 @@
+<!--
+  Notification status-bar small icon (monochrome).
+
+  Android renders the notification small icon as a mask: only the alpha channel
+  is used and the system tints it. This dumbbell glyph is drawn in solid white
+  so it displays correctly across all system themes. It must live in `drawable`
+  (flutter_local_notifications resolves the small icon as @drawable/<name>),
+  which is why the previous `ic_launcher` (a mipmap) silently failed.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M20.57,14.86L22,13.43 20.57,12 17,15.57 8.43,7 12,3.43 10.57,2 9.14,3.43 7.71,2 5.57,4.14 4.14,2.71 2.71,4.14 4.14,5.57 2,7.71 3.43,9.14 2,10.57 3.43,12 7,8.43 15.57,17 12,20.57 13.43,22 14.86,20.57 16.29,22 18.43,19.86 19.86,21.29 21.29,19.86 19.86,18.43 22,16.29z" />
+</vector>

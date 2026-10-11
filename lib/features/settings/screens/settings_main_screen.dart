@@ -146,12 +146,24 @@ class SettingsMainScreen extends ConsumerWidget {
   Future<void> _sendTestReminder(BuildContext context) async {
     final sent = await WorkoutReminderService.instance.showTestReminder();
     if (!context.mounted) return;
+    if (sent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Test workout reminder sent.')),
+      );
+      return;
+    }
+    // Permission is denied (or was dismissed). Offer a one-tap deep-link into
+    // the system notification settings so the user can enable it.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          sent
-              ? 'Test workout reminder sent.'
-              : 'Allow SyncroFit notifications in phone settings, then try again.',
+        duration: const Duration(seconds: 6),
+        content: const Text(
+          'Notifications are turned off for SyncroFit. Enable them to receive '
+          'workout reminders.',
+        ),
+        action: SnackBarAction(
+          label: 'Open settings',
+          onPressed: () => _openNotificationSettings(context),
         ),
       ),
     );

@@ -17,11 +17,10 @@ import 'package:synchrofit/core/theme/app_theme.dart';
 void main() {
   int channel(double value) => (value * 255).round().clamp(0, 255);
 
-  String hex(Color c) =>
-      '#${channel(c.r).toRadixString(16).padLeft(2, '0')}'
-              '${channel(c.g).toRadixString(16).padLeft(2, '0')}'
-              '${channel(c.b).toRadixString(16).padLeft(2, '0')}'
-          .toUpperCase();
+  String hex(Color c) => '#${channel(c.r).toRadixString(16).padLeft(2, '0')}'
+          '${channel(c.g).toRadixString(16).padLeft(2, '0')}'
+          '${channel(c.b).toRadixString(16).padLeft(2, '0')}'
+      .toUpperCase();
 
   group('Brand palette constants', () {
     test('the three brand colors match the specified hex values', () {

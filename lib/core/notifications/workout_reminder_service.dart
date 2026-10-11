@@ -42,7 +42,7 @@ class WorkoutReminderService {
     }
 
     const settings = InitializationSettings(
-      android: AndroidInitializationSettings('ic_launcher'),
+      android: AndroidInitializationSettings('ic_stat_notify'),
     );
     await _notifications.initialize(
       settings: settings,
@@ -106,6 +106,7 @@ class WorkoutReminderService {
             android: AndroidNotificationDetails(
               _channelId,
               'Scheduled workouts',
+              icon: 'ic_stat_notify',
               channelDescription:
                   'Reminders for workout days in your accepted weekly plan.',
               importance: Importance.high,
@@ -126,6 +127,7 @@ class WorkoutReminderService {
             android: AndroidNotificationDetails(
               _channelId,
               'Scheduled workouts',
+              icon: 'ic_stat_notify',
               channelDescription:
                   'Reminders for workout days in your accepted weekly plan.',
               importance: Importance.high,
@@ -146,9 +148,8 @@ class WorkoutReminderService {
   Future<bool> showTestReminder() async {
     if (!_initialized || kIsWeb) return false;
     try {
-      final allowed = await _androidPlugin?.requestNotificationsPermission();
-      _preferences?.setBool(_permissionRequestedKey, true);
-      if (allowed == false) return false;
+      // Request (or confirm) permission and only post when actually granted.
+      if (!await requestNotificationPermission()) return false;
       await _notifications.show(
         id: _testNotificationId,
         title: 'SyncroFit workout reminder',
@@ -157,6 +158,7 @@ class WorkoutReminderService {
           android: AndroidNotificationDetails(
             _channelId,
             'Scheduled workouts',
+            icon: 'ic_stat_notify',
             channelDescription:
                 'Reminders for workout days in your accepted weekly plan.',
             importance: Importance.high,
@@ -200,6 +202,7 @@ class WorkoutReminderService {
         android: AndroidNotificationDetails(
           _channelId,
           'Scheduled workouts',
+          icon: 'ic_stat_notify',
           channelDescription:
               'Reminders for workout days in your accepted weekly plan.',
           importance: Importance.high,
@@ -213,10 +216,30 @@ class WorkoutReminderService {
 
   Future<bool> _requestPermissionOnce() async {
     final preferences = _preferences;
-    if (preferences?.getBool(_permissionRequestedKey) ?? false) return true;
+    // Always reflect the real OS permission state. A prior "requested" flag must
+    // never mask a later denial, otherwise reminders are scheduled against a
+    // permission the user does not actually have and nothing is shown.
+    if (await areNotificationsEnabled()) return true;
     final allowed = await _androidPlugin?.requestNotificationsPermission();
     await preferences?.setBool(_permissionRequestedKey, true);
-    return allowed ?? true;
+    return allowed ?? false;
+  }
+
+  /// Whether the OS currently permits SyncroFit to post notifications.
+  Future<bool> areNotificationsEnabled() async {
+    if (!_initialized || kIsWeb) return false;
+    return await _androidPlugin?.areNotificationsEnabled() ?? false;
+  }
+
+  /// Explicitly requests the POST_NOTIFICATIONS permission and returns the
+  /// resulting grant state. Safe to call repeatedly; on Android 13+ the system
+  /// shows the dialog once, after which this reflects the stored decision.
+  Future<bool> requestNotificationPermission() async {
+    if (!_initialized || kIsWeb) return false;
+    if (await areNotificationsEnabled()) return true;
+    final allowed = await _androidPlugin?.requestNotificationsPermission();
+    await _preferences?.setBool(_permissionRequestedKey, true);
+    return allowed ?? false;
   }
 
   tz.TZDateTime _nextOccurrence(int weekday, int hour) {
