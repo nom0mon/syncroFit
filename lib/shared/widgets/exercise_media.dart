@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/theme/app_spacing.dart';
@@ -130,6 +131,30 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
     if (mounted) setState(() {});
   }
 
+  /// Opens the current video in an immersive, landscape-capable fullscreen
+  /// view. The existing [VideoPlayerController] is reused so playback position
+  /// and buffering are preserved and a second decoder is never created.
+  Future<void> _openFullscreen() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    await Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: true,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => _FullscreenVideoPage(
+          controller: controller,
+          exerciseName: widget.exerciseName,
+        ),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+
+    // Returning from fullscreen: reflect any play/pause changes made there.
+    if (mounted) setState(() {});
+  }
+
   void _disposeController() {
     final controller = _controller;
     _controller = null;
@@ -168,6 +193,7 @@ class _ExerciseMediaState extends State<ExerciseMedia> {
                 ? _VideoPlayback(
                     controller: controller,
                     onTogglePlayback: _togglePlayback,
+                    onFullscreen: _openFullscreen,
                   )
                 : _VideoPrompt(
                     hasVideo: _hasVideo,
@@ -238,10 +264,12 @@ class _VideoPlayback extends StatelessWidget {
   const _VideoPlayback({
     required this.controller,
     required this.onTogglePlayback,
+    required this.onFullscreen,
   });
 
   final VideoPlayerController controller;
   final VoidCallback onTogglePlayback;
+  final VoidCallback onFullscreen;
 
   @override
   Widget build(BuildContext context) {
@@ -306,11 +334,131 @@ class _VideoPlayback extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 20),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.xs),
+              IconButton(
+                key: const Key('exercise-media-fullscreen'),
+                tooltip: 'Fullscreen',
+                onPressed: onFullscreen,
+                color: Colors.white,
+                icon: const Icon(Icons.fullscreen),
+              ),
+              const SizedBox(width: AppSpacing.xs),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Immersive fullscreen playback for an exercise demonstration.
+///
+/// Reuses the caller's [VideoPlayerController] so playback state is shared and
+/// no second decoder is created. Allows landscape while open and restores the
+/// app's portrait orientation and system UI overlays on exit.
+class _FullscreenVideoPage extends StatefulWidget {
+  const _FullscreenVideoPage({
+    required this.controller,
+    this.exerciseName,
+  });
+
+  final VideoPlayerController controller;
+  final String? exerciseName;
+
+  @override
+  State<_FullscreenVideoPage> createState() => _FullscreenVideoPageState();
+}
+
+class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    // Restore the app's default chrome and release the fullscreen orientation
+    // override. The app does not lock orientation globally, so we clear the
+    // preference (empty list = system default) rather than forcing portrait.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations(const []);
+    super.dispose();
+  }
+
+  void _togglePlayback() {
+    final controller = widget.controller;
+    controller.value.isPlaying ? controller.pause() : controller.play();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final semanticsLabel = widget.exerciseName == null
+        ? 'Fullscreen exercise video'
+        : 'Fullscreen exercise video for ${widget.exerciseName}';
+
+    return Semantics(
+      label: semanticsLabel,
+      container: true,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: AspectRatio(
+                aspectRatio: controller.value.aspectRatio == 0
+                    ? 16 / 9
+                    : controller.value.aspectRatio,
+                child: GestureDetector(
+                  onTap: _togglePlayback,
+                  child: VideoPlayer(controller),
+                ),
+              ),
+            ),
+            // Progress bar pinned to the bottom.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ColoredBox(
+                color: Colors.black54,
+                child: VideoProgressIndicator(
+                  controller,
+                  allowScrubbing: true,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.md,
+                    horizontal: AppSpacing.sm,
+                  ),
+                ),
+              ),
+            ),
+            // Exit-fullscreen control, kept clear of the status-bar inset.
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: IconButton(
+                    key: const Key('exercise-media-exit-fullscreen'),
+                    tooltip: 'Exit fullscreen',
+                    color: Colors.white,
+                    icon: const Icon(Icons.fullscreen_exit),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
