@@ -97,8 +97,10 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const ExerciseMedia(
-            videoPath: 'assets/videos/dumbbell_bench_press.mp4',
-            exerciseName: 'Dumbbell Bench Press',
+            // A backend-generated path for an exercise whose demonstration has
+            // not been produced/bundled yet must fall back gracefully.
+            videoPath: 'assets/videos/cable_lateral_raise.mp4',
+            exerciseName: 'Cable Lateral Raise',
           ),
         ),
       );

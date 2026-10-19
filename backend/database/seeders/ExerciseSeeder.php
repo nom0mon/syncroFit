@@ -212,22 +212,6 @@ class ExerciseSeeder extends Seeder
                 'exercise_type' => 'compound',
                 'goals' => ['muscle_gain', 'strength', 'general_fitness'],
             ],
-            [
-                'name' => 'Resistance Band Curl',
-                'description' => 'A bicep curl performed with a resistance band, providing constant tension throughout the movement.',
-                'instructions' => json_encode(['Stand on the middle of a resistance band with feet shoulder-width apart.', 'Hold both ends of the band with palms facing up.', 'Curl your hands toward your shoulders against the resistance.', 'Lower slowly back to the starting position.']),
-                'muscle_group' => 'biceps',
-                'equipment' => 'resistance_band',
-                'difficulty' => 'beginner',
-                'default_sets' => 3,
-                'default_reps' => 15,
-                'default_duration_seconds' => 0,
-                'movement_pattern' => 'accessory',
-                'primary_muscles' => ['biceps'],
-                'secondary_muscles' => [],
-                'exercise_type' => 'isolation',
-                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
-            ],
             // ===== TRICEPS =====
             [
                 'name' => 'Tricep Dip',

@@ -68,7 +68,6 @@ void main() {
         'Dumbbell Bicep Curl',
         'Barbell Curl',
         'Chin-Up',
-        'Resistance Band Curl',
         'Tricep Dip',
         'Dumbbell Overhead Tricep Extension',
         'Cable Tricep Pushdown',

@@ -118,7 +118,7 @@ class ExerciseVideoPathConversionTest extends TestCase
             'Cable Chest Fly', 'Pull-Up', 'Barbell Bent-Over Row',
             'Dumbbell Single-Arm Row', 'Dumbbell Overhead Press', 'Pike Push-Up',
             'Dumbbell Bicep Curl', 'Barbell Curl', 'Chin-Up',
-            'Resistance Band Curl', 'Tricep Dip', 'Dumbbell Overhead Tricep Extension',
+            'Tricep Dip', 'Dumbbell Overhead Tricep Extension',
             'Cable Tricep Pushdown', 'Bodyweight Squat', 'Barbell Back Squat',
             'Leg Press', 'Dumbbell Romanian Deadlift', 'Plank',
             'Hanging Leg Raise', 'Cable Woodchop', 'Burpee',

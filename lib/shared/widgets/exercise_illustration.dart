@@ -30,7 +30,6 @@ class ExerciseIllustration extends StatelessWidget {
     'dumbbell bicep curl': 'bicep-curl',
     'barbell curl': 'repdb-barbell-curl.webp',
     'chin-up': 'chin-up',
-    'resistance band curl': 'bicep-curl',
     'tricep dip': 'dip',
     'dumbbell overhead tricep extension': 'dumbbell-overhead-tricep-extension',
     'cable tricep pushdown': 'tricep-pushdown',
