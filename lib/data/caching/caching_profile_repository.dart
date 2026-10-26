@@ -116,8 +116,12 @@ class CachingProfileRepository implements ProfileRepository {
       entityType: 'profile',
       entityId: profile.userId,
       operationType: 'create',
+      // Use the API-shaped payload (same as the online POST path) so the
+      // queued request matches StoreProfileRequest. toJson() is the SQLite
+      // cache serializer and leaks client-only fields (user_id, updated_at)
+      // that the backend rejects, causing a 422 on sync.
       payload: {
-        ...profile.toJson(),
+        ...profile.toApiJson(),
         'updated_at': now.toIso8601String(),
       },
       createdAt: now,
@@ -186,9 +190,10 @@ class CachingProfileRepository implements ProfileRepository {
     UserProfile? existing,
     UserProfile updated,
   ) {
-    // If there's no existing profile, all fields are dirty
+    // If there's no existing profile, all fields are dirty. Use the
+    // API-shaped payload so user_id (client-only) is not sent to the backend.
     if (existing == null) {
-      return updated.toJson();
+      return updated.toApiJson();
     }
 
     final dirty = <String, dynamic>{};

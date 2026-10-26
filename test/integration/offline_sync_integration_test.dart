@@ -248,6 +248,17 @@ void main() {
       expect(pending.first.entityId, equals('user-1'));
       expect(pending.first.operationType, equals('create'));
 
+      // Regression guard: the queued payload must match the backend
+      // StoreProfileRequest contract (same shape as the online toApiJson
+      // POST). It must NOT leak the client-only `user_id` field, which the
+      // backend rejects with a 422 during sync.
+      final queuedPayload = pending.first.payload;
+      expect(queuedPayload.containsKey('user_id'), isFalse,
+          reason: 'user_id is client-only and is rejected by the API');
+      expect(queuedPayload['first_name'], equals('Offline User'));
+      expect(queuedPayload.containsKey('age'), isTrue);
+      expect(queuedPayload.containsKey('availability_days'), isTrue);
+
       // Step 3: Mock Dio to return success when sync processes the mutation
       when(() => mockDio.post(
             any(),
