@@ -26,8 +26,12 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('profiles', [
             'id', 'user_id', 'age', 'height_cm', 'weight_kg',
             'gender', 'goal', 'fitness_level', 'workout_preference',
-            'availability_days', 'bmi', 'created_at', 'updated_at',
+            'created_at', 'updated_at',
         ]));
+        // Normalized to 3NF: availability_days moved to profile_availability,
+        // bmi is now a computed accessor (no stored column).
+        $this->assertFalse(Schema::hasColumn('profiles', 'availability_days'));
+        $this->assertFalse(Schema::hasColumn('profiles', 'bmi'));
     }
 
     public function test_exercises_table_is_created(): void
@@ -45,9 +49,11 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasTable('workouts'));
         $this->assertTrue(Schema::hasColumns('workouts', [
             'id', 'user_id', 'name', 'day_of_week',
-            'estimated_duration_minutes', 'exercises', 'is_generated',
+            'estimated_duration_minutes', 'is_generated',
             'created_at', 'updated_at',
         ]));
+        // Normalized to 3NF: exercises moved to the workout_exercises table.
+        $this->assertFalse(Schema::hasColumn('workouts', 'exercises'));
     }
 
     public function test_workout_history_table_is_created(): void
@@ -55,7 +61,30 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasTable('workout_history'));
         $this->assertTrue(Schema::hasColumns('workout_history', [
             'id', 'user_id', 'workout_name', 'completed_at',
-            'total_duration_seconds', 'exercises_completed',
+            'total_duration_seconds', 'created_at', 'updated_at',
+        ]));
+        // Normalized to 3NF: moved to the workout_history_exercises table.
+        $this->assertFalse(Schema::hasColumn('workout_history', 'exercises_completed'));
+    }
+
+    public function test_normalized_3nf_tables_are_created(): void
+    {
+        $this->assertTrue(Schema::hasTable('profile_availability'));
+        $this->assertTrue(Schema::hasColumns('profile_availability', [
+            'id', 'profile_id', 'day_of_week', 'created_at', 'updated_at',
+        ]));
+
+        $this->assertTrue(Schema::hasTable('workout_exercises'));
+        $this->assertTrue(Schema::hasColumns('workout_exercises', [
+            'id', 'workout_id', 'exercise_id', 'sets', 'reps',
+            'duration_seconds', 'rest_seconds', 'position',
+            'created_at', 'updated_at',
+        ]));
+
+        $this->assertTrue(Schema::hasTable('workout_history_exercises'));
+        $this->assertTrue(Schema::hasColumns('workout_history_exercises', [
+            'id', 'workout_history_id', 'exercise_id', 'exercise_name',
+            'sets_completed', 'reps_or_duration', 'is_duration', 'position',
             'created_at', 'updated_at',
         ]));
     }
@@ -66,7 +95,8 @@ class MigrationTest extends TestCase
         $this->assertFalse(Schema::hasTable('cache'));
         $this->assertFalse(Schema::hasTable('cache_locks'));
         $this->assertFalse(Schema::hasTable('recommendations'));
-        $this->assertFalse(Schema::hasTable('workout_exercises'));
+        // Note: workout_exercises is reintroduced by the 3NF normalization
+        // and is intentionally present (asserted above).
         $this->assertFalse(Schema::hasTable('workout_sessions'));
         $this->assertFalse(Schema::hasTable('session_exercises'));
         $this->assertFalse(Schema::hasTable('progress_records'));

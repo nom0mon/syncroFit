@@ -84,7 +84,8 @@ class ProfileController extends Controller
         $identity = Arr::only($data, ['first_name', 'last_name', 'username']);
         $profileData = Arr::except($data, ['first_name', 'last_name', 'username']);
         $profileData['user_id'] = $user->id;
-        $profileData['bmi'] = $this->computeBmi($profileData['weight_kg'], $profileData['height_cm']);
+        // bmi is a computed accessor on the Profile model (derived from
+        // height_cm/weight_kg); it is no longer a stored column.
 
         $profile = DB::transaction(function () use ($user, $identity, $profileData) {
             if ($identity !== []) {
@@ -121,13 +122,7 @@ class ProfileController extends Controller
             && $newAvailability->diff($oldAvailability)->isEmpty();
         $recommendationContextChanged = $preferenceChanged || $availabilityChanged;
 
-        // Recompute BMI if height or weight changed
-        $heightCm = $data['height_cm'] ?? $profile->height_cm;
-        $weightKg = $data['weight_kg'] ?? $profile->weight_kg;
-
-        if (isset($data['height_cm']) || isset($data['weight_kg'])) {
-            $data['bmi'] = $this->computeBmi($weightKg, $heightCm);
-        }
+        // bmi is a computed accessor on the Profile model; no column to update.
 
         DB::transaction(function () use ($user, $profile, $identity, $data): void {
             if ($identity !== []) {

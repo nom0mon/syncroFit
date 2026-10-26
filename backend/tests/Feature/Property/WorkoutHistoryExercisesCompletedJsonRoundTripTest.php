@@ -2,139 +2,139 @@
 
 namespace Tests\Feature\Property;
 
+use App\Models\Exercise;
 use App\Models\User;
 use App\Models\WorkoutHistory;
-use Eris\TestTrait;
-use Eris\Generators;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Property Test: WorkoutHistory exercises_completed JSON round-trip (Property 4)
+ * WorkoutHistory exercises_completed round-trip (3NF normalization).
  *
- * Feature: database-simplification
- * Property 4: WorkoutHistory exercises_completed JSON round-trip
+ * The former `workout_history.exercises_completed` JSON column is now the
+ * `workout_history_exercises` relation, exposed via the model's virtual
+ * `exercises_completed` attribute. This test verifies the data round-trips
+ * through that relation. exercise_id references real catalog rows.
  *
- * For any valid array of exercise completion objects, storing the array in a
- * WorkoutHistory model's `exercises_completed` column and reading it back
- * SHALL produce an identical array.
+ * Replaces the former Eris JSON-column round-trip (the arbitrary-JSON contract
+ * no longer exists under the normalized schema).
  *
  * **Validates: Requirements 4.2**
  */
 class WorkoutHistoryExercisesCompletedJsonRoundTripTest extends TestCase
 {
-    use TestTrait;
     use RefreshDatabase;
 
-    /**
-     * Property 4: WorkoutHistory exercises_completed JSON round-trip
-     *
-     * Using Eris, generate arrays of exercise completion objects, store in
-     * WorkoutHistory model, verify identical on read-back.
-     *
-     * Each exercise completion object has:
-     * - exercise_id (int)
-     * - exercise_name (string)
-     * - sets_completed (int)
-     * - reps_completed (int)
-     * - skipped (bool)
-     *
-     * **Validates: Requirements 4.2**
-     */
-    #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
-    public function test_exercises_completed_json_round_trip_property(): void
-    {
-        $this->limitTo(100);
+    private User $user;
 
-        $user = User::create([
+    /** @var array<int, int> */
+    private array $exerciseIds = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::create([
             'first_name' => 'Test',
             'last_name' => 'User',
             'email' => 'test-pbt-wh@example.com',
             'password' => bcrypt('password'),
         ]);
-
-        $this->forAll(
-            $this->exercisesCompletedGenerator()
-        )->then(function (array $exercisesCompleted) use ($user): void {
-            // Store in WorkoutHistory model
-            $workoutHistory = WorkoutHistory::create([
-                'user_id' => $user->id,
-                'workout_name' => 'Test Workout',
-                'completed_at' => now(),
-                'total_duration_seconds' => 1800,
-                'exercises_completed' => $exercisesCompleted,
-            ]);
-
-            // Read back from database
-            $retrieved = WorkoutHistory::find($workoutHistory->id);
-
-            // Verify the exercises_completed array is identical
-            $this->assertEquals(
-                $exercisesCompleted,
-                $retrieved->exercises_completed,
-                'exercises_completed JSON round-trip failed. '
-                . 'Stored: ' . json_encode($exercisesCompleted) . ' '
-                . 'Retrieved: ' . json_encode($retrieved->exercises_completed)
-            );
-
-            // Clean up for next iteration
-            $workoutHistory->delete();
-        });
+        $this->exerciseIds = Exercise::factory()->count(10)->create()->pluck('id')->all();
     }
 
     /**
-     * Create a custom Eris generator for arrays of exercise completion objects.
-     *
-     * Each object has the structure:
-     * {
-     *   "exercise_id": int (1-1000),
-     *   "exercise_name": string,
-     *   "sets_completed": int (1-10),
-     *   "reps_completed": int (1-50),
-     *   "skipped": bool
-     * }
-     *
-     * Generates arrays with 1-8 exercise completion objects.
+     * @return iterable<string, array{int}>
      */
-    private function exercisesCompletedGenerator(): \Eris\Generator
+    public static function completionCounts(): iterable
     {
-        $exerciseNames = [
-            'Push Ups', 'Squats', 'Deadlift', 'Bench Press', 'Barbell Row',
-            'Pull Ups', 'Overhead Press', 'Lunges', 'Plank', 'Burpees',
-            'Dumbbell Curl', 'Tricep Dip', 'Leg Press', 'Calf Raise',
-            'Kettlebell Swing', 'Cable Fly', 'Lat Pulldown', 'Hip Thrust',
-            'Mountain Climber', 'Russian Twist',
-        ];
+        yield 'one exercise' => [1];
+        yield 'two exercises' => [2];
+        yield 'four exercises' => [4];
+        yield 'eight exercises' => [8];
+    }
 
-        return Generators::bind(
-            Generators::choose(1, 8),
-            function (int $count) use ($exerciseNames): \Eris\Generator {
-                $generators = [];
-                for ($i = 0; $i < $count; $i++) {
-                    $generators[] = Generators::tuple(
-                        Generators::choose(1, 1000),         // exercise_id
-                        Generators::elements($exerciseNames), // exercise_name
-                        Generators::choose(1, 10),           // sets_completed
-                        Generators::choose(1, 50),           // reps_completed
-                        Generators::elements([true, false])   // skipped
-                    );
-                }
+    #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
+    #[\PHPUnit\Framework\Attributes\DataProvider('completionCounts')]
+    public function test_exercises_completed_round_trip(int $count): void
+    {
+        $names = ['Push Ups', 'Squats', 'Deadlift', 'Bench Press', 'Barbell Row',
+            'Pull Ups', 'Overhead Press', 'Lunges'];
 
-                return Generators::map(
-                    function (array $tuples): array {
-                        return array_map(function (array $tuple): array {
-                            return [
-                                'exercise_id' => $tuple[0],
-                                'exercise_name' => $tuple[1],
-                                'sets_completed' => $tuple[2],
-                                'reps_completed' => $tuple[3],
-                                'skipped' => $tuple[4],
-                            ];
-                        }, $tuples);
-                    },
-                    Generators::tuple(...$generators)
-                );
-            }
+        $completed = [];
+        for ($i = 0; $i < $count; $i++) {
+            $completed[] = [
+                'exercise_id' => (string) $this->exerciseIds[$i % count($this->exerciseIds)],
+                'exercise_name' => $names[$i % count($names)],
+                'sets_completed' => ($i % 10) + 1,
+                'reps_or_duration' => (($i * 7) % 50) + 1,
+                'is_duration' => ($i % 2 === 0),
+            ];
+        }
+
+        $history = WorkoutHistory::create([
+            'user_id' => $this->user->id,
+            'workout_name' => 'Test Workout',
+            'completed_at' => now(),
+            'total_duration_seconds' => 1800,
+            'exercises_completed' => $completed,
+        ]);
+
+        $retrieved = WorkoutHistory::find($history->id);
+
+        $this->assertEquals(
+            $completed,
+            $retrieved->exercises_completed,
+            'exercises_completed should round-trip through the relation. '
+            . 'Stored: ' . json_encode($completed) . ' '
+            . 'Retrieved: ' . json_encode($retrieved->exercises_completed)
         );
+    }
+
+    /**
+     * A completed session with zero exercises is valid and round-trips as [].
+     */
+    #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
+    public function test_empty_completion_round_trips(): void
+    {
+        $history = WorkoutHistory::create([
+            'user_id' => $this->user->id,
+            'workout_name' => 'Skipped everything',
+            'completed_at' => now(),
+            'total_duration_seconds' => 60,
+            'exercises_completed' => [],
+        ]);
+
+        $this->assertSame([], WorkoutHistory::find($history->id)->exercises_completed);
+        $this->assertDatabaseCount('workout_history_exercises', 0);
+    }
+
+    /**
+     * The snapshot name survives even if the referenced exercise is deleted;
+     * the exercise_id link is nulled (nullOnDelete FK).
+     */
+    #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
+    public function test_snapshot_name_survives_exercise_deletion(): void
+    {
+        $id = $this->exerciseIds[0];
+        $history = WorkoutHistory::create([
+            'user_id' => $this->user->id,
+            'workout_name' => 'Legacy',
+            'completed_at' => now(),
+            'total_duration_seconds' => 300,
+            'exercises_completed' => [[
+                'exercise_id' => (string) $id,
+                'exercise_name' => 'Bench Press',
+                'sets_completed' => 3,
+                'reps_or_duration' => 10,
+                'is_duration' => false,
+            ]],
+        ]);
+
+        Exercise::whereKey($id)->delete();
+
+        $retrieved = WorkoutHistory::find($history->id)->exercises_completed;
+        $this->assertCount(1, $retrieved);
+        $this->assertSame('Bench Press', $retrieved[0]['exercise_name']);
+        $this->assertSame('', $retrieved[0]['exercise_id']); // link nulled
     }
 }

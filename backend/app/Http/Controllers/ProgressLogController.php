@@ -41,11 +41,9 @@ class ProgressLogController extends Controller
 
         $profile = Profile::where('user_id', $request->user()->id)->first();
         if ($profile !== null) {
+            // bmi is a computed accessor derived from weight_kg/height_cm,
+            // so updating the weight is sufficient — no bmi column to set.
             $profile->weight_kg = $validated['weight_kg'];
-            $profile->bmi = round(
-                ((float) $validated['weight_kg']) / pow(((float) $profile->height_cm) / 100, 2),
-                2
-            );
             $profile->save();
         }
 

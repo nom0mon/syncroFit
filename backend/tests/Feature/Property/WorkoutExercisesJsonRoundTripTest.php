@@ -2,31 +2,34 @@
 
 namespace Tests\Feature\Property;
 
+use App\Models\Exercise;
 use App\Models\User;
 use App\Models\Workout;
-use Eris\Generators;
-use Eris\TestTrait;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Property Test: Workout exercises JSON round-trip (Property 2)
+ * Workout exercises round-trip (3NF normalization).
  *
- * Feature: database-simplification
- * Property 2: Workout exercises JSON round-trip
+ * The former `workouts.exercises` JSON column is now the `workout_exercises`
+ * relation, exposed via the model's virtual `exercises` attribute. This test
+ * verifies that assigning an exercises array and reading it back preserves the
+ * data exactly, across a range of shapes. exercise_id references real catalog
+ * rows (FK-enforced).
  *
- * For any valid array of exercise objects (each containing exercise_id, sets, reps,
- * duration_seconds, and order), storing the array in a Workout model's `exercises`
- * column and reading it back SHALL produce an identical array.
+ * Replaces the former Eris JSON-column round-trip (the arbitrary-JSON contract
+ * no longer exists under the normalized schema).
  *
  * **Validates: Requirements 3.2**
  */
 class WorkoutExercisesJsonRoundTripTest extends TestCase
 {
     use RefreshDatabase;
-    use TestTrait;
 
     private User $user;
+
+    /** @var array<int, int> */
+    private array $exerciseIds = [];
 
     protected function setUp(): void
     {
@@ -37,118 +40,87 @@ class WorkoutExercisesJsonRoundTripTest extends TestCase
             'email' => 'testuser_' . uniqid() . '@example.com',
             'password' => bcrypt('password'),
         ]);
+        $this->exerciseIds = Exercise::factory()->count(10)->create()->pluck('id')->all();
     }
 
     /**
-     * Property 2: Workout exercises JSON round-trip
-     *
-     * Using Eris, generate arrays of exercise objects with exercise_id, sets, reps,
-     * duration_seconds, order, store in Workout model and verify identical array on read-back.
-     *
-     * **Validates: Requirements 3.2**
+     * @return iterable<string, array{int, int, int, int}>
+     */
+    public static function exerciseShapes(): iterable
+    {
+        // [count, setsBase, repsBase, durationBase]
+        yield 'single rep-based' => [1, 3, 10, 0];
+        yield 'single timed' => [1, 4, 1, 45];
+        yield 'two exercises' => [2, 3, 12, 0];
+        yield 'five exercises' => [5, 4, 8, 30];
+        yield 'ten exercises (max)' => [10, 5, 15, 60];
+        yield 'mixed volumes' => [7, 2, 20, 0];
+    }
+
+    #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
+    #[\PHPUnit\Framework\Attributes\DataProvider('exerciseShapes')]
+    public function test_workout_exercises_round_trip(
+        int $count,
+        int $setsBase,
+        int $repsBase,
+        int $durationBase
+    ): void {
+        $exercises = [];
+        for ($i = 0; $i < $count; $i++) {
+            $exercises[] = [
+                'exercise_id' => $this->exerciseIds[$i % count($this->exerciseIds)],
+                'sets' => (($setsBase + $i) % 20) + 1,
+                'reps' => (($repsBase + $i) % 100) + 1,
+                'duration_seconds' => ($durationBase + $i * 5) % 3601,
+                'rest_seconds' => ($i * 15) % 180,
+                'order' => $i + 1,
+            ];
+        }
+
+        $workout = Workout::create([
+            'user_id' => $this->user->id,
+            'name' => 'Test Workout',
+            'day_of_week' => 'Monday',
+            'estimated_duration_minutes' => 30,
+            'exercises' => $exercises,
+            'is_generated' => false,
+        ]);
+
+        $retrieved = Workout::find($workout->id);
+
+        $this->assertNotNull($retrieved);
+        $this->assertEquals(
+            $exercises,
+            $retrieved->exercises,
+            'Exercises should be identical after relation round-trip. '
+            . 'Stored: ' . json_encode($exercises) . ' Retrieved: ' . json_encode($retrieved->exercises)
+        );
+        $this->assertCount($count, $retrieved->exercises);
+    }
+
+    /**
+     * Updating the virtual attribute replaces the related rows (no leftovers).
      */
     #[\PHPUnit\Framework\Attributes\Group('database-simplification')]
-    public function test_workout_exercises_json_round_trip_property(): void
+    public function test_updating_exercises_replaces_relation_rows(): void
     {
-        $this->limitTo(100);
+        $workout = Workout::create([
+            'user_id' => $this->user->id,
+            'name' => 'Test Workout',
+            'exercises' => [
+                ['exercise_id' => $this->exerciseIds[0], 'sets' => 3, 'reps' => 10, 'duration_seconds' => 0, 'order' => 1],
+                ['exercise_id' => $this->exerciseIds[1], 'sets' => 3, 'reps' => 12, 'duration_seconds' => 0, 'order' => 2],
+            ],
+            'is_generated' => false,
+        ]);
 
-        $this->forAll(
-            $this->exercisesArrayGenerator()
-        )->then(function (array $exercises): void {
-            // Store the exercises array in a Workout model
-            $workout = Workout::create([
-                'user_id' => $this->user->id,
-                'name' => 'Test Workout',
-                'day_of_week' => 'Monday',
-                'estimated_duration_minutes' => 30,
-                'exercises' => $exercises,
-                'is_generated' => false,
-            ]);
+        $workout->update([
+            'exercises' => [
+                ['exercise_id' => $this->exerciseIds[2], 'sets' => 4, 'reps' => 8, 'duration_seconds' => 0, 'order' => 1],
+            ],
+        ]);
 
-            // Read the workout back from the database
-            $retrieved = Workout::find($workout->id);
-
-            // Verify the exercises array is identical on read-back
-            $this->assertNotNull($retrieved, 'Workout should be retrievable from database');
-            $this->assertEquals(
-                $exercises,
-                $retrieved->exercises,
-                'Exercises array should be identical after JSON round-trip. ' .
-                'Stored: ' . json_encode($exercises) . ' Retrieved: ' . json_encode($retrieved->exercises)
-            );
-
-            // Verify the count matches
-            $this->assertCount(
-                count($exercises),
-                $retrieved->exercises,
-                'Exercise count should match after round-trip'
-            );
-
-            // Verify each exercise object fields are preserved
-            foreach ($exercises as $index => $exercise) {
-                $retrievedExercise = $retrieved->exercises[$index];
-                $this->assertEquals($exercise['exercise_id'], $retrievedExercise['exercise_id'],
-                    "exercise_id at index $index should be preserved");
-                $this->assertEquals($exercise['sets'], $retrievedExercise['sets'],
-                    "sets at index $index should be preserved");
-                $this->assertEquals($exercise['reps'], $retrievedExercise['reps'],
-                    "reps at index $index should be preserved");
-                $this->assertEquals($exercise['duration_seconds'], $retrievedExercise['duration_seconds'],
-                    "duration_seconds at index $index should be preserved");
-                $this->assertEquals($exercise['order'], $retrievedExercise['order'],
-                    "order at index $index should be preserved");
-            }
-
-            // Clean up for next iteration
-            $workout->delete();
-        });
-    }
-
-    /**
-     * Create an Eris generator for arrays of exercise objects.
-     *
-     * Each exercise object has:
-     * - exercise_id: positive integer (1-100)
-     * - sets: positive integer (1-20)
-     * - reps: positive integer (1-100)
-     * - duration_seconds: non-negative integer (0-3600)
-     * - order: positive integer (1-20)
-     *
-     * The array contains 1-10 exercise objects.
-     */
-    private function exercisesArrayGenerator(): \Eris\Generator
-    {
-        // Generate an array of 1-10 exercise objects, each with
-        // exercise_id, sets, reps, duration_seconds, and order fields
-        return Generators::map(
-            function (array $tuple): array {
-                $count = ($tuple[0] % 10) + 1; // 1 to 10 exercises
-                $exercises = [];
-                for ($i = 0; $i < $count; $i++) {
-                    $exercises[] = [
-                        'exercise_id' => (($tuple[1 + $i * 5] % 100) + 1),
-                        'sets' => (($tuple[2 + $i * 5] % 20) + 1),
-                        'reps' => (($tuple[3 + $i * 5] % 100) + 1),
-                        'duration_seconds' => ($tuple[4 + $i * 5] % 3601),
-                        'order' => $i + 1,
-                    ];
-                }
-                return $exercises;
-            },
-            Generators::tuple(
-                Generators::choose(0, 9),         // count seed
-                // 10 exercises * 5 fields = 50 values needed (max)
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20),
-                Generators::choose(1, 100), Generators::choose(1, 20), Generators::choose(1, 100), Generators::choose(0, 3600), Generators::choose(1, 20)
-            )
-        );
+        $this->assertDatabaseCount('workout_exercises', 1);
+        $this->assertEquals($this->exerciseIds[2], Workout::find($workout->id)->exercises[0]['exercise_id']);
     }
 }
