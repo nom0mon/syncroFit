@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_config.dart';
+import '../../core/network/api_client.dart';
 import '../../core/network/connectivity_provider.dart';
 import '../../shared/models/sync_mutation.dart';
 import '../local/database_provider.dart';
@@ -80,6 +81,22 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    // Attach the Sanctum bearer token to every queued mutation request.
+    // Without this, offline-created mutations (e.g. profile creation) are
+    // replayed unauthenticated on reconnect, the server rejects them with a
+    // 401, and the engine drops them — so the data never reaches the backend.
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await ref.read(tokenStorageProvider).getToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
         },
       ),
     );

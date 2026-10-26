@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/network/api_config.dart';
 import '../../core/network/connectivity_monitor.dart';
@@ -51,6 +52,12 @@ class SyncEngineImpl implements SyncEngine {
 
   @override
   Stream<SyncEvent> get syncEvents => _syncEventController.stream;
+
+  /// Test seam exposing the underlying [Dio] so tests can swap the
+  /// [HttpClientAdapter] and assert on outbound request options (e.g. the
+  /// Authorization header). Not for production use.
+  @visibleForTesting
+  Dio get debugDio => _dio;
 
   @override
   void initialize() {
@@ -295,6 +302,12 @@ class SyncEngineImpl implements SyncEngine {
 
     if (e.type == DioExceptionType.badResponse) {
       final statusCode = e.response?.statusCode ?? 0;
+      // 401 on a queued mutation usually means the bearer token was not yet
+      // available when the request fired on reconnect (secure storage read
+      // race). Retry rather than permanently discard the user's offline data.
+      if (statusCode == 401) {
+        return true;
+      }
       return statusCode >= 500;
     }
 
