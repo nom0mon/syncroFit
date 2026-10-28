@@ -310,6 +310,18 @@ class RecommendationEngine
         array $excludedExerciseIds
     ): ?Exercise {
         // Try each pattern pool in order ("X OR Y").
+        //
+        // Pools are ordered by programming priority (e.g. "vertical_push OR
+        // accessory"): the earliest non-empty pool normally wins so the slot
+        // keeps its intended movement emphasis. The one exception is a
+        // user-*preferred* exercise. A preference the member explicitly set
+        // must be honored even when it lives in a lower-priority pool for this
+        // slot, otherwise the preference silently never appears in the plan.
+        // So we scan the pools in order but, before returning the first pool's
+        // winner, keep looking for a preferred exercise in the remaining pools
+        // and let it take the slot if found.
+        $firstPoolBest = null;
+
         foreach ($slot['patterns'] as $pattern) {
             $candidates = Exercise::where('movement_pattern', $pattern)
                 ->whereJsonContains('environments', $workoutEnvironment)
@@ -322,9 +334,10 @@ class RecommendationEngine
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get();
 
-            // Remove excluded IDs.
+            // Remove excluded IDs. Exclusion is a hard global filter: an
+            // excluded exercise is never prescribed, in any pool, for any slot.
             $candidates = $candidates->reject(
-                fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true)
+                fn (Exercise $e) => in_array((int) $e->id, $excludedExerciseIds, true)
             );
 
             // Never prescribe the same movement twice in one session. Exercises
@@ -332,7 +345,7 @@ class RecommendationEngine
             // deliberately smaller equipment-free pools, so a week-wide hard
             // exclusion can exhaust the catalog and create empty workouts.
             $candidates = $candidates->reject(
-                fn (Exercise $e) => in_array($e->id, $workoutExerciseIds, true)
+                fn (Exercise $e) => in_array((int) $e->id, $workoutExerciseIds, true)
             );
 
             if ($candidates->isEmpty()) {
@@ -354,12 +367,25 @@ class RecommendationEngine
                 }
             }
 
-            if ($best !== null) {
+            if ($best === null) {
+                continue;
+            }
+
+            // If this pool's winner is a preferred exercise, it already
+            // satisfies both the slot pattern and the member's preference.
+            if (in_array((int) $best->id, $includedExerciseIds, true)) {
                 return $best;
+            }
+
+            // Remember the highest-priority pool's winner. If no preferred
+            // exercise turns up in a later pool we fall back to this one,
+            // preserving the original movement-pattern priority ordering.
+            if ($firstPoolBest === null) {
+                $firstPoolBest = $best;
             }
         }
 
-        return null;
+        return $firstPoolBest;
     }
 
     /**
@@ -373,7 +399,7 @@ class RecommendationEngine
     ): int {
         $score = 0;
 
-        if (in_array($exercise->id, $includedExerciseIds, true)) {
+        if (in_array((int) $exercise->id, $includedExerciseIds, true)) {
             $score += 100;
         }
 
@@ -382,7 +408,7 @@ class RecommendationEngine
             $score += 30;
         }
 
-        if (!in_array($exercise->id, $usedExerciseIds, true)) {
+        if (!in_array((int) $exercise->id, $usedExerciseIds, true)) {
             $score += 20;
         }
 
@@ -457,7 +483,7 @@ class RecommendationEngine
                 )
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->get()
-                ->reject(fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true))
+                ->reject(fn (Exercise $e) => in_array((int) $e->id, $excludedExerciseIds, true))
                 ->first(function (Exercise $e) use ($muscle) {
                     $primary = $e->primary_muscles ?? [];
                     $secondary = $e->secondary_muscles ?? [];
@@ -469,9 +495,14 @@ class RecommendationEngine
             }
 
             // Find a swappable slot: prefer a full_body or accessory exercise.
+            // Never swap out an exercise the member explicitly preferred —
+            // honoring the preference takes priority over best-effort coverage.
             $swapped = false;
             foreach ($workouts as $wIndex => $workout) {
                 foreach ($workout['_selected'] as $sIndex => $selected) {
+                    if (in_array((int) $selected->id, $includedExerciseIds, true)) {
+                        continue;
+                    }
                     $pattern = $selected->movement_pattern;
                     if (in_array($pattern, ['full_body', 'accessory'], true)) {
                         // Perform the swap.

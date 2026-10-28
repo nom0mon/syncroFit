@@ -20,6 +20,7 @@ import '../../features/profile/screens/profile_view_screen.dart';
 
 import '../../features/settings/screens/change_password_screen.dart';
 import '../../features/settings/screens/settings_main_screen.dart';
+import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/community/screens/post_detail_screen.dart';
 import '../../features/exercise_library/screens/exercise_detail_screen.dart';
 import '../../features/exercise_library/screens/standalone_exercise_setup_screen.dart';
@@ -109,6 +110,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/settings/change-password',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.privacyPolicy,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrivacyPolicyScreen(),
       ),
       GoRoute(
         path: '/settings/edit-profile',
