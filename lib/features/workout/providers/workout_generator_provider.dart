@@ -160,6 +160,31 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     );
   }
 
+  /// Drops any preferred/excluded selections that are no longer eligible for
+  /// the current fitness level and training location.
+  ///
+  /// The picker only offers eligible exercises, so when the member changes
+  /// location or level a previously-selected exercise can fall out of scope.
+  /// Pruning keeps the on-screen counts honest and prevents sending IDs the
+  /// server would silently drop. No-op when nothing changes, so it is safe to
+  /// call during build.
+  void retainEligibleSelections(Set<int> eligibleIds) {
+    final included =
+        state.includedExerciseIds.where(eligibleIds.contains).toSet();
+    final excluded =
+        state.excludedExerciseIds.where(eligibleIds.contains).toSet();
+
+    if (included.length == state.includedExerciseIds.length &&
+        excluded.length == state.excludedExerciseIds.length) {
+      return;
+    }
+
+    state = state.copyWith(
+      includedExerciseIds: included,
+      excludedExerciseIds: excluded,
+    );
+  }
+
   /// Explicitly generates workouts using the current include/exclude
   /// selections. This is the only path that triggers generation.
   ///

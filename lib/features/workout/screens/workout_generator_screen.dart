@@ -13,6 +13,64 @@ import '../../profile/widgets/profile_form.dart'
 import '../providers/workout_generator_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
 
+/// Difficulty levels allowed for a given fitness level.
+///
+/// Mirrors the backend RecommendationEngine::getAllowedDifficulties so the
+/// preferred/excluded picker only offers exercises that can actually be
+/// prescribed for the member — a preferred exercise outside this set would be
+/// silently dropped by the server and never appear in the plan.
+Set<DifficultyLevel> _allowedDifficulties(FitnessLevel level) {
+  switch (level) {
+    case FitnessLevel.beginner:
+      return const {DifficultyLevel.beginner, DifficultyLevel.intermediate};
+    case FitnessLevel.intermediate:
+      return const {
+        DifficultyLevel.beginner,
+        DifficultyLevel.intermediate,
+        DifficultyLevel.advanced,
+      };
+    case FitnessLevel.advanced:
+      return const {DifficultyLevel.intermediate, DifficultyLevel.advanced};
+  }
+}
+
+/// Filters the catalog to exercises eligible for the member's effective
+/// fitness level and training location, matching the server's hard rules:
+///
+/// - Training location: the exercise must be classified for the selected
+///   environment. Home and Outdoor plans are deliberately equipment-free, so
+///   only `bodyweight` exercises are eligible there.
+/// - Fitness level: the exercise difficulty must be within the allowed range.
+///
+/// Fitness goal is intentionally not a hard filter — the server uses it to
+/// *score/order* candidates rather than exclude them — but eligible results
+/// are ordered to surface goal-aligned, location-appropriate exercises first.
+List<Exercise> eligibleExercisesForProfile(
+  List<Exercise> all, {
+  required FitnessLevel fitnessLevel,
+  required WorkoutPreference workoutPreference,
+}) {
+  final allowed = _allowedDifficulties(fitnessLevel);
+  final environment = workoutPreference.name;
+  final equipmentFreeOnly = workoutPreference == WorkoutPreference.home ||
+      workoutPreference == WorkoutPreference.outdoor;
+
+  final filtered = all.where((exercise) {
+    if (!exercise.environments.contains(environment)) return false;
+    if (equipmentFreeOnly &&
+        (exercise.equipment?.toLowerCase() ?? '') != 'bodyweight') {
+      return false;
+    }
+    if (!allowed.contains(exercise.difficulty)) return false;
+    return true;
+  }).toList()
+    ..sort((a, b) => a.displayName
+        .toLowerCase()
+        .compareTo(b.displayName.toLowerCase()));
+
+  return filtered;
+}
+
 /// Dedicated screen for the schedule-aware workout generator.
 ///
 /// Generation is explicit: it only happens when the user presses the
@@ -149,6 +207,35 @@ class _PreferencesSection extends StatelessWidget {
     final includedCount = state.includedExerciseIds.length;
     final excludedCount = state.excludedExerciseIds.length;
 
+    // Effective level/location: generator overrides take precedence over the
+    // saved profile. The preferred/excluded picker is scoped to exercises that
+    // are actually eligible for these values.
+    final effectiveLevel = state.fitnessLevel ?? profile?.fitnessLevel;
+    final effectivePreference =
+        state.workoutPreference ?? profile?.workoutPreference;
+    final eligibleExercises = (effectiveLevel != null &&
+            effectivePreference != null)
+        ? eligibleExercisesForProfile(
+            exercises,
+            fitnessLevel: effectiveLevel,
+            workoutPreference: effectivePreference,
+          )
+        : const <Exercise>[];
+
+    // Keep selections consistent with what the picker can actually offer:
+    // after the frame, drop any preferred/excluded IDs that are no longer
+    // eligible for the effective level/location. Guarded to a no-op when the
+    // eligible set has not been resolved yet.
+    if (eligibleExercises.isNotEmpty) {
+      final eligibleIds = eligibleExercises
+          .map((e) => int.tryParse(e.id))
+          .whereType<int>()
+          .toSet();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifier.retainEligibleSelections(eligibleIds);
+      });
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -224,6 +311,13 @@ class _PreferencesSection extends StatelessWidget {
               notifier.setSaveOptionsToProfile(value ?? false),
         ),
         const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Preferred and excluded choices below are limited to exercises that '
+          'fit your training location and fitness level.',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         AdaptiveGridList(
           minItemWidth: 220,
           maxColumns: 2,
@@ -234,6 +328,7 @@ class _PreferencesSection extends StatelessWidget {
               onPressed: () => _openSelectionSheet(
                 context,
                 isInclude: true,
+                eligibleExercises: eligibleExercises,
               ),
               icon: const Icon(Icons.thumb_up_alt_outlined),
               label: Text('Preferred ($includedCount)'),
@@ -242,6 +337,7 @@ class _PreferencesSection extends StatelessWidget {
               onPressed: () => _openSelectionSheet(
                 context,
                 isInclude: false,
+                eligibleExercises: eligibleExercises,
               ),
               icon: const Icon(Icons.block),
               label: Text('Excluded ($excludedCount)'),
@@ -252,7 +348,11 @@ class _PreferencesSection extends StatelessWidget {
     );
   }
 
-  void _openSelectionSheet(BuildContext context, {required bool isInclude}) {
+  void _openSelectionSheet(
+    BuildContext context, {
+    required bool isInclude,
+    required List<Exercise> eligibleExercises,
+  }) {
     showSafeModalBottomSheet<void>(
       context: context,
       title: Text(
@@ -267,7 +367,7 @@ class _PreferencesSection extends StatelessWidget {
       ),
       builder: (_) => _ExerciseSelectionSheet(
         isInclude: isInclude,
-        exercises: exercises,
+        exercises: eligibleExercises,
         notifier: notifier,
         initiallySelectedIds:
             isInclude ? state.includedExerciseIds : state.excludedExerciseIds,
