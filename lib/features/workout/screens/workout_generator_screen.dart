@@ -13,6 +13,18 @@ import '../../profile/widgets/profile_form.dart'
 import '../providers/workout_generator_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
 
+/// Maps a [FitnessGoal] to the engine-side goal tag stored on each exercise.
+///
+/// Mirrors RecommendationEngine::GOAL_MAP in the Laravel backend so the
+/// client-side picker applies the same goal classification as the server's
+/// scoring function.
+String _engineGoal(FitnessGoal goal) => switch (goal) {
+      FitnessGoal.loseWeight => 'fat_loss',
+      FitnessGoal.buildMuscle => 'muscle_gain',
+      FitnessGoal.maintainFitness => 'general_fitness',
+      FitnessGoal.improveEndurance => 'endurance',
+    };
+
 /// Difficulty levels allowed for a given fitness level.
 ///
 /// Mirrors the backend RecommendationEngine::getAllowedDifficulties so the
@@ -35,25 +47,35 @@ Set<DifficultyLevel> _allowedDifficulties(FitnessLevel level) {
 }
 
 /// Filters the catalog to exercises eligible for the member's effective
-/// fitness level and training location, matching the server's hard rules:
+/// fitness level, training location, impact preference, and fitness goal,
+/// matching the server's hard rules:
 ///
 /// - Training location: the exercise must be classified for the selected
 ///   environment. Home and Outdoor plans are deliberately equipment-free, so
 ///   only `bodyweight` exercises are eligible there.
 /// - Fitness level: the exercise difficulty must be within the allowed range.
+/// - Low-impact: when [lowImpactOnly] is true, only exercises whose
+///   `impact_level` is 'low' are included. This mirrors the server's hard
+///   `WHERE impact_level = 'low'` guard so the picker never offers an exercise
+///   that the engine would silently drop from the plan.
+/// - Fitness goal: only exercises whose `goals` list contains the mapped
+///   engine goal are shown. Exercises with an empty `goals` list are treated
+///   as untagged and pass through for all goals, matching the server's
+///   behaviour of never hard-rejecting untagged exercises.
 ///
-/// Fitness goal is intentionally not a hard filter — the server uses it to
-/// *score/order* candidates rather than exclude them — but eligible results
-/// are ordered to surface goal-aligned, location-appropriate exercises first.
+/// Results are ordered alphabetically for consistent display.
 List<Exercise> eligibleExercisesForProfile(
   List<Exercise> all, {
   required FitnessLevel fitnessLevel,
   required WorkoutPreference workoutPreference,
+  required FitnessGoal fitnessGoal,
+  bool lowImpactOnly = false,
 }) {
   final allowed = _allowedDifficulties(fitnessLevel);
   final environment = workoutPreference.name;
   final equipmentFreeOnly = workoutPreference == WorkoutPreference.home ||
       workoutPreference == WorkoutPreference.outdoor;
+  final mappedGoal = _engineGoal(fitnessGoal);
 
   final filtered = all.where((exercise) {
     if (!exercise.environments.contains(environment)) return false;
@@ -62,6 +84,11 @@ List<Exercise> eligibleExercisesForProfile(
       return false;
     }
     if (!allowed.contains(exercise.difficulty)) return false;
+    if (lowImpactOnly && exercise.impactLevel != 'low') return false;
+    // Untagged exercises (empty goals list) are eligible for every goal.
+    if (exercise.goals.isNotEmpty && !exercise.goals.contains(mappedGoal)) {
+      return false;
+    }
     return true;
   }).toList()
     ..sort((a, b) => a.displayName
@@ -211,18 +238,22 @@ class _PreferencesSection extends StatelessWidget {
     final includedCount = state.includedExerciseIds.length;
     final excludedCount = state.excludedExerciseIds.length;
 
-    // Effective level/location: generator overrides take precedence over the
-    // saved profile. The preferred/excluded picker is scoped to exercises that
-    // are actually eligible for these values.
+    // Effective level/location/goal: generator overrides take precedence over
+    // the saved profile. The preferred/excluded picker is scoped to exercises
+    // that are actually eligible for these values.
     final effectiveLevel = state.fitnessLevel ?? profile?.fitnessLevel;
     final effectivePreference =
         state.workoutPreference ?? profile?.workoutPreference;
+    final effectiveGoal = state.fitnessGoal ?? profile?.fitnessGoal;
     final eligibleExercises = (effectiveLevel != null &&
-            effectivePreference != null)
+            effectivePreference != null &&
+            effectiveGoal != null)
         ? eligibleExercisesForProfile(
             exercises,
             fitnessLevel: effectiveLevel,
             workoutPreference: effectivePreference,
+            fitnessGoal: effectiveGoal,
+            lowImpactOnly: profile?.lowImpactOnly ?? false,
           )
         : const <Exercise>[];
 

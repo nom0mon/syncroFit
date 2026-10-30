@@ -85,6 +85,8 @@ class ExerciseDao {
       'default_sets': row['default_sets'],
       'default_reps': row['default_reps'],
       'video_path': row['video_path'],
+      'impact_level': row['impact_level'] as String? ?? 'low',
+      'goals': jsonDecode((row['goals'] as String?) ?? '[]'),
     });
   }
 
@@ -102,6 +104,8 @@ class ExerciseDao {
       'default_sets': exercise.defaultSets,
       'default_reps': exercise.defaultReps,
       'video_path': exercise.videoPath,
+      'impact_level': exercise.impactLevel,
+      'goals': jsonEncode(exercise.goals),
     };
   }
 }

@@ -12,6 +12,8 @@ Exercise _exercise({
   required DifficultyLevel difficulty,
   required List<String> environments,
   String? equipment,
+  String impactLevel = 'low',
+  List<String> goals = const [],
 }) {
   return Exercise(
     id: id,
@@ -24,6 +26,8 @@ Exercise _exercise({
     defaultDurationSeconds: 0,
     defaultSets: 3,
     defaultReps: 10,
+    impactLevel: impactLevel,
+    goals: goals,
   );
 }
 
@@ -96,6 +100,7 @@ void main() {
         catalog,
         fitnessLevel: FitnessLevel.beginner,
         workoutPreference: WorkoutPreference.home,
+        fitnessGoal: FitnessGoal.maintainFitness,
       );
 
       final ids = result.map((e) => e.id).toList();
@@ -109,6 +114,7 @@ void main() {
         catalog,
         fitnessLevel: FitnessLevel.beginner,
         workoutPreference: WorkoutPreference.gym,
+        fitnessGoal: FitnessGoal.maintainFitness,
       );
 
       final ids = result.map((e) => e.id).toSet();
@@ -122,6 +128,7 @@ void main() {
         catalog,
         fitnessLevel: FitnessLevel.advanced,
         workoutPreference: WorkoutPreference.gym,
+        fitnessGoal: FitnessGoal.maintainFitness,
       );
 
       final ids = result.map((e) => e.id).toSet();
@@ -135,6 +142,7 @@ void main() {
         catalog,
         fitnessLevel: FitnessLevel.intermediate,
         workoutPreference: WorkoutPreference.gym,
+        fitnessGoal: FitnessGoal.maintainFitness,
       );
       final names = result.map((e) => e.displayName).toList();
       final sorted = [...names]

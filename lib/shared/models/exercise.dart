@@ -13,6 +13,21 @@ class Exercise {
   final int defaultReps;
   final String? videoPath;
 
+  /// Joint-impact classification: 'low', 'moderate', or 'high'.
+  ///
+  /// 'low' means no jumping or explosive ground contact. Used to filter
+  /// the preferred/excluded picker when the profile has lowImpactOnly = true,
+  /// matching the hard constraint applied by the server's RecommendationEngine.
+  final String impactLevel;
+
+  /// Engine-side goal tags for this exercise (e.g. 'muscle_gain', 'fat_loss',
+  /// 'general_fitness', 'endurance', 'strength').
+  ///
+  /// An empty list means the exercise is untagged and is eligible for all
+  /// goals. Used to filter the preferred/excluded picker so only exercises
+  /// that the RecommendationEngine would score for the selected goal are shown.
+  final List<String> goals;
+
   const Exercise({
     required this.id,
     required this.name,
@@ -25,6 +40,8 @@ class Exercise {
     required this.defaultSets,
     required this.defaultReps,
     this.videoPath,
+    this.impactLevel = 'low',
+    this.goals = const [],
   });
 
   /// User-facing labels normalized without changing API/cache values.
@@ -52,6 +69,10 @@ class Exercise {
       defaultSets: json['default_sets'] as int,
       defaultReps: json['default_reps'] as int,
       videoPath: json['video_path'] as String?,
+      impactLevel: json['impact_level'] as String? ?? 'low',
+      goals: (json['goals'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
@@ -67,6 +88,8 @@ class Exercise {
         'default_sets': defaultSets,
         'default_reps': defaultReps,
         'video_path': videoPath,
+        'impact_level': impactLevel,
+        'goals': goals,
       };
 
   static DifficultyLevel _difficultyFromJson(String value) {
