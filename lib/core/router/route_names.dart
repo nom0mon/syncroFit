@@ -42,4 +42,5 @@ abstract final class RouteNames {
   static const String trainers = '/settings/trainers';
   static const String trainerDetail = '/settings/trainers/:id';
   static const String trainerBook = '/settings/trainers/:id/book';
+  static const String privacyPolicy = '/settings/privacy-policy';
 }

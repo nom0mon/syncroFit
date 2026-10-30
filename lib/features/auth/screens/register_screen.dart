@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
+  bool _acceptedDataPrivacy = false;
 
   @override
   void dispose() {
@@ -40,6 +42,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_acceptedDataPrivacy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please agree to the Data Privacy consent to continue.',
+          ),
+        ),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     await ref.read(authStateProvider.notifier).register(
@@ -207,11 +219,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onFieldSubmitted: (_) => _submit(),
                         ),
                         const SizedBox(height: AppSpacing.xl),
+                        _DataPrivacyConsent(
+                          value: _acceptedDataPrivacy,
+                          onChanged: (value) => setState(
+                            () => _acceptedDataPrivacy = value ?? false,
+                          ),
+                          onViewPolicy: () =>
+                              context.push(RouteNames.privacyPolicy),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
                         ConstrainedBox(
                           constraints: const BoxConstraints(minHeight: 52),
                           child: ElevatedButton(
                             key: const Key('register-submit'),
-                            onPressed: authState.isLoading ? null : _submit,
+                            onPressed: authState.isLoading ||
+                                    !_acceptedDataPrivacy
+                                ? null
+                                : _submit,
                             child: authState.isLoading
                                 ? const SizedBox(
                                     height: 20,
@@ -294,6 +318,68 @@ class _PasswordStrengthIndicator extends StatelessWidget {
               )),
         ],
       ),
+    );
+  }
+}
+
+class _DataPrivacyConsent extends StatelessWidget {
+  const _DataPrivacyConsent({
+    required this.value,
+    required this.onChanged,
+    required this.onViewPolicy,
+  });
+
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final VoidCallback onViewPolicy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bodyStyle = theme.textTheme.bodySmall?.copyWith(
+      color: AppColors.grey600,
+    );
+    final linkStyle = bodyStyle?.copyWith(
+      color: AppColors.primary,
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+    );
+
+    return Row(
+      key: const Key('data-privacy-consent'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          key: const Key('data-privacy-consent-checkbox'),
+          value: value,
+          onChanged: onChanged,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text.rich(
+              TextSpan(
+                style: bodyStyle,
+                children: [
+                  const TextSpan(
+                    text:
+                        'I consent to SyncroFit collecting and processing my '
+                        'profile information to personalize my fitness plan, '
+                        'in accordance with Republic Act No. 10173 (the Data '
+                        'Privacy Act of 2012). Read our ',
+                  ),
+                  TextSpan(
+                    text: 'Privacy Policy',
+                    style: linkStyle,
+                    recognizer: TapGestureRecognizer()..onTap = onViewPolicy,
+                  ),
+                  const TextSpan(text: '.'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

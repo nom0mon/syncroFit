@@ -60,6 +60,13 @@ class SettingsMainScreen extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/settings/change-password'),
               ),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Privacy Policy', softWrap: true),
+                subtitle: const Text('How your data is protected (RA 10173)'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/settings/privacy-policy'),
+              ),
               const Divider(),
               SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),

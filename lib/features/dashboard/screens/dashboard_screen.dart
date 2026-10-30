@@ -388,6 +388,13 @@ class _FullScreenSettingsMenu extends ConsumerWidget {
                 title: const Text('Change Password'),
                 onTap: () => _openRoute(context, RouteNames.changePassword),
               ),
+              ListTile(
+                key: const Key('menu-privacy-policy'),
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Privacy Policy'),
+                subtitle: const Text('How your data is protected (RA 10173)'),
+                onTap: () => _openRoute(context, RouteNames.privacyPolicy),
+              ),
               const Divider(),
               SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
