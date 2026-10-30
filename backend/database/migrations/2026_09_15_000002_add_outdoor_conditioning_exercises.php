@@ -2,12 +2,23 @@
 
 use Database\Seeders\ExerciseSeeder;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        // Ensure impact_level column exists before running the seeder, since
+        // the seeder writes impact_level and the column may not yet exist on
+        // older development databases being upgraded incrementally.
+        if (!Schema::hasColumn('exercises', 'impact_level')) {
+            Schema::table('exercises', function (Blueprint $table) {
+                $table->string('impact_level')->default('low')->after('exercise_type');
+            });
+        }
+
         // Upgrade an existing deployed catalog in place. On a fresh database,
         // DatabaseSeeder remains responsible for populating exercises; seeding
         // inside a migration would pollute isolated tests that use factories.

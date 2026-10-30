@@ -26,11 +26,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('profiles', function (Blueprint $table) {
-            $table->boolean('low_impact_only')->default(false)->after('workout_preference');
+            if (!Schema::hasColumn('profiles', 'low_impact_only')) {
+                $table->boolean('low_impact_only')->default(false)->after('workout_preference');
+            }
         });
 
         Schema::table('exercises', function (Blueprint $table) {
-            $table->string('impact_level')->default('moderate')->after('exercise_type');
+            if (!Schema::hasColumn('exercises', 'impact_level')) {
+                $table->string('impact_level')->default('moderate')->after('exercise_type');
+            }
         });
 
         // Everything is low-impact unless explicitly classified otherwise.
