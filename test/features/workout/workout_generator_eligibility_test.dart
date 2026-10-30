@@ -137,7 +137,10 @@ void main() {
       expect(ids, {'1', '3'});
     });
 
-    test('results are sorted alphabetically by display name', () {
+    test('results are sorted: goal matches first, then alphabetically within groups',
+        () {
+      // All fixture exercises are untagged (goals: []) so they all fall in the
+      // "matches" group and must be alphabetical among themselves.
       final result = eligibleExercisesForProfile(
         catalog,
         fitnessLevel: FitnessLevel.intermediate,
@@ -148,6 +151,33 @@ void main() {
       final sorted = [...names]
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       expect(names, sorted);
+    });
+
+    test('goal-tagged exercises sort before non-matching tagged exercises', () {
+      final muscleGainExercise = _exercise(
+        id: '10',
+        name: 'Curl',
+        difficulty: DifficultyLevel.beginner,
+        environments: const ['gym'],
+        equipment: 'dumbbell',
+        goals: const ['muscle_gain'],
+      );
+      final fatLossExercise = _exercise(
+        id: '11',
+        name: 'Aaardvark Run',
+        difficulty: DifficultyLevel.beginner,
+        environments: const ['gym'],
+        equipment: 'dumbbell',
+        goals: const ['fat_loss'],
+      );
+      final result = eligibleExercisesForProfile(
+        [muscleGainExercise, fatLossExercise],
+        fitnessLevel: FitnessLevel.beginner,
+        workoutPreference: WorkoutPreference.gym,
+        fitnessGoal: FitnessGoal.buildMuscle,
+      );
+      // muscle_gain match comes first despite alphabetical order putting fat_loss first.
+      expect(result.map((e) => e.id).toList(), ['10', '11']);
     });
   });
 

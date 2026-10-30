@@ -331,6 +331,7 @@ class SafeScrollableBottomSheet extends StatelessWidget {
                       ),
                     ),
                   Flexible(
+                    fit: FlexFit.loose,
                     child: SingleChildScrollView(
                       controller: scrollController,
                       keyboardDismissBehavior:

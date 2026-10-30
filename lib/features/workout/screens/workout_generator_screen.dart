@@ -47,8 +47,8 @@ Set<DifficultyLevel> _allowedDifficulties(FitnessLevel level) {
 }
 
 /// Filters the catalog to exercises eligible for the member's effective
-/// fitness level, training location, impact preference, and fitness goal,
-/// matching the server's hard rules:
+/// fitness level, training location, and impact preference, matching the
+/// server's hard rules:
 ///
 /// - Training location: the exercise must be classified for the selected
 ///   environment. Home and Outdoor plans are deliberately equipment-free, so
@@ -58,12 +58,11 @@ Set<DifficultyLevel> _allowedDifficulties(FitnessLevel level) {
 ///   `impact_level` is 'low' are included. This mirrors the server's hard
 ///   `WHERE impact_level = 'low'` guard so the picker never offers an exercise
 ///   that the engine would silently drop from the plan.
-/// - Fitness goal: only exercises whose `goals` list contains the mapped
-///   engine goal are shown. Exercises with an empty `goals` list are treated
-///   as untagged and pass through for all goals, matching the server's
-///   behaviour of never hard-rejecting untagged exercises.
 ///
-/// Results are ordered alphabetically for consistent display.
+/// Fitness goal is NOT a hard filter — this mirrors the server's behaviour
+/// where goal only affects scoring (+30 bonus), never exclusion. Goal-relevant
+/// exercises are sorted to the top so the picker visually reflects the goal
+/// without hiding any exercise that the server would still legitimately use.
 List<Exercise> eligibleExercisesForProfile(
   List<Exercise> all, {
   required FitnessLevel fitnessLevel,
@@ -85,15 +84,19 @@ List<Exercise> eligibleExercisesForProfile(
     }
     if (!allowed.contains(exercise.difficulty)) return false;
     if (lowImpactOnly && exercise.impactLevel != 'low') return false;
-    // Untagged exercises (empty goals list) are eligible for every goal.
-    if (exercise.goals.isNotEmpty && !exercise.goals.contains(mappedGoal)) {
-      return false;
-    }
     return true;
-  }).toList()
-    ..sort((a, b) => a.displayName
-        .toLowerCase()
-        .compareTo(b.displayName.toLowerCase()));
+  }).toList();
+
+  // Sort: goal-tagged exercises first, then alphabetically within each group.
+  // Untagged exercises (empty goals list) are treated as general and sorted
+  // after goal matches but before non-matching tagged exercises.
+  filtered.sort((a, b) {
+    final aMatches = a.goals.isEmpty || a.goals.contains(mappedGoal);
+    final bMatches = b.goals.isEmpty || b.goals.contains(mappedGoal);
+    if (aMatches && !bMatches) return -1;
+    if (!aMatches && bMatches) return 1;
+    return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+  });
 
   return filtered;
 }
