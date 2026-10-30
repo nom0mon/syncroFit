@@ -27,6 +27,14 @@ class WorkoutGeneratorState {
   final List<Workout> generatedWorkouts;
   final Set<int> includedExerciseIds;
   final Set<int> excludedExerciseIds;
+
+  /// Muscle groups the user wants the engine to emphasise this session.
+  ///
+  /// Values match the engine's primary/secondary muscle strings (e.g.
+  /// 'chest', 'back', 'shoulders', 'biceps', 'triceps', 'quadriceps',
+  /// 'hamstrings', 'glutes', 'core'). An empty set means no bias is applied.
+  final Set<String> focusMuscles;
+
   final FitnessLevel? fitnessLevel;
   final FitnessGoal? fitnessGoal;
   final WorkoutPreference? workoutPreference;
@@ -44,6 +52,7 @@ class WorkoutGeneratorState {
     this.generatedWorkouts = const [],
     this.includedExerciseIds = const {},
     this.excludedExerciseIds = const {},
+    this.focusMuscles = const {},
     this.fitnessLevel,
     this.fitnessGoal,
     this.workoutPreference,
@@ -57,6 +66,7 @@ class WorkoutGeneratorState {
     List<Workout>? generatedWorkouts,
     Set<int>? includedExerciseIds,
     Set<int>? excludedExerciseIds,
+    Set<String>? focusMuscles,
     FitnessLevel? fitnessLevel,
     FitnessGoal? fitnessGoal,
     WorkoutPreference? workoutPreference,
@@ -70,6 +80,7 @@ class WorkoutGeneratorState {
       generatedWorkouts: generatedWorkouts ?? this.generatedWorkouts,
       includedExerciseIds: includedExerciseIds ?? this.includedExerciseIds,
       excludedExerciseIds: excludedExerciseIds ?? this.excludedExerciseIds,
+      focusMuscles: focusMuscles ?? this.focusMuscles,
       fitnessLevel: fitnessLevel ?? this.fitnessLevel,
       fitnessGoal: fitnessGoal ?? this.fitnessGoal,
       workoutPreference: workoutPreference ?? this.workoutPreference,
@@ -104,6 +115,20 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
 
   void setSaveOptionsToProfile(bool value) =>
       state = state.copyWith(saveOptionsToProfile: value);
+
+  /// Toggles a muscle group in the focus set.
+  ///
+  /// Changing focus muscles clears any existing draft — the plan must be
+  /// regenerated to reflect the new bias.
+  void toggleFocusMuscle(String muscle) {
+    final muscles = Set<String>.from(state.focusMuscles);
+    if (muscles.contains(muscle)) {
+      muscles.remove(muscle);
+    } else {
+      muscles.add(muscle);
+    }
+    state = _withClearedStaleDraft(state.copyWith(focusMuscles: muscles));
+  }
 
   /// Discards any already-generated draft when a generation input changes.
   ///
@@ -218,6 +243,7 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     final result = await generationRepository.generateRecommendation(
       includedExercises: [...state.includedExerciseIds],
       excludedExercises: [...state.excludedExerciseIds],
+      focusMuscles: [...state.focusMuscles],
       fitnessLevel: state.fitnessLevel,
       fitnessGoal: state.fitnessGoal,
       workoutPreference: state.workoutPreference,

@@ -13,6 +13,23 @@ import '../../profile/widgets/profile_form.dart'
 import '../providers/workout_generator_provider.dart';
 import '../providers/workout_scheduler_provider.dart';
 
+/// Ordered muscle groups shown in the focus-muscle chip selector.
+///
+/// Values match the primary/secondary muscle strings used by the
+/// RecommendationEngine and the exercise catalog seeder. 'full_body' is a
+/// programming classification, not a user-selectable target, so it is omitted.
+const List<({String value, String label})> kFocusMuscleOptions = [
+  (value: 'chest', label: 'Chest'),
+  (value: 'back', label: 'Back'),
+  (value: 'shoulders', label: 'Shoulders'),
+  (value: 'biceps', label: 'Biceps'),
+  (value: 'triceps', label: 'Triceps'),
+  (value: 'quadriceps', label: 'Quads'),
+  (value: 'hamstrings', label: 'Hamstrings'),
+  (value: 'glutes', label: 'Glutes'),
+  (value: 'core', label: 'Core'),
+];
+
 /// Maps a [FitnessGoal] to the engine-side goal tag stored on each exercise.
 ///
 /// Mirrors RecommendationEngine::GOAL_MAP in the Laravel backend so the
@@ -347,6 +364,34 @@ class _PreferencesSection extends StatelessWidget {
           controlAffinity: ListTileControlAffinity.leading,
           onChanged: (value) =>
               notifier.setSaveOptionsToProfile(value ?? false),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Focus muscles',
+          style: theme.textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'The engine scores exercises for these muscles higher. '
+          'Leave all off for a balanced plan.',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final muscle in kFocusMuscleOptions)
+              FilterChip(
+                key: Key('focus-muscle-${muscle.value}'),
+                label: Text(muscle.label),
+                selected: state.focusMuscles.contains(muscle.value),
+                onSelected: (_) =>
+                    notifier.toggleFocusMuscle(muscle.value),
+              ),
+          ],
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(

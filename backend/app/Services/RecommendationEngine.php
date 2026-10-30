@@ -86,13 +86,15 @@ class RecommendationEngine
      * @param  User  $user
      * @param  int[]  $includedExerciseIds  Exercise IDs to strongly favor.
      * @param  int[]  $excludedExerciseIds  Exercise IDs to never include.
+     * @param  string[]  $focusMuscles  Muscle groups to score-bias (e.g. 'chest', 'back').
      * @return array{workouts: array<int, array>, meta: array{coverage: array<string, float>, unresolved_slots: array}}
      */
     public function generate(
         User $user,
         array $includedExerciseIds = [],
         array $excludedExerciseIds = [],
-        array $profileOverrides = []
+        array $profileOverrides = [],
+        array $focusMuscles = []
     ): array
     {
         $profile = $user->profile;
@@ -151,7 +153,8 @@ class RecommendationEngine
                     $usedExerciseIds,
                     $includedExerciseIds,
                     $excludedExerciseIds,
-                    $lowImpactOnly
+                    $lowImpactOnly,
+                    $focusMuscles
                 );
 
                 if ($candidate === null) {
@@ -312,7 +315,8 @@ class RecommendationEngine
         array $usedExerciseIds,
         array $includedExerciseIds,
         array $excludedExerciseIds,
-        bool $lowImpactOnly = false
+        bool $lowImpactOnly = false,
+        array $focusMuscles = []
     ): ?Exercise {
         // Try each pattern pool in order ("X OR Y").
         //
@@ -365,7 +369,8 @@ class RecommendationEngine
                     $candidate,
                     $mappedGoal,
                     $usedExerciseIds,
-                    $includedExerciseIds
+                    $includedExerciseIds,
+                    $focusMuscles
                 );
                 if ($score > $bestScore) {
                     $bestScore = $score;
@@ -396,17 +401,48 @@ class RecommendationEngine
 
     /**
      * Score a candidate exercise for slot selection.
+     *
+     * Scoring weights:
+     *   +100  explicitly preferred exercise
+     *   +40   primary muscle matches a focus muscle
+     *   +30   exercise goals tag matches the mapped goal
+     *   +20   secondary muscle matches a focus muscle
+     *   +20   exercise not yet used this week (variety)
+     *   +10   compound movement type
+     *   +0–5  random tie-breaker
      */
     private function scoreCandidate(
         Exercise $exercise,
         string $mappedGoal,
         array $usedExerciseIds,
-        array $includedExerciseIds
+        array $includedExerciseIds,
+        array $focusMuscles = []
     ): int {
         $score = 0;
 
         if (in_array((int) $exercise->id, $includedExerciseIds, true)) {
             $score += 100;
+        }
+
+        // Focus-muscle scoring bias — primary muscles carry more weight than
+        // secondary muscles, matching the document's proposed weights (+40/+20).
+        if (!empty($focusMuscles)) {
+            $primaryMuscles = $exercise->primary_muscles ?? [];
+            $secondaryMuscles = $exercise->secondary_muscles ?? [];
+
+            foreach ($primaryMuscles as $muscle) {
+                if (in_array($muscle, $focusMuscles, true)) {
+                    $score += 40;
+                    break; // one primary match is enough
+                }
+            }
+
+            foreach ($secondaryMuscles as $muscle) {
+                if (in_array($muscle, $focusMuscles, true)) {
+                    $score += 20;
+                    break; // one secondary match is enough
+                }
+            }
         }
 
         $goals = $exercise->goals ?? [];

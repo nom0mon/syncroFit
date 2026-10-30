@@ -155,6 +155,7 @@ class CachingWorkoutRepository
   Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    List<String> focusMuscles = const [],
     FitnessLevel? fitnessLevel,
     FitnessGoal? fitnessGoal,
     WorkoutPreference? workoutPreference,
@@ -174,6 +175,7 @@ class CachingWorkoutRepository
     final result = await generationRepository.generateRecommendation(
       includedExercises: includedExercises,
       excludedExercises: excludedExercises,
+      focusMuscles: focusMuscles,
       fitnessLevel: fitnessLevel,
       fitnessGoal: fitnessGoal,
       workoutPreference: workoutPreference,

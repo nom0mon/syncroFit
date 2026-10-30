@@ -28,6 +28,18 @@ class Exercise {
   /// that the RecommendationEngine would score for the selected goal are shown.
   final List<String> goals;
 
+  /// Primary muscles trained by this exercise (e.g. 'chest', 'quadriceps').
+  ///
+  /// Used by the focus-muscle scoring bias: a +40 bonus is applied in the
+  /// RecommendationEngine when a primary muscle matches a user-selected focus.
+  final List<String> primaryMuscles;
+
+  /// Secondary muscles trained by this exercise (e.g. 'triceps', 'core').
+  ///
+  /// Used by the focus-muscle scoring bias: a +20 bonus is applied when a
+  /// secondary muscle matches a user-selected focus muscle.
+  final List<String> secondaryMuscles;
+
   const Exercise({
     required this.id,
     required this.name,
@@ -42,6 +54,8 @@ class Exercise {
     this.videoPath,
     this.impactLevel = 'low',
     this.goals = const [],
+    this.primaryMuscles = const [],
+    this.secondaryMuscles = const [],
   });
 
   /// User-facing labels normalized without changing API/cache values.
@@ -73,6 +87,13 @@ class Exercise {
       goals: (json['goals'] as List<dynamic>? ?? const [])
           .map((e) => e.toString())
           .toList(),
+      primaryMuscles: (json['primary_muscles'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      secondaryMuscles:
+          (json['secondary_muscles'] as List<dynamic>? ?? const [])
+              .map((e) => e.toString())
+              .toList(),
     );
   }
 
@@ -90,6 +111,8 @@ class Exercise {
         'video_path': videoPath,
         'impact_level': impactLevel,
         'goals': goals,
+        'primary_muscles': primaryMuscles,
+        'secondary_muscles': secondaryMuscles,
       };
 
   static DifficultyLevel _difficultyFromJson(String value) {

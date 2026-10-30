@@ -78,13 +78,15 @@ class RemoteWorkoutRepository
   ///
   /// POST /api/workouts/generate
   ///
-  /// Optionally accepts [includedExercises] and [excludedExercises] as lists
-  /// of exercise IDs. These are only sent when non-empty. The backend accepts
-  /// a JSON body `{ "included_exercises": [...], "excluded_exercises": [...] }`.
+  /// Optionally accepts [includedExercises], [excludedExercises], and
+  /// [focusMuscles]. These are only sent when non-empty. The backend uses
+  /// [focusMuscles] as a scoring bias — exercises whose primary or secondary
+  /// muscles match a focus muscle receive a higher selection score.
   @override
   Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    List<String> focusMuscles = const [],
     FitnessLevel? fitnessLevel,
     FitnessGoal? fitnessGoal,
     WorkoutPreference? workoutPreference,
@@ -97,6 +99,7 @@ class RemoteWorkoutRepository
           'included_exercises': includedExercises,
         if (excludedExercises.isNotEmpty)
           'excluded_exercises': excludedExercises,
+        if (focusMuscles.isNotEmpty) 'focus_muscles': focusMuscles,
         if (fitnessLevel != null) 'fitness_level': fitnessLevel.name,
         if (fitnessGoal != null)
           'goal': switch (fitnessGoal) {

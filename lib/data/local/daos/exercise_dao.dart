@@ -87,6 +87,10 @@ class ExerciseDao {
       'video_path': row['video_path'],
       'impact_level': row['impact_level'] as String? ?? 'low',
       'goals': jsonDecode((row['goals'] as String?) ?? '[]'),
+      'primary_muscles':
+          jsonDecode((row['primary_muscles'] as String?) ?? '[]'),
+      'secondary_muscles':
+          jsonDecode((row['secondary_muscles'] as String?) ?? '[]'),
     });
   }
 
@@ -106,6 +110,8 @@ class ExerciseDao {
       'video_path': exercise.videoPath,
       'impact_level': exercise.impactLevel,
       'goals': jsonEncode(exercise.goals),
+      'primary_muscles': jsonEncode(exercise.primaryMuscles),
+      'secondary_muscles': jsonEncode(exercise.secondaryMuscles),
     };
   }
 }

@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 7;
+  static const int _databaseVersion = 8;
 
   Database? _database;
 
@@ -78,14 +78,21 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion == 7) {
+      await _addMuscleColumns(db);
+      return;
+    }
+
     if (oldVersion == 6) {
       await _addImpactLevelColumn(db);
+      await _addMuscleColumns(db);
       return;
     }
 
     if (oldVersion == 5) {
       await _addLowImpactColumn(db);
       await _addImpactLevelColumn(db);
+      await _addMuscleColumns(db);
       return;
     }
 
@@ -94,6 +101,7 @@ class LocalDatabaseImpl implements LocalDatabase {
           "ALTER TABLE exercises ADD COLUMN environments TEXT NOT NULL DEFAULT '[]'");
       await _addLowImpactColumn(db);
       await _addImpactLevelColumn(db);
+      await _addMuscleColumns(db);
       return;
     }
 
@@ -163,6 +171,25 @@ class LocalDatabaseImpl implements LocalDatabase {
     if (!columns.contains('goals')) {
       await db.execute(
           "ALTER TABLE exercises ADD COLUMN goals TEXT NOT NULL DEFAULT '[]'");
+    }
+  }
+
+  /// Adds `exercises.primary_muscles` and `exercises.secondary_muscles`
+  /// (schema v8) if they are missing.
+  ///
+  /// Both default to '[]' so existing cached rows return empty lists until the
+  /// exercise catalog is refreshed from the server.
+  Future<void> _addMuscleColumns(Database db) async {
+    final columns = (await db.rawQuery('PRAGMA table_info(exercises)'))
+        .map((row) => row['name'] as String)
+        .toSet();
+    if (!columns.contains('primary_muscles')) {
+      await db.execute(
+          "ALTER TABLE exercises ADD COLUMN primary_muscles TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (!columns.contains('secondary_muscles')) {
+      await db.execute(
+          "ALTER TABLE exercises ADD COLUMN secondary_muscles TEXT NOT NULL DEFAULT '[]'");
     }
   }
 
@@ -252,7 +279,9 @@ class LocalDatabaseImpl implements LocalDatabase {
         default_reps INTEGER NOT NULL,
         video_path TEXT,
         impact_level TEXT NOT NULL DEFAULT 'low',
-        goals TEXT NOT NULL DEFAULT '[]'
+        goals TEXT NOT NULL DEFAULT '[]',
+        primary_muscles TEXT NOT NULL DEFAULT '[]',
+        secondary_muscles TEXT NOT NULL DEFAULT '[]'
       )
     ''');
   }

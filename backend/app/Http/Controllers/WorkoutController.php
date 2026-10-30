@@ -78,6 +78,8 @@ class WorkoutController extends Controller
             'included_exercises.*' => 'integer',
             'excluded_exercises' => 'nullable|array',
             'excluded_exercises.*' => 'integer',
+            'focus_muscles' => 'nullable|array',
+            'focus_muscles.*' => 'string',
             'fitness_level' => 'nullable|in:beginner,intermediate,advanced',
             'goal' => 'nullable|in:lose_weight,build_muscle,stay_fit,increase_stamina',
             'workout_preference' => 'nullable|in:home,gym,outdoor',
@@ -87,6 +89,7 @@ class WorkoutController extends Controller
 
         $included = $validated['included_exercises'] ?? [];
         $excluded = $validated['excluded_exercises'] ?? [];
+        $focusMuscles = $validated['focus_muscles'] ?? [];
         $overrides = array_filter([
             'fitness_level' => $validated['fitness_level'] ?? null,
             'goal' => $validated['goal'] ?? null,
@@ -102,7 +105,7 @@ class WorkoutController extends Controller
         }
 
         $engine = new RecommendationEngine();
-        $result = $engine->generate($user, $included, $excluded, $overrides);
+        $result = $engine->generate($user, $included, $excluded, $overrides, $focusMuscles);
 
         // Replace any abandoned draft, while preserving the accepted plan
         // until the user explicitly approves this new one.

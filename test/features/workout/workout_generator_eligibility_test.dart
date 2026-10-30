@@ -37,6 +37,7 @@ class _FakeWorkoutRepository
   Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
+    List<String> focusMuscles = const [],
     FitnessLevel? fitnessLevel,
     FitnessGoal? fitnessGoal,
     WorkoutPreference? workoutPreference,
