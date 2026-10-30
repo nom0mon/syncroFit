@@ -175,6 +175,10 @@ class _ProfileContent extends StatelessWidget {
                   label: 'Preference',
                   value: profile.workoutPreference.label,
                 ),
+                _InfoRow(
+                  label: 'Low-impact only',
+                  value: profile.lowImpactOnly ? 'On' : 'Off',
+                ),
               ]),
               const SizedBox(height: AppSpacing.lg),
 

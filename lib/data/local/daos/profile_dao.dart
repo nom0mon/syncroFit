@@ -65,6 +65,7 @@ class ProfileDao {
       'fitness_level': row['fitness_level'],
       'workout_preference': row['workout_preference'],
       'availability_days': availabilityDays,
+      'low_impact_only': row['low_impact_only'],
       'updated_at': row['updated_at'],
     });
   }
@@ -87,6 +88,7 @@ class ProfileDao {
       'availability_days': jsonEncode(
         profile.workoutAvailability.map((d) => d.name).toList(),
       ),
+      'low_impact_only': profile.lowImpactOnly ? 1 : 0,
       'updated_at': profile.updatedAt?.toIso8601String() ??
           DateTime.now().toIso8601String(),
     };

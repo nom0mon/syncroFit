@@ -43,6 +43,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       fitnessLevel: data.fitnessLevel,
       workoutPreference: data.workoutPreference,
       workoutAvailability: data.workoutAvailability,
+      lowImpactOnly: data.lowImpactOnly,
     );
 
     await ref.read(profileProvider.notifier).saveProfile(profile);

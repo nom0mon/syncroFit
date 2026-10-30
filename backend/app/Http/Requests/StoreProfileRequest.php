@@ -37,6 +37,7 @@ class StoreProfileRequest extends FormRequest
             'goal' => ['required', 'string', 'in:lose_weight,build_muscle,stay_fit,increase_stamina'],
             'fitness_level' => ['required', 'string', 'in:beginner,intermediate,advanced'],
             'workout_preference' => ['required', 'string', 'in:home,gym,outdoor'],
+            'low_impact_only' => ['sometimes', 'boolean'],
             'availability_days' => ['required', 'array', 'min:1', 'max:7'],
             'availability_days.*' => ['string', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
         ];

@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   Database? _database;
 
@@ -78,9 +78,15 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion == 5) {
+      await _addLowImpactColumn(db);
+      return;
+    }
+
     if (oldVersion == 4) {
       await db.execute(
           "ALTER TABLE exercises ADD COLUMN environments TEXT NOT NULL DEFAULT '[]'");
+      await _addLowImpactColumn(db);
       return;
     }
 
@@ -108,6 +114,7 @@ class LocalDatabaseImpl implements LocalDatabase {
         await db.execute(
             "ALTER TABLE user_profile ADD COLUMN username TEXT NOT NULL DEFAULT ''");
       }
+      await _addLowImpactColumn(db);
       return;
     }
 
@@ -120,6 +127,17 @@ class LocalDatabaseImpl implements LocalDatabase {
     await db.execute('DROP TABLE IF EXISTS sync_queue');
     await db.execute('DROP TABLE IF EXISTS cache_metadata');
     await _onCreate(db, newVersion);
+  }
+
+  /// Adds `user_profile.low_impact_only` (schema v6) if it is missing.
+  Future<void> _addLowImpactColumn(Database db) async {
+    final columns = (await db.rawQuery('PRAGMA table_info(user_profile)'))
+        .map((row) => row['name'] as String)
+        .toSet();
+    if (!columns.contains('low_impact_only')) {
+      await db.execute(
+          'ALTER TABLE user_profile ADD COLUMN low_impact_only INTEGER NOT NULL DEFAULT 0');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -167,6 +185,7 @@ class LocalDatabaseImpl implements LocalDatabase {
         fitness_level TEXT NOT NULL,
         workout_preference TEXT NOT NULL,
         availability_days TEXT NOT NULL,
+        low_impact_only INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT NOT NULL
       )
     ''');

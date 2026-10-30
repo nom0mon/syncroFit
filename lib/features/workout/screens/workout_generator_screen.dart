@@ -65,6 +65,10 @@ class WorkoutGeneratorScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.md),
                       const Divider(height: 1),
                       const SizedBox(height: AppSpacing.md),
+                      if (state.unresolvedSlots > 0)
+                        _UnresolvedSlotsBanner(
+                          unresolvedSlots: state.unresolvedSlots,
+                        ),
                       _ContentArea(
                         state: state,
                         exerciseNames: exerciseNames,
@@ -404,6 +408,53 @@ class _ContentArea extends StatelessWidget {
           isError: true,
         );
     }
+  }
+}
+
+class _UnresolvedSlotsBanner extends StatelessWidget {
+  const _UnresolvedSlotsBanner({required this.unresolvedSlots});
+
+  final int unresolvedSlots;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final slotWord = unresolvedSlots == 1 ? 'slot' : 'slots';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Material(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  '$unresolvedSlots exercise $slotWord could not be filled '
+                  'with low-impact options in your current environment. '
+                  'Switch to Gym or turn off Low-impact in your profile '
+                  'for a fuller plan.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -114,13 +114,17 @@ class ProfileController extends Controller
         $data = Arr::except($data, ['first_name', 'last_name', 'username']);
         $preferenceChanged = array_key_exists('workout_preference', $data)
             && $data['workout_preference'] !== $profile->workout_preference;
+        // Switching the low-impact setting changes which exercises are valid,
+        // so existing generated plans must be regenerated (same as environment).
+        $lowImpactChanged = array_key_exists('low_impact_only', $data)
+            && (bool) $data['low_impact_only'] !== (bool) $profile->low_impact_only;
         $oldAvailability = collect($profile->availability_days ?? [])->map('strtolower');
         $newAvailability = collect($data['availability_days'] ?? $profile->availability_days ?? [])->map('strtolower');
         $availabilityChanged = $oldAvailability->sort()->values()->all()
             !== $newAvailability->sort()->values()->all();
         $availabilityOnlyRemoved = $availabilityChanged
             && $newAvailability->diff($oldAvailability)->isEmpty();
-        $recommendationContextChanged = $preferenceChanged || $availabilityChanged;
+        $recommendationContextChanged = $preferenceChanged || $lowImpactChanged || $availabilityChanged;
 
         // bmi is a computed accessor on the Profile model; no column to update.
 
@@ -134,7 +138,7 @@ class ProfileController extends Controller
 
         // Removing days can safely prune the accepted schedule. Environment
         // changes or added days require a newly generated recommendation.
-        if ($preferenceChanged || ($availabilityChanged && !$availabilityOnlyRemoved)) {
+        if ($preferenceChanged || $lowImpactChanged || ($availabilityChanged && !$availabilityOnlyRemoved)) {
             Workout::where('user_id', $profile->user_id)
                 ->where('is_generated', true)
                 ->delete();

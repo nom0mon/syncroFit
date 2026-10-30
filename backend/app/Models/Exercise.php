@@ -27,6 +27,7 @@ class Exercise extends Model
         'primary_muscles',
         'secondary_muscles',
         'exercise_type',
+        'impact_level',
         'goals',
     ];
 

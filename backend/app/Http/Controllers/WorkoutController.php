@@ -81,6 +81,7 @@ class WorkoutController extends Controller
             'fitness_level' => 'nullable|in:beginner,intermediate,advanced',
             'goal' => 'nullable|in:lose_weight,build_muscle,stay_fit,increase_stamina',
             'workout_preference' => 'nullable|in:home,gym,outdoor',
+            'low_impact_only' => 'nullable|boolean',
             'save_options_to_profile' => 'sometimes|boolean',
         ]);
 
@@ -90,6 +91,9 @@ class WorkoutController extends Controller
             'fitness_level' => $validated['fitness_level'] ?? null,
             'goal' => $validated['goal'] ?? null,
             'workout_preference' => $validated['workout_preference'] ?? null,
+            'low_impact_only' => isset($validated['low_impact_only'])
+                ? (bool) $validated['low_impact_only']
+                : null,
         ], fn ($value) => $value !== null);
 
         if (($validated['save_options_to_profile'] ?? false) && $overrides !== []) {
@@ -224,6 +228,21 @@ class WorkoutController extends Controller
                     'exercise_ids' => ["{$ineligible->name} is not classified for {$profile->workout_preference} workouts."],
                 ],
             ], 422);
+        }
+
+        if ($profile->low_impact_only) {
+            $highImpact = $models->first(
+                fn (\App\Models\Exercise $exercise) => $exercise->impact_level !== 'low'
+            );
+            if ($highImpact !== null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An exercise is not low-impact.',
+                    'errors' => [
+                        'exercise_ids' => ["{$highImpact->name} is not low-impact and your profile is set to low-impact only."],
+                    ],
+                ], 422);
+            }
         }
 
         $patternCounts = [];

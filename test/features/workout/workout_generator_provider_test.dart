@@ -12,9 +12,13 @@ class _FakeWorkoutRepository
         WorkoutRepository,
         WorkoutGenerationRepository,
         WorkoutPlanAcceptanceRepository {
-  _FakeWorkoutRepository({required this.acceptResult});
+  _FakeWorkoutRepository({
+    required this.acceptResult,
+    this.unresolvedSlots = 0,
+  });
 
   final Result<List<Workout>, AppError> acceptResult;
+  final int unresolvedSlots;
 
   Workout _draft() => const Workout(
         id: '1',
@@ -27,7 +31,7 @@ class _FakeWorkoutRepository
       );
 
   @override
-  Future<Result<List<Workout>, AppError>> generateRecommendation({
+  Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
     FitnessLevel? fitnessLevel,
@@ -35,7 +39,10 @@ class _FakeWorkoutRepository
     WorkoutPreference? workoutPreference,
     bool saveOptionsToProfile = false,
   }) async {
-    return Success([_draft()]);
+    return Success(GenerationResult(
+      workouts: [_draft()],
+      unresolvedSlots: unresolvedSlots,
+    ));
   }
 
   @override
@@ -134,6 +141,42 @@ void main() {
       expect(accepted, isFalse);
       expect(state.status, WorkoutGeneratorStatus.generated);
       expect(state.generatedWorkouts, isNotEmpty);
+    });
+  });
+
+  group('Unresolved slots', () {
+    test('unresolvedSlots is zero after generation with a full plan', () async {
+      final repo = _FakeWorkoutRepository(
+        acceptResult: const Success([]),
+        unresolvedSlots: 0,
+      );
+      final container = _containerWith(repo);
+      await container.read(workoutGeneratorProvider.notifier).generate();
+      expect(container.read(workoutGeneratorProvider).unresolvedSlots, 0);
+    });
+
+    test('unresolvedSlots is populated when engine reports gaps', () async {
+      final repo = _FakeWorkoutRepository(
+        acceptResult: const Success([]),
+        unresolvedSlots: 3,
+      );
+      final container = _containerWith(repo);
+      await container.read(workoutGeneratorProvider.notifier).generate();
+      expect(container.read(workoutGeneratorProvider).unresolvedSlots, 3);
+    });
+
+    test('unresolvedSlots resets to zero when a stale draft is cleared', () async {
+      final repo = _FakeWorkoutRepository(
+        acceptResult: const Success([]),
+        unresolvedSlots: 2,
+      );
+      final container = _containerWith(repo);
+      final notifier = container.read(workoutGeneratorProvider.notifier);
+      await notifier.generate();
+      expect(container.read(workoutGeneratorProvider).unresolvedSlots, 2);
+
+      notifier.setFitnessLevel(FitnessLevel.advanced);
+      expect(container.read(workoutGeneratorProvider).unresolvedSlots, 0);
     });
   });
 }

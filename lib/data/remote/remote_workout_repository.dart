@@ -82,7 +82,7 @@ class RemoteWorkoutRepository
   /// of exercise IDs. These are only sent when non-empty. The backend accepts
   /// a JSON body `{ "included_exercises": [...], "excluded_exercises": [...] }`.
   @override
-  Future<Result<List<Workout>, AppError>> generateRecommendation({
+  Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
     FitnessLevel? fitnessLevel,
@@ -90,7 +90,7 @@ class RemoteWorkoutRepository
     WorkoutPreference? workoutPreference,
     bool saveOptionsToProfile = false,
   }) async {
-    return _apiClient.post<List<Workout>>(
+    return _apiClient.post<GenerationResult>(
       '/api/workouts/generate',
       body: {
         if (includedExercises.isNotEmpty)
@@ -109,7 +109,7 @@ class RemoteWorkoutRepository
           'workout_preference': workoutPreference.name,
         'save_options_to_profile': saveOptionsToProfile,
       },
-      fromJson: (json) => _parseWorkoutsList(json),
+      fromJson: (json) => _parseGenerationResult(json),
     );
   }
 
@@ -132,6 +132,24 @@ class RemoteWorkoutRepository
   }
 
   // ─── Private Helpers ──────────────────────────────────────────────────
+
+  /// Parses a [GenerationResult] from the generate endpoint response.
+  ///
+  /// The backend returns `{ "workouts": [...], "meta": { "unresolved_slots": [...] } }`.
+  /// The number of unresolved slots is extracted from the meta block so the UI
+  /// can surface a warning when the engine could not fill every slot.
+  GenerationResult _parseGenerationResult(dynamic json) {
+    final workouts = _parseWorkoutsList(json);
+    int unresolvedSlots = 0;
+    if (json is Map<String, dynamic>) {
+      final meta = json['meta'] as Map<String, dynamic>?;
+      if (meta != null) {
+        final slots = meta['unresolved_slots'];
+        if (slots is List) unresolvedSlots = slots.length;
+      }
+    }
+    return GenerationResult(workouts: workouts, unresolvedSlots: unresolvedSlots);
+  }
 
   /// Parses workouts from a list response.
   List<Workout> _parseWorkoutsList(dynamic json) {

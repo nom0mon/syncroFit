@@ -20,9 +20,24 @@ abstract class WorkoutCustomizationRepository {
   );
 }
 
+/// Result of a workout generation call.
+///
+/// Carries both the generated workouts and the number of exercise slots the
+/// engine could not fill (see `meta.unresolved_slots` in the backend
+/// response). Zero means every slot was filled.
+class GenerationResult {
+  const GenerationResult({
+    required this.workouts,
+    this.unresolvedSlots = 0,
+  });
+
+  final List<Workout> workouts;
+  final int unresolvedSlots;
+}
+
 /// Additional capability for generating and persistently caching a plan.
 abstract class WorkoutGenerationRepository {
-  Future<Result<List<Workout>, AppError>> generateRecommendation({
+  Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
     FitnessLevel? fitnessLevel,

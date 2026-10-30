@@ -31,6 +31,12 @@ class WorkoutGeneratorState {
   final FitnessGoal? fitnessGoal;
   final WorkoutPreference? workoutPreference;
   final bool saveOptionsToProfile;
+
+  /// Number of exercise slots the engine could not fill on the last
+  /// generation. Zero means every slot was filled. When this is greater than
+  /// zero the UI shows an informational banner so the user knows the plan is
+  /// shorter than intended and can switch environment or turn off low-impact.
+  final int unresolvedSlots;
   final String? errorMessage;
 
   const WorkoutGeneratorState({
@@ -42,6 +48,7 @@ class WorkoutGeneratorState {
     this.fitnessGoal,
     this.workoutPreference,
     this.saveOptionsToProfile = false,
+    this.unresolvedSlots = 0,
     this.errorMessage,
   });
 
@@ -54,6 +61,7 @@ class WorkoutGeneratorState {
     FitnessGoal? fitnessGoal,
     WorkoutPreference? workoutPreference,
     bool? saveOptionsToProfile,
+    int? unresolvedSlots,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -66,6 +74,7 @@ class WorkoutGeneratorState {
       fitnessGoal: fitnessGoal ?? this.fitnessGoal,
       workoutPreference: workoutPreference ?? this.workoutPreference,
       saveOptionsToProfile: saveOptionsToProfile ?? this.saveOptionsToProfile,
+      unresolvedSlots: unresolvedSlots ?? this.unresolvedSlots,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -114,6 +123,7 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     return next.copyWith(
       status: WorkoutGeneratorStatus.idle,
       generatedWorkouts: const [],
+      unresolvedSlots: 0,
       clearError: true,
     );
   }
@@ -190,13 +200,14 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
     );
 
     switch (result) {
-      case Success(value: final workouts):
+      case Success(value: final result):
         if (state.saveOptionsToProfile) {
           _ref.invalidate(profileProvider);
         }
         state = state.copyWith(
           status: WorkoutGeneratorStatus.generated,
-          generatedWorkouts: workouts,
+          generatedWorkouts: result.workouts,
+          unresolvedSlots: result.unresolvedSlots,
           clearError: true,
         );
       case Failure(error: final error):

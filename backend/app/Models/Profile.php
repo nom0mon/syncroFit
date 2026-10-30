@@ -27,6 +27,7 @@ class Profile extends Model
         'goal',
         'fitness_level',
         'workout_preference',
+        'low_impact_only',
         'availability_days',
     ];
 
@@ -39,6 +40,7 @@ class Profile extends Model
     {
         return [
             'age' => 'integer',
+            'low_impact_only' => 'boolean',
             'height_cm' => 'decimal:2',
             'weight_kg' => 'decimal:2',
         ];

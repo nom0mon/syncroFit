@@ -152,7 +152,7 @@ class CachingWorkoutRepository
   }
 
   @override
-  Future<Result<List<Workout>, AppError>> generateRecommendation({
+  Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
     FitnessLevel? fitnessLevel,

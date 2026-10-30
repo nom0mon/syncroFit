@@ -101,6 +101,8 @@ class RecommendationEngine
         $fitnessLevel = $profileOverrides['fitness_level'] ?? $profile->fitness_level;
         $workoutPreference = $profileOverrides['workout_preference'] ?? $profile->workout_preference;
         $availabilityDays = $profile->availability_days ?? [];
+        // Low-impact is a hard constraint: only exercises tagged impact_level=low qualify.
+        $lowImpactOnly = (bool) ($profileOverrides['low_impact_only'] ?? $profile->low_impact_only ?? false);
 
         $includedExerciseIds = array_map('intval', $includedExerciseIds);
         $excludedExerciseIds = array_map('intval', $excludedExerciseIds);
@@ -148,7 +150,8 @@ class RecommendationEngine
                     $workoutExerciseIds,
                     $usedExerciseIds,
                     $includedExerciseIds,
-                    $excludedExerciseIds
+                    $excludedExerciseIds,
+                    $lowImpactOnly
                 );
 
                 if ($candidate === null) {
@@ -191,7 +194,8 @@ class RecommendationEngine
             $fitnessLevel,
             $adaptationFactor,
             $excludedExerciseIds,
-            $includedExerciseIds
+            $includedExerciseIds,
+            $lowImpactOnly
         );
 
         $coverage = $this->computeCoverage($workouts);
@@ -307,7 +311,8 @@ class RecommendationEngine
         array $workoutExerciseIds,
         array $usedExerciseIds,
         array $includedExerciseIds,
-        array $excludedExerciseIds
+        array $excludedExerciseIds,
+        bool $lowImpactOnly = false
     ): ?Exercise {
         // Try each pattern pool in order ("X OR Y").
         foreach ($slot['patterns'] as $pattern) {
@@ -320,6 +325,7 @@ class RecommendationEngine
                     fn ($query) => $query->where('equipment', 'bodyweight')
                 )
                 ->whereIn('difficulty', $allowedDifficulties)
+                ->when($lowImpactOnly, fn ($query) => $query->where('impact_level', 'low'))
                 ->get();
 
             // Remove excluded IDs.
@@ -441,7 +447,8 @@ class RecommendationEngine
         string $fitnessLevel,
         float $adaptationFactor,
         array $excludedExerciseIds,
-        array $includedExerciseIds
+        array $includedExerciseIds,
+        bool $lowImpactOnly = false
     ): void {
         foreach (self::REQUIRED_MUSCLES as $muscle) {
             $coverage = $this->computeCoverage($workouts);
@@ -456,6 +463,7 @@ class RecommendationEngine
                     fn ($query) => $query->where('equipment', 'bodyweight')
                 )
                 ->whereIn('difficulty', $allowedDifficulties)
+                ->when($lowImpactOnly, fn ($query) => $query->where('impact_level', 'low'))
                 ->get()
                 ->reject(fn (Exercise $e) => in_array($e->id, $excludedExerciseIds, true))
                 ->first(function (Exercise $e) use ($muscle) {

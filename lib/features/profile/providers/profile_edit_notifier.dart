@@ -261,6 +261,8 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
         return _originalProfile.fitnessLevel;
       case 'workout_preference':
         return _originalProfile.workoutPreference;
+      case 'low_impact_only':
+        return _originalProfile.lowImpactOnly;
       case 'availability_days':
         return _originalProfile.workoutAvailability;
       default:
@@ -313,6 +315,9 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       workoutAvailability: dirty.containsKey('availability_days')
           ? (dirty['availability_days'] as List).cast<DayOfWeek>()
           : _originalProfile.workoutAvailability,
+      lowImpactOnly: dirty.containsKey('low_impact_only')
+          ? dirty['low_impact_only'] as bool
+          : _originalProfile.lowImpactOnly,
       updatedAt: DateTime.now(),
     );
   }

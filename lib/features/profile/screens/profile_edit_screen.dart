@@ -21,7 +21,8 @@ import '../widgets/profile_form.dart'
         FitnessGoalLabel,
         FitnessLevelLabel,
         WorkoutPreferenceLabel,
-        DayOfWeekLabel;
+        DayOfWeekLabel,
+        LowImpactToggle;
 import '../../auth/providers/auth_provider.dart';
 
 /// Screen for editing an existing user profile using dirty-field tracking.
@@ -437,6 +438,13 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
                           }
                         },
                       ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      LowImpactToggle(
+                        value: _currentLowImpactOnly(state, profile),
+                        onChanged: (value) =>
+                            notifier.updateField('low_impact_only', value),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
 
                       // Availability Days multi-select chips
@@ -570,6 +578,13 @@ class _ProfileEditContentState extends ConsumerState<_ProfileEditContent> {
       return state.dirtyFields['workout_preference'] as WorkoutPreference;
     }
     return profile.workoutPreference;
+  }
+
+  bool _currentLowImpactOnly(ProfileEditState state, UserProfile profile) {
+    if (state.dirtyFields.containsKey('low_impact_only')) {
+      return state.dirtyFields['low_impact_only'] as bool;
+    }
+    return profile.lowImpactOnly;
   }
 
   List<DayOfWeek> _currentAvailabilityDays(

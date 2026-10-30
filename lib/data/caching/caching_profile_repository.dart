@@ -106,6 +106,7 @@ class CachingProfileRepository implements ProfileRepository {
       fitnessLevel: profile.fitnessLevel,
       workoutPreference: profile.workoutPreference,
       workoutAvailability: profile.workoutAvailability,
+      lowImpactOnly: profile.lowImpactOnly,
       updatedAt: now,
     );
 
@@ -158,6 +159,7 @@ class CachingProfileRepository implements ProfileRepository {
       fitnessLevel: profile.fitnessLevel,
       workoutPreference: profile.workoutPreference,
       workoutAvailability: profile.workoutAvailability,
+      lowImpactOnly: profile.lowImpactOnly,
       updatedAt: now,
     );
 

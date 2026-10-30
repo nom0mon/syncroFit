@@ -499,6 +499,7 @@ class ExerciseSeeder extends Seeder
                 return array_merge($exercise, [
                     'video_path' => 'assets/videos/' . $snakeName . '.mp4',
                     'environments' => json_encode($this->environmentsFor($exercise['equipment'], $exercise['name'])),
+                    'impact_level' => $this->impactLevelFor($exercise['name']),
                     'verification_status' => 'catalog_cross_checked',
                     'source_reference' => self::SOURCE_REFERENCE,
                     'primary_muscles' => json_encode($exercise['primary_muscles']),
@@ -515,6 +516,19 @@ class ExerciseSeeder extends Seeder
                 $row
             );
         }
+    }
+
+    /**
+     * Joint-impact classification (not training intensity). Members with
+     * low_impact_only enabled are only given 'low' exercises.
+     */
+    private function impactLevelFor(string $name): string
+    {
+        return match (true) {
+            in_array($name, ['Burpee', 'Jumping Jack', 'High Knees', 'Broad Jump'], true) => 'high',
+            in_array($name, ['Dumbbell Clean and Press'], true) => 'moderate',
+            default => 'low',
+        };
     }
 
     private function environmentsFor(string $equipment, string $name): array

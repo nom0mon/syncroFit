@@ -107,6 +107,7 @@ Future<Database> _createInMemoryDatabase() async {
             fitness_level TEXT NOT NULL,
             workout_preference TEXT NOT NULL,
             availability_days TEXT NOT NULL,
+            low_impact_only INTEGER NOT NULL DEFAULT 0,
             updated_at TEXT NOT NULL
           )
         ''');

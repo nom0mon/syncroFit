@@ -13,6 +13,10 @@ class UserProfile {
   final FitnessLevel fitnessLevel;
   final WorkoutPreference workoutPreference;
   final List<DayOfWeek> workoutAvailability;
+
+  /// When true, generated workouts only include low-impact exercises
+  /// (no jumping or explosive ground contact).
+  final bool lowImpactOnly;
   final DateTime? updatedAt;
 
   const UserProfile({
@@ -28,6 +32,7 @@ class UserProfile {
     required this.fitnessLevel,
     required this.workoutPreference,
     required this.workoutAvailability,
+    this.lowImpactOnly = false,
     this.updatedAt,
   });
 
@@ -67,6 +72,7 @@ class UserProfile {
       workoutAvailability: (json['availability_days'] as List<dynamic>)
           .map((e) => _dayOfWeekFromJson(e as String))
           .toList(),
+      lowImpactOnly: _boolFromJson(json['low_impact_only']),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
@@ -87,6 +93,7 @@ class UserProfile {
         'fitness_level': fitnessLevel.name,
         'workout_preference': workoutPreference.name,
         'availability_days': workoutAvailability.map((d) => d.name).toList(),
+        'low_impact_only': lowImpactOnly,
         'updated_at': updatedAt?.toIso8601String(),
       };
 
@@ -104,7 +111,16 @@ class UserProfile {
         'fitness_level': fitnessLevel.name,
         'workout_preference': workoutPreference.name,
         'availability_days': workoutAvailability.map((d) => d.name).toList(),
+        'low_impact_only': lowImpactOnly,
       };
+
+  /// Accepts bool, 0/1 (SQLite) or null (older cached/remote payloads).
+  static bool _boolFromJson(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) return value == '1' || value.toLowerCase() == 'true';
+    return false;
+  }
 
   static Gender _genderFromJson(String value) {
     switch (value) {

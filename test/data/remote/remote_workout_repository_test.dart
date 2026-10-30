@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synchrofit/core/network/api_client.dart';
+import 'package:synchrofit/data/repositories/workout_repository.dart';
 import 'package:synchrofit/data/remote/remote_workout_repository.dart';
 import 'package:synchrofit/shared/models/models.dart';
 
@@ -34,16 +35,16 @@ void main() {
 
   group('RemoteWorkoutRepository - generateRecommendation', () {
     test('calls correct endpoint', () async {
-      when(() => mockApiClient.post<List<Workout>>(
+      when(() => mockApiClient.post<GenerationResult>(
                 '/api/workouts/generate',
                 body: any(named: 'body'),
                 fromJson: any(named: 'fromJson'),
               ))
-          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+          .thenAnswer((_) async => Success<GenerationResult, AppError>(GenerationResult(workouts: const [])));
 
       await repository.generateRecommendation();
 
-      verify(() => mockApiClient.post<List<Workout>>(
+      verify(() => mockApiClient.post<GenerationResult>(
             '/api/workouts/generate',
             body: any(named: 'body'),
             fromJson: any(named: 'fromJson'),
@@ -51,12 +52,12 @@ void main() {
     });
 
     test('sends temporary generator options and save preference', () async {
-      when(() => mockApiClient.post<List<Workout>>(
+      when(() => mockApiClient.post<GenerationResult>(
                 '/api/workouts/generate',
                 body: any(named: 'body'),
                 fromJson: any(named: 'fromJson'),
               ))
-          .thenAnswer((_) async => const Success<List<Workout>, AppError>([]));
+          .thenAnswer((_) async => Success<GenerationResult, AppError>(GenerationResult(workouts: const [])));
 
       await repository.generateRecommendation(
         fitnessLevel: FitnessLevel.advanced,
@@ -65,7 +66,7 @@ void main() {
         saveOptionsToProfile: true,
       );
 
-      verify(() => mockApiClient.post<List<Workout>>(
+      verify(() => mockApiClient.post<GenerationResult>(
             '/api/workouts/generate',
             body: {
               'fitness_level': 'advanced',

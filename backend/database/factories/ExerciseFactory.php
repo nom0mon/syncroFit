@@ -51,6 +51,11 @@ class ExerciseFactory extends Factory
         'full_body' => ['quadriceps', 'chest'],
     ];
 
+    public function impact(string $level): static
+    {
+        return $this->state(fn () => ['impact_level' => $level]);
+    }
+
     /**
      * Define the model's default state.
      *
@@ -82,6 +87,7 @@ class ExerciseFactory extends Factory
             'primary_muscles' => self::PRIMARY_MUSCLES_BY_MUSCLE_GROUP[$muscleGroup] ?? ['core'],
             'secondary_muscles' => [],
             'exercise_type' => fake()->randomElement(['compound', 'isolation']),
+            'impact_level' => 'low',
             'goals' => fake()->randomElements(
                 ['muscle_gain', 'strength', 'general_fitness', 'fat_loss', 'endurance'],
                 fake()->numberBetween(1, 3)

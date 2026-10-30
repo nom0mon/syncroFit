@@ -60,6 +60,47 @@ extension DayOfWeekLabel on DayOfWeek {
       };
 }
 
+/// Toggle for the low-impact preference, shared by the profile setup form and
+/// the profile edit screen.
+class LowImpactToggle extends StatelessWidget {
+  const LowImpactToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          key: const Key('low-impact-toggle'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Low-impact exercises only'),
+          subtitle: const Text(
+            'Avoids jumping and explosive movements. Turn this on if you have '
+            'joint concerns, are returning to exercise, or prefer gentler workouts.',
+          ),
+          value: value,
+          onChanged: onChanged,
+        ),
+        Text(
+          'SyncroFit is not a medical service. If you have a health condition '
+          'or injury, consult a physician before starting a new exercise program.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// A reusable profile form widget used by both ProfileSetupScreen and
 /// ProfileEditScreen. Handles all input fields, validation, and exposes
 /// the collected data via [onSubmit].
@@ -108,6 +149,7 @@ class ProfileFormData {
     required this.fitnessLevel,
     required this.workoutPreference,
     required this.workoutAvailability,
+    this.lowImpactOnly = false,
   });
 
   final String firstName;
@@ -121,6 +163,7 @@ class ProfileFormData {
   final FitnessLevel fitnessLevel;
   final WorkoutPreference workoutPreference;
   final List<DayOfWeek> workoutAvailability;
+  final bool lowImpactOnly;
 }
 
 class _ProfileFormState extends State<ProfileForm> {
@@ -138,6 +181,7 @@ class _ProfileFormState extends State<ProfileForm> {
   FitnessLevel? _selectedFitnessLevel;
   WorkoutPreference? _selectedWorkoutPreference;
   final Set<DayOfWeek> _selectedDays = {};
+  bool _lowImpactOnly = false;
 
   String? _availabilityError;
 
@@ -168,6 +212,7 @@ class _ProfileFormState extends State<ProfileForm> {
     _selectedFitnessGoal = profile?.fitnessGoal;
     _selectedFitnessLevel = profile?.fitnessLevel;
     _selectedWorkoutPreference = profile?.workoutPreference;
+    _lowImpactOnly = profile?.lowImpactOnly ?? false;
 
     if (profile != null) {
       _selectedDays.addAll(profile.workoutAvailability);
@@ -210,6 +255,7 @@ class _ProfileFormState extends State<ProfileForm> {
         workoutPreference: _selectedWorkoutPreference!,
         workoutAvailability: _selectedDays.toList()
           ..sort((a, b) => a.index.compareTo(b.index)),
+        lowImpactOnly: _lowImpactOnly,
       ),
     );
   }
@@ -350,6 +396,12 @@ class _ProfileFormState extends State<ProfileForm> {
                 setState(() => _selectedWorkoutPreference = value),
             validator: (value) =>
                 value == null ? 'Please select a workout preference' : null,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          LowImpactToggle(
+            value: _lowImpactOnly,
+            onChanged: (value) => setState(() => _lowImpactOnly = value),
           ),
           const SizedBox(height: AppSpacing.lg),
 
