@@ -35,8 +35,7 @@ return new class extends Migration
     private function environmentsFor(string $equipment): array
     {
         return match ($equipment) {
-            'bodyweight' => ['home', 'gym', 'outdoor'],
-            'dumbbell', 'kettlebell', 'resistance_band' => ['home', 'gym'],
+            'bodyweight', 'pull_up_bar' => ['home', 'gym', 'outdoor'],
             default => ['gym'],
         };
     }

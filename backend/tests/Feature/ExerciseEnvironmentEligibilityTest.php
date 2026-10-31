@@ -25,14 +25,24 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
         });
     }
 
-    public function test_home_and_outdoor_catalogs_have_distinct_focus(): void
+    public function test_environment_portable_exercises_span_all_locations_while_equipment_dependent_stay_gym(): void
     {
         $this->seed(ExerciseSeeder::class);
 
-        $this->assertContains('home', Exercise::where('name', 'Pike Push-Up')->firstOrFail()->environments);
-        $this->assertNotContains('outdoor', Exercise::where('name', 'Pike Push-Up')->firstOrFail()->environments);
-        $this->assertContains('outdoor', Exercise::where('name', 'Walking Lunge')->firstOrFail()->environments);
-        $this->assertNotContains('home', Exercise::where('name', 'Walking Lunge')->firstOrFail()->environments);
+        // Bodyweight and pull-up-bar movements are environment-portable: they
+        // are eligible at home, gym, and outdoor (see categorized_exercises_revised.md).
+        foreach (['Pike Push-Up', 'Walking Lunge', 'Pull-Up'] as $name) {
+            $environments = Exercise::where('name', $name)->firstOrFail()->environments;
+            $this->assertContains('home', $environments, $name);
+            $this->assertContains('gym', $environments, $name);
+            $this->assertContains('outdoor', $environments, $name);
+        }
+
+        // Equipment-dependent movements stay gym-only.
+        $dumbbell = Exercise::where('name', 'Dumbbell Bicep Curl')->firstOrFail()->environments;
+        $this->assertContains('gym', $dumbbell);
+        $this->assertNotContains('home', $dumbbell);
+        $this->assertNotContains('outdoor', $dumbbell);
     }
 
     public function test_each_environment_only_receives_exercises_classified_for_it(): void
@@ -62,7 +72,7 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
         }
     }
 
-    public function test_outdoor_plan_does_not_assume_portable_or_fixed_equipment(): void
+    public function test_outdoor_plan_uses_only_environment_portable_equipment(): void
     {
         $this->seed(ExerciseSeeder::class);
         $user = User::factory()->create();
@@ -80,10 +90,15 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
         $result = app(RecommendationEngine::class)->generate($user->load('profile'));
         $exerciseIds = collect($result['workouts'])->pluck('exercises')->flatten(1)->pluck('exercise_id');
 
-        $this->assertSame(['bodyweight'], Exercise::whereIn('id', $exerciseIds)->pluck('equipment')->unique()->values()->all());
+        $this->assertNotEmpty($exerciseIds);
+        // Outdoor plans assume a bar is available, so bodyweight and pull-up-bar
+        // movements are eligible; portable or fixed gym equipment never is.
+        Exercise::whereIn('id', $exerciseIds)->get()->each(function (Exercise $exercise): void {
+            $this->assertContains($exercise->equipment, ['bodyweight', 'pull_up_bar'], $exercise->name);
+        });
     }
 
-    public function test_home_plan_is_equipment_free(): void
+    public function test_home_plan_uses_only_environment_portable_equipment(): void
     {
         $this->seed(ExerciseSeeder::class);
         $user = User::factory()->create();
@@ -98,7 +113,11 @@ class ExerciseEnvironmentEligibilityTest extends TestCase
         $ids = collect($result['workouts'])->pluck('exercises')->flatten(1)->pluck('exercise_id');
 
         $this->assertNotEmpty($ids);
-        $this->assertSame(['bodyweight'], Exercise::whereIn('id', $ids)->pluck('equipment')->unique()->values()->all());
+        // Home plans assume a bar is available, so bodyweight and pull-up-bar
+        // movements are eligible; other equipment never is.
+        Exercise::whereIn('id', $ids)->get()->each(function (Exercise $exercise): void {
+            $this->assertContains($exercise->equipment, ['bodyweight', 'pull_up_bar'], $exercise->name);
+        });
     }
 
     public function test_home_and_outdoor_fill_every_available_day_without_same_session_duplicates(): void

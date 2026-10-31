@@ -24,9 +24,9 @@ SyncroFit is an Android fitness application built with Flutter and a Laravel RES
 
 SyncroFit does not use a generative AI model to create workout plans. Its recommendation engine is deterministic and rule-based. It selects exercises using the member's fitness goal, fitness level, available workout days, training environment, exercise difficulty, equipment requirements, and movement-pattern balance.
 
-- **Home** plans use equipment-free movements appropriate for limited indoor space.
+- **Home** plans use bodyweight and pull-up-bar movements appropriate for limited indoor space (a bar is assumed available); other equipment is not prescribed at home.
 - **Gym** plans may use bodyweight, dumbbells, kettlebells, resistance bands, barbells, and machines.
-- **Outdoor** plans use equipment-free movements and emphasize open-space conditioning such as walking, running-in-place, and jumping movements.
+- **Outdoor** plans use bodyweight and pull-up-bar movements and emphasize open-space conditioning such as walking, running-in-place, and jumping (a bar is assumed available outdoors).
 
 Sets, repetitions, timed durations, and rest periods are assigned by the server's prescription policy. Users may add, remove, and reorder exercises in recommended plans, but the safety-related prescription remains server-controlled. Standalone library sessions are intentionally user-configurable.
 

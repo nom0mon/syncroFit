@@ -24,21 +24,18 @@
     }
   ],
   "environment_policy": {
-    "bodyweight": ["home", "gym"],
+    "bodyweight": ["home", "gym", "outdoor"],
+    "pull_up_bar": ["home", "gym", "outdoor"],
     "dumbbell": ["gym"],
     "kettlebell": ["gym"],
     "resistance_band": ["gym"],
     "barbell": ["gym"],
-    "machine": ["gym"],
-    "pull_up_bar": ["gym"],
-    "named_environment_overrides": {
-      "shared_home_outdoor": ["Push-Up", "Bodyweight Squat", "Plank", "Burpee"],
-      "outdoor_open_space": ["Walking Lunge", "Mountain Climber", "Jumping Jack", "High Knees", "Broad Jump"]
-    }
+    "machine": ["gym"]
   },
   "limitations": [
     "Home recommendations prioritize equipment-free movements suitable for limited indoor space.",
     "Outdoor recommendations remain equipment-free and add traveling, jumping, and conditioning movements that benefit from open space.",
+    "Home and outdoor plans assume a bar is available, so the recommender and manual workout building both use bodyweight and pull-up-bar movements; portable or fixed gym equipment (dumbbells, barbells, machines) is never prescribed there.",
     "Catalog verification does not guarantee effectiveness or safety for a particular person."
   ]
 }

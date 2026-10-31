@@ -55,7 +55,7 @@ class ExerciseSeeder extends Seeder
                 'instructions' => json_encode(['Lie on a flat bench and grip the barbell slightly wider than shoulder-width.', 'Unrack the bar and lower it to your mid-chest.', 'Press the bar back up to full lockout.', 'Keep your shoulder blades retracted and feet planted firmly.']),
                 'muscle_group' => 'chest',
                 'equipment' => 'barbell',
-                'difficulty' => 'advanced',
+                'difficulty' => 'intermediate',
                 'default_sets' => 4,
                 'default_reps' => 8,
                 'default_duration_seconds' => 0,
@@ -292,7 +292,7 @@ class ExerciseSeeder extends Seeder
                 'primary_muscles' => ['quadriceps'],
                 'secondary_muscles' => ['glutes', 'hamstrings'],
                 'exercise_type' => 'compound',
-                'goals' => ['muscle_gain', 'strength', 'general_fitness'],
+                'goals' => ['muscle_gain', 'strength', 'general_fitness', 'fat_loss'],
             ],
             [
                 'name' => 'Leg Press',
@@ -373,7 +373,7 @@ class ExerciseSeeder extends Seeder
                 'primary_muscles' => ['core'],
                 'secondary_muscles' => [],
                 'exercise_type' => 'isolation',
-                'goals' => ['general_fitness', 'fat_loss', 'endurance'],
+                'goals' => ['general_fitness', 'fat_loss', 'endurance', 'muscle_gain'],
             ],
             // ===== FULL BODY =====
             [
@@ -406,7 +406,7 @@ class ExerciseSeeder extends Seeder
                 'primary_muscles' => ['hamstrings', 'glutes'],
                 'secondary_muscles' => ['lower_back', 'back', 'core'],
                 'exercise_type' => 'compound',
-                'goals' => ['muscle_gain', 'strength', 'general_fitness'],
+                'goals' => ['muscle_gain', 'strength', 'general_fitness', 'fat_loss'],
             ],
             [
                 'name' => 'Dumbbell Clean and Press',
@@ -422,7 +422,7 @@ class ExerciseSeeder extends Seeder
                 'primary_muscles' => ['shoulders', 'quadriceps'],
                 'secondary_muscles' => ['glutes', 'triceps', 'core', 'back'],
                 'exercise_type' => 'compound',
-                'goals' => ['fat_loss', 'endurance', 'general_fitness'],
+                'goals' => ['fat_loss', 'endurance', 'general_fitness', 'muscle_gain'],
             ],
             // ===== ADDITIONAL EXERCISES FOR COVERAGE =====
             [
@@ -486,11 +486,11 @@ class ExerciseSeeder extends Seeder
                 'name' => 'Broad Jump',
                 'description' => 'An explosive forward jump requiring a clear outdoor landing area.',
                 'instructions' => json_encode(['Stand with feet shoulder-width apart.', 'Swing the arms back and bend the hips and knees.', 'Jump forward explosively.', 'Land softly with the knees aligned over the feet.']),
-                'muscle_group' => 'legs', 'equipment' => 'bodyweight', 'difficulty' => 'advanced',
+                'muscle_group' => 'legs', 'equipment' => 'bodyweight', 'difficulty' => 'intermediate',
                 'default_sets' => 4, 'default_reps' => 6, 'default_duration_seconds' => 0,
                 'movement_pattern' => 'hip_dominant', 'primary_muscles' => ['glutes', 'quadriceps'],
                 'secondary_muscles' => ['hamstrings', 'calves'], 'exercise_type' => 'compound',
-                'goals' => ['strength', 'general_fitness', 'fat_loss'],
+                'goals' => ['strength', 'general_fitness', 'fat_loss', 'endurance', 'muscle_gain'],
             ],
         ];
         $rows = array_map(function ($exercise) {
@@ -498,7 +498,7 @@ class ExerciseSeeder extends Seeder
 
                 return array_merge($exercise, [
                     'video_path' => 'assets/videos/' . $snakeName . '.mp4',
-                    'environments' => json_encode($this->environmentsFor($exercise['equipment'], $exercise['name'])),
+                    'environments' => json_encode($this->environmentsFor($exercise['equipment'])),
                     'impact_level' => $this->impactLevelFor($exercise['name']),
                     'verification_status' => 'catalog_cross_checked',
                     'source_reference' => self::SOURCE_REFERENCE,
@@ -531,16 +531,14 @@ class ExerciseSeeder extends Seeder
         };
     }
 
-    private function environmentsFor(string $equipment, string $name): array
+    private function environmentsFor(string $equipment): array
     {
-        $outdoorFocused = ['Walking Lunge', 'Mountain Climber', 'Jumping Jack', 'High Knees', 'Broad Jump'];
-        if (in_array($name, $outdoorFocused, true)) {
-            return ['gym', 'outdoor'];
-        }
+        // Bodyweight and pull-up-bar movements are environment-portable: they
+        // require no portable or fixed equipment beyond (optionally) a bar, so
+        // they are eligible at home, gym, and outdoor. All other equipment is
+        // gym-only. See docs/categorized_exercises_revised.md.
         return match ($equipment) {
-            'bodyweight' => in_array($name, ['Push-Up', 'Bodyweight Squat', 'Plank', 'Burpee'], true)
-                ? ['home', 'gym', 'outdoor']
-                : ['home', 'gym'],
+            'bodyweight', 'pull_up_bar' => ['home', 'gym', 'outdoor'],
             default => ['gym'],
         };
     }

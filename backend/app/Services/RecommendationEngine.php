@@ -334,11 +334,11 @@ class RecommendationEngine
         foreach ($slot['patterns'] as $pattern) {
             $candidates = Exercise::where('movement_pattern', $pattern)
                 ->whereJsonContains('environments', $workoutEnvironment)
-                // Home/outdoor plans are deliberately equipment-free. Keep
-                // this hard guard even if old deployment metadata is stale.
+                // Home/outdoor plans assume a bar is available, so bodyweight and
+                // pull-up-bar movements are eligible; other equipment is gym-only.
                 ->when(
                     in_array($workoutEnvironment, ['home', 'outdoor'], true),
-                    fn ($query) => $query->where('equipment', 'bodyweight')
+                    fn ($query) => $query->whereIn('equipment', ['bodyweight', 'pull_up_bar'])
                 )
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->when($lowImpactOnly, fn ($query) => $query->where('impact_level', 'low'))
@@ -522,7 +522,7 @@ class RecommendationEngine
             $replacement = Exercise::whereJsonContains('environments', $workoutEnvironment)
                 ->when(
                     in_array($workoutEnvironment, ['home', 'outdoor'], true),
-                    fn ($query) => $query->where('equipment', 'bodyweight')
+                    fn ($query) => $query->whereIn('equipment', ['bodyweight', 'pull_up_bar'])
                 )
                 ->whereIn('difficulty', $allowedDifficulties)
                 ->when($lowImpactOnly, fn ($query) => $query->where('impact_level', 'low'))
