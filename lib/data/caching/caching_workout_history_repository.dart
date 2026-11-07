@@ -126,8 +126,32 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
   }
 
   @override
-  Future<Result<void, AppError>> delete(String id) async {
+  Future<Result<WorkoutHistory, AppError>> update(WorkoutHistory record) async {
     if (_connectivity.currentStatus == ConnectivityStatus.online) {
+      final result = await _remote.update(record);
+      if (result is Success<WorkoutHistory, AppError>) {
+        await _dao.insertRecord(result.value); // insertRecord uses REPLACE
+        await _cacheMetadataDao.updateLastSynced(
+          _entityType,
+          DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        return result;
+      }
+
+      if (result case Failure(error: final error)
+          when error is NetworkError ||
+              (error is ServerError && error.statusCode >= 500)) {
+        return _updateLocallyAndQueue(record);
+      }
+
+      return result;
+    }
+
+    return _updateLocallyAndQueue(record);
+  }
+
+  @override
+  Future<Result<void, AppError>> delete(String id) async {    if (_connectivity.currentStatus == ConnectivityStatus.online) {
       final result = await _remote.delete(id);
       if (result is Success<void, AppError>) {
         await _dao.deleteById(id);
@@ -174,9 +198,27 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
     return Success(record);
   }
 
+  /// Updates a record locally and queues an idempotent remote update mutation.
+  Future<Result<WorkoutHistory, AppError>> _updateLocallyAndQueue(
+    WorkoutHistory record,
+  ) async {
+    await _dao.insertRecord(record); // REPLACE-based upsert
+
+    final mutation = SyncMutation(
+      id: _uuid.v4(),
+      entityType: _entityType,
+      entityId: record.id,
+      operationType: 'update',
+      payload: record.toJson(),
+      createdAt: DateTime.now(),
+    );
+    await _syncQueueDao.enqueue(mutation);
+
+    return Success(record);
+  }
+
   /// Deletes a record locally and queues an idempotent remote deletion.
-  Future<Result<void, AppError>> _deleteLocallyAndQueue(String id) async {
-    await _dao.deleteById(id);
+  Future<Result<void, AppError>> _deleteLocallyAndQueue(String id) async {    await _dao.deleteById(id);
 
     final mutation = SyncMutation(
       id: _uuid.v4(),

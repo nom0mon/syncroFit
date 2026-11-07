@@ -6,9 +6,24 @@ class WorkoutHistory {
   final String id;
   final String userId;
   final String workoutName;
+
+  /// The ID of the [Workout] plan this session belongs to. Null for legacy
+  /// records saved before this field was introduced.
+  final String? workoutId;
+
   final DateTime completedAt;
   final int totalDurationSeconds;
   final List<Map<String, dynamic>> exercisesCompleted;
+
+  /// Whether this session is a voluntary extra/bonus session for a plan that
+  /// was already completed this week.
+  ///
+  /// `false` (or absent / null from older records) = primary scheduled
+  /// session that counts toward the weekly goal.
+  /// `true` = an additional session that is tracked separately and does NOT
+  /// inflate the primary goal metric.
+  final bool isBonus;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -16,9 +31,11 @@ class WorkoutHistory {
     required this.id,
     required this.userId,
     required this.workoutName,
+    this.workoutId,
     required this.completedAt,
     required this.totalDurationSeconds,
     required this.exercisesCompleted,
+    this.isBonus = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -44,10 +61,14 @@ class WorkoutHistory {
       id: json['id'].toString(),
       userId: json['user_id'].toString(),
       workoutName: json['workout_name'] as String,
+      workoutId: json['workout_id']?.toString(),
       // API timestamps are UTC; dashboard calendar/week boundaries are local.
       completedAt: DateTime.parse(json['completed_at'] as String).toLocal(),
       totalDurationSeconds: json['total_duration_seconds'] as int,
       exercisesCompleted: _parseExercisesCompleted(json['exercises_completed']),
+      isBonus: json['is_bonus'] == true ||
+          json['is_bonus'] == 1 ||
+          json['is_bonus'] == '1',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String).toLocal()
           : null,
@@ -61,9 +82,11 @@ class WorkoutHistory {
         'id': id,
         'user_id': userId,
         'workout_name': workoutName,
+        'workout_id': workoutId,
         'completed_at': completedAt.toIso8601String(),
         'total_duration_seconds': totalDurationSeconds,
         'exercises_completed': exercisesCompleted,
+        'is_bonus': isBonus,
         'created_at': createdAt?.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
       };
@@ -85,9 +108,11 @@ class WorkoutHistory {
     String? id,
     String? userId,
     String? workoutName,
+    String? workoutId,
     DateTime? completedAt,
     int? totalDurationSeconds,
     List<Map<String, dynamic>>? exercisesCompleted,
+    bool? isBonus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -95,9 +120,11 @@ class WorkoutHistory {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       workoutName: workoutName ?? this.workoutName,
+      workoutId: workoutId ?? this.workoutId,
       completedAt: completedAt ?? this.completedAt,
       totalDurationSeconds: totalDurationSeconds ?? this.totalDurationSeconds,
       exercisesCompleted: exercisesCompleted ?? this.exercisesCompleted,
+      isBonus: isBonus ?? this.isBonus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -110,9 +137,11 @@ class WorkoutHistory {
     return id == other.id &&
         userId == other.userId &&
         workoutName == other.workoutName &&
+        workoutId == other.workoutId &&
         completedAt == other.completedAt &&
         totalDurationSeconds == other.totalDurationSeconds &&
         _listEquals(exercisesCompleted, other.exercisesCompleted) &&
+        isBonus == other.isBonus &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -122,11 +151,13 @@ class WorkoutHistory {
         id,
         userId,
         workoutName,
+        workoutId,
         completedAt,
         totalDurationSeconds,
         Object.hashAll(exercisesCompleted.map((e) => Object.hashAll(
               e.entries.map((entry) => Object.hash(entry.key, entry.value)),
             ))),
+        isBonus,
         createdAt,
         updatedAt,
       );

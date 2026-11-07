@@ -84,9 +84,11 @@ class WorkoutHistoryDao {
       'id': row['id'],
       'user_id': row['user_id'],
       'workout_name': row['workout_name'],
+      'workout_id': row['workout_id'],
       'completed_at': row['completed_at'],
       'total_duration_seconds': row['total_duration_seconds'],
       'exercises_completed': row['exercises_completed'],
+      'is_bonus': row['is_bonus'],
       'created_at': row['created_at'],
       'updated_at': row['updated_at'],
     });
@@ -100,9 +102,11 @@ class WorkoutHistoryDao {
       'id': record.id,
       'user_id': record.userId,
       'workout_name': record.workoutName,
+      'workout_id': record.workoutId,
       'completed_at': record.completedAt.toIso8601String(),
       'total_duration_seconds': record.totalDurationSeconds,
       'exercises_completed': jsonEncode(record.exercisesCompleted),
+      'is_bonus': record.isBonus ? 1 : 0,
       'created_at': record.createdAt?.toIso8601String(),
       'updated_at': record.updatedAt?.toIso8601String(),
     };

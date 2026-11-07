@@ -185,7 +185,9 @@ class ApiClient {
           final parsed = fromJson(data['data']);
           return Success(parsed);
         }
-        return Success(data['data'] as T);
+        // When T is void (e.g. delete calls) we must not cast data['data'] to
+        // T — the cast throws at runtime. Return null coerced to T instead.
+        return Success(null as T);
       } else {
         // Server returned success: false in body
         final message = data['message'] as String? ?? 'An error occurred';
@@ -201,11 +203,11 @@ class ApiClient {
       }
     }
 
-    // Fallback: response is not a standard envelope
+    // Fallback: response is not a standard envelope (e.g. 204 No Content).
     if (fromJson != null) {
       return Success(fromJson(data));
     }
-    return Success(data as T);
+    return Success(null as T);
   }
 
   /// Maps Dio exceptions to appropriate AppError subtypes.

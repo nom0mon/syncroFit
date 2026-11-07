@@ -534,15 +534,23 @@ class _WeeklyStatsChart extends StatelessWidget {
 
     if (data.isEmpty) return const SizedBox.shrink();
 
+    // Y-axis ceiling is the tallest *total* bar (primary + bonus).
     final observedMax = data
-        .map((entry) => entry.workoutsCompleted)
-        .reduce((a, b) => a > b ? a : b)
-        .toDouble();
-    final maxWorkouts =
-        observedMax > weeklyGoal ? observedMax : weeklyGoal.toDouble();
+        .map((e) => (e.workoutsCompleted + e.bonusCompleted).toDouble())
+        .reduce((a, b) => a > b ? a : b);
+    final maxY = observedMax > weeklyGoal ? observedMax : weeklyGoal.toDouble();
+
+    final hasAnyBonus = data.any((e) => e.bonusCompleted > 0);
+
+    final bonusColor =
+        theme.colorScheme.primary.withValues(alpha: 0.40);
+
     final semanticSummary = data
-        .map((entry) =>
-            '${_labelFor(entry.weekLabel, ChartLabelDensity.full)}: ${entry.workoutsCompleted} workouts')
+        .map((entry) {
+          final label = _labelFor(entry.weekLabel, ChartLabelDensity.full);
+          final total = entry.workoutsCompleted + entry.bonusCompleted;
+          return '$label: $total workout${total == 1 ? '' : 's'}';
+        })
         .join(', ');
 
     return Column(
@@ -550,29 +558,57 @@ class _WeeklyStatsChart extends StatelessWidget {
       children: [
         Text('Weekly Statistics', style: theme.textTheme.titleLarge),
         Text(
-          'Bars and vertical numbers show completed workouts per week.',
+          'Primary bars = goal sessions · lighter stack = extra sessions.',
           style: theme.textTheme.bodySmall,
         ),
-        if (weeklyGoal > 0) ...[
+        if (weeklyGoal > 0 || hasAnyBonus) ...[
           const SizedBox(height: AppSpacing.xs),
           Wrap(
-            key: const Key('weekly-goal-legend'),
+            key: const Key('weekly-stats-legend'),
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppSpacing.xs,
             children: [
-              SizedBox(
-                width: 24,
-                child: Divider(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                  thickness: 1,
+              if (weeklyGoal > 0)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      child: Divider(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                        thickness: 1,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'Weekly goal: $weeklyGoal',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Text(
-                'Weekly goal: $weeklyGoal workouts',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+              if (hasAnyBonus)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: bonusColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'Extra session',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-              ),
             ],
           ),
         ],
@@ -586,6 +622,8 @@ class _WeeklyStatsChart extends StatelessWidget {
               data.length,
             );
             final showAxisNames = density != ChartLabelDensity.sparse;
+            final barWidth =
+                density == ChartLabelDensity.sparse ? 12.0 : 20.0;
 
             return Semantics(
               label: 'Weekly workout chart. $semanticSummary',
@@ -595,7 +633,7 @@ class _WeeklyStatsChart extends StatelessWidget {
                   height: 220,
                   child: BarChart(
                     BarChartData(
-                      maxY: maxWorkouts > 0 ? maxWorkouts : 1,
+                      maxY: maxY > 0 ? maxY : 1,
                       extraLinesData: weeklyGoal > 0
                           ? ExtraLinesData(horizontalLines: [
                               HorizontalLine(
@@ -667,18 +705,47 @@ class _WeeklyStatsChart extends StatelessWidget {
                       ),
                       borderData: FlBorderData(show: true),
                       barGroups: data.asMap().entries.map((entry) {
+                        final stat = entry.value;
+                        final primary = stat.workoutsCompleted.toDouble();
+                        final bonus = stat.bonusCompleted.toDouble();
+
                         return BarChartGroupData(
                           x: entry.key,
                           barRods: [
                             BarChartRodData(
-                              toY: entry.value.workoutsCompleted.toDouble(),
-                              color: theme.colorScheme.primary,
-                              width:
-                                  density == ChartLabelDensity.sparse ? 12 : 20,
+                              // Total bar height = primary + bonus.
+                              toY: primary + bonus,
+                              width: barWidth,
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(4),
                                 topRight: Radius.circular(4),
                               ),
+                              // Stacked colouring: primary fills up to its
+                              // value; the bonus segment sits on top in a
+                              // lighter accent colour.
+                              rodStackItems: bonus > 0
+                                  ? [
+                                      BarChartRodStackItem(
+                                        0,
+                                        primary,
+                                        theme.colorScheme.primary,
+                                      ),
+                                      BarChartRodStackItem(
+                                        primary,
+                                        primary + bonus,
+                                        bonusColor,
+                                      ),
+                                    ]
+                                  : [
+                                      BarChartRodStackItem(
+                                        0,
+                                        primary,
+                                        theme.colorScheme.primary,
+                                      ),
+                                    ],
+                              // color is ignored when rodStackItems is set,
+                              // but must be provided to avoid a null assertion.
+                              color: theme.colorScheme.primary,
                             ),
                           ],
                         );

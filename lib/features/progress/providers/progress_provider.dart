@@ -39,9 +39,20 @@ final progressWorkoutHistoryRepositoryProvider =
 /// Weekly statistic entry showing workouts completed in a given week.
 class WeeklyStat {
   final String weekLabel;
+
+  /// Primary (non-bonus) sessions completed this week. This is the value
+  /// compared against the weekly goal for progress tracking.
   final int workoutsCompleted;
 
-  const WeeklyStat({required this.weekLabel, required this.workoutsCompleted});
+  /// Extra/bonus sessions completed this week on top of the primary count.
+  /// Rendered as a stacked bar segment in a different colour.
+  final int bonusCompleted;
+
+  const WeeklyStat({
+    required this.weekLabel,
+    required this.workoutsCompleted,
+    this.bonusCompleted = 0,
+  });
 }
 
 /// The complete state exposed by the progress provider.
@@ -183,24 +194,34 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     return deleted;
   }
 
-  /// Returns the Monday 00:00:00 → Sunday 23:59:59 range for the current week.
-  /// Groups workout history records by ISO week and counts workouts per week.
+  /// Groups workout history records by ISO week and counts primary vs bonus
+  /// sessions per week. Primary sessions ([WorkoutHistory.isBonus] == false)
+  /// drive the bar height; bonus sessions are stacked on top in a lighter
+  /// accent colour.
   List<WeeklyStat> _computeWeeklyStats(List<WorkoutHistory> history) {
-    final weekCounts = <String, int>{};
+    final primaryCounts = <String, int>{};
+    final bonusCounts = <String, int>{};
 
     for (final record in history) {
       final weekLabel = _getIsoWeekLabel(record.effectiveCompletedAt);
-      weekCounts[weekLabel] = (weekCounts[weekLabel] ?? 0) + 1;
+      if (record.isBonus) {
+        bonusCounts[weekLabel] = (bonusCounts[weekLabel] ?? 0) + 1;
+      } else {
+        primaryCounts[weekLabel] = (primaryCounts[weekLabel] ?? 0) + 1;
+      }
     }
 
-    // Sort by week label descending and take last 4 weeks
-    final entries = weekCounts.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
+    // Union of all week keys, sorted descending, take 4.
+    final allKeys = {...primaryCounts.keys, ...bonusCounts.keys}.toList()
+      ..sort((a, b) => b.compareTo(a));
 
-    return entries
-        .take(4)
-        .map((e) => WeeklyStat(weekLabel: e.key, workoutsCompleted: e.value))
-        .toList();
+    return allKeys.take(4).map((key) {
+      return WeeklyStat(
+        weekLabel: key,
+        workoutsCompleted: primaryCounts[key] ?? 0,
+        bonusCompleted: bonusCounts[key] ?? 0,
+      );
+    }).toList();
   }
 
   /// Returns the ISO week's Monday date as a sortable string "yyyy-MM-dd"

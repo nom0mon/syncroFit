@@ -229,7 +229,8 @@ WeeklyProgress calculateWeeklyProgress({
   final completedDates = history
       .where((record) {
         final completedAt = record.effectiveCompletedAt;
-        return !completedAt.isBefore(weekStart) &&
+        return !record.isBonus &&
+            !completedAt.isBefore(weekStart) &&
             completedAt.isBefore(nextWeek) &&
             scheduledWeekdays.contains(completedAt.weekday);
       })

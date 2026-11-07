@@ -21,4 +21,10 @@ abstract class WorkoutHistoryRepository {
   ///
   /// When offline, the deletion is applied locally and queued for sync.
   Future<Result<void, AppError>> delete(String id);
+
+  /// Updates an existing workout history record (overwrite flow).
+  ///
+  /// Sends a PATCH request with the updated exercise data and duration.
+  /// When offline, the update is applied locally and queued for sync.
+  Future<Result<WorkoutHistory, AppError>> update(WorkoutHistory record);
 }

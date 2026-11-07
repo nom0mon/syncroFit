@@ -390,7 +390,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   /// Returns the saved record or null if the workout wasn't completed or had
   /// zero exercises logged (Spec 4D — empty sessions are silently dropped and
   /// never written to the database).
-  Future<WorkoutHistory?> saveCompletedSession() async {
+  ///
+  /// **Callers should call [findDuplicateThisWeek] first.** If a primary
+  /// session for the same workout plan already exists this week, the user
+  /// must choose Overwrite ([overwriteSession]) or Extra Session
+  /// ([saveAsExtraSession]) before this method is called — passing
+  /// [isBonus: true] for the extra-session path.
+  Future<WorkoutHistory?> saveCompletedSession({bool isBonus = false}) async {
     if (!state.isCompleted || state.workout == null) return null;
 
     // Spec 4D: backend guardrail — never persist a zero-exercise session.
@@ -400,32 +406,94 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
         'history-${DateTime.now().millisecondsSinceEpoch}';
     final record = WorkoutHistory(
       id: mutationId,
-      // Keeping the local record user-scoped is essential for offline mode:
-      // Progress and Dashboard query history using the authenticated id.
       userId: _ref.read(authStateProvider).user?.id ?? '',
       workoutName: state.workout!.name,
+      workoutId: state.workout!.id,
       completedAt: state.completedAt ?? DateTime.now(),
       totalDurationSeconds: state.totalDurationSeconds,
       exercisesCompleted:
           state.completedExercises.map((e) => e.toJson()).toList(),
+      isBonus: isBonus,
     );
 
     final result = await _historyRepo.save(record);
     switch (result) {
       case Success(value: final saved):
-        final refresh = _ref.read(workoutHistoryRefreshProvider.notifier);
-        refresh.state = refresh.state + 1;
-        final weekday = _workoutWeekday(state.workout!.dayOfWeek);
-        if (weekday != null) {
-          await WorkoutReminderService.instance.markWorkoutCompleted(
-            weekday: weekday,
-            workoutId: state.workout!.id,
-            workoutName: state.workout!.name,
-          );
-        }
+        _onSaveSuccess(saved);
         return saved;
       case Failure():
         return null;
+    }
+  }
+
+  /// Searches the user's workout history for a primary (non-bonus) completed
+  /// session for the current workout plan within the current ISO week.
+  ///
+  /// Returns the matching [WorkoutHistory] record if a duplicate exists, or
+  /// `null` if this is a first-time completion this week.
+  Future<WorkoutHistory?> findDuplicateThisWeek(
+    List<WorkoutHistory> allHistory,
+  ) async {
+    if (state.workout == null) return null;
+
+    final workoutId = state.workout!.id;
+    final now = DateTime.now();
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 7));
+
+    return allHistory
+        .where(
+          (h) =>
+              !h.isBonus &&
+              h.workoutId == workoutId &&
+              !h.effectiveCompletedAt.isBefore(weekStart) &&
+              h.effectiveCompletedAt.isBefore(weekEnd),
+        )
+        .firstOrNull;
+  }
+
+  /// Overwrites an existing workout history record with the data from the
+  /// current session. Used when the user selects "Overwrite" in the duplicate-
+  /// resolution dialog.
+  Future<WorkoutHistory?> overwriteSession(WorkoutHistory existing) async {
+    if (!state.isCompleted || state.workout == null) return null;
+    if (state.completedExercises.isEmpty) return null;
+
+    final updated = existing.copyWith(
+      completedAt: state.completedAt ?? DateTime.now(),
+      totalDurationSeconds: state.totalDurationSeconds,
+      exercisesCompleted:
+          state.completedExercises.map((e) => e.toJson()).toList(),
+      isBonus: false,
+    );
+
+    final result = await _historyRepo.update(updated);
+    switch (result) {
+      case Success(value: final saved):
+        _onSaveSuccess(saved);
+        return saved;
+      case Failure():
+        return null;
+    }
+  }
+
+  /// Saves the current session as a bonus extra session (is_bonus: true).
+  Future<WorkoutHistory?> saveAsExtraSession() =>
+      saveCompletedSession(isBonus: true);
+
+  /// Shared post-save logic: bumps the refresh counter and schedules
+  /// the workout completion reminder.
+  void _onSaveSuccess(WorkoutHistory saved) {
+    final refresh = _ref.read(workoutHistoryRefreshProvider.notifier);
+    refresh.state = refresh.state + 1;
+    final weekday = _workoutWeekday(state.workout?.dayOfWeek);
+    if (weekday != null && state.workout != null) {
+      WorkoutReminderService.instance.markWorkoutCompleted(
+        weekday: weekday,
+        workoutId: state.workout!.id,
+        workoutName: state.workout!.name,
+      );
     }
   }
 

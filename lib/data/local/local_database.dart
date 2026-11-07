@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 9;
+  static const int _databaseVersion = 10;
 
   Database? _database;
 
@@ -78,6 +78,25 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 10) {
+      // v10: add workout_id (FK to the workout plan) and is_bonus flag so
+      // duplicate-plan completions can be tracked without inflating the weekly
+      // goal metric.
+      final historyColumns =
+          (await db.rawQuery('PRAGMA table_info(workout_history)'))
+              .map((row) => row['name'] as String)
+              .toSet();
+      if (!historyColumns.contains('workout_id')) {
+        await db.execute(
+            'ALTER TABLE workout_history ADD COLUMN workout_id TEXT');
+      }
+      if (!historyColumns.contains('is_bonus')) {
+        await db.execute(
+            'ALTER TABLE workout_history ADD COLUMN is_bonus INTEGER NOT NULL DEFAULT 0');
+      }
+      if (oldVersion == 9) return; // only v9→v10 needed
+    }
+
     if (oldVersion == 8) {
       await db.execute(
           'ALTER TABLE workouts ADD COLUMN baseline_exercises TEXT');
@@ -222,9 +241,11 @@ class LocalDatabaseImpl implements LocalDatabase {
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         workout_name TEXT NOT NULL,
+        workout_id TEXT,
         completed_at TEXT NOT NULL,
         total_duration_seconds INTEGER NOT NULL,
         exercises_completed TEXT NOT NULL,
+        is_bonus INTEGER NOT NULL DEFAULT 0,
         created_at TEXT,
         updated_at TEXT
       )
