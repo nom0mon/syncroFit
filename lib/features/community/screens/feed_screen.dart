@@ -149,9 +149,9 @@ class _FeedList extends StatelessWidget {
     return Stack(
       children: [
         ListView.builder(
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             top: AppSpacing.md,
-            bottom: AppSpacing.md,
+            bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
           ),
           itemCount: posts.length + leadingItems + (hasMore ? 1 : 0),
           itemBuilder: (context, index) {

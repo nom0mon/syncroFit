@@ -50,7 +50,12 @@ class _ProgressLogCreateScreenState
           child: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: EdgeInsets.only(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                top: AppSpacing.md,
+                bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
+              ),
               children: [
                 TextFormField(
                   controller: _title,

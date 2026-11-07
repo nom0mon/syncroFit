@@ -102,9 +102,9 @@ class _ProgressContent extends StatelessWidget {
       children: [
         SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             top: AppSpacing.md,
-            bottom: AppSpacing.md,
+            bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
           ),
           child: ResponsiveConstrainedPage(
             child: Column(

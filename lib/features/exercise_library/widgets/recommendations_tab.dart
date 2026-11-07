@@ -146,8 +146,10 @@ class _ScheduleContent extends StatelessWidget {
         ),
 
         // Bottom padding
-        const SliverToBoxAdapter(
-          child: SizedBox(height: AppSpacing.lg),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
+          ),
         ),
       ],
     );

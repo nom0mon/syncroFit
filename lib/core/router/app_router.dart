@@ -315,12 +315,7 @@ class _MainShellScreen extends ConsumerWidget {
           children: [
             const OfflineIndicator(),
             Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: 72 + MediaQuery.viewPaddingOf(context).bottom,
-                ),
-                child: navigationShell,
-              ),
+              child: navigationShell,
             ),
           ],
         ),

@@ -27,6 +27,11 @@ class FloatingPillNavBar extends StatelessWidget {
   static const double _maxWidth = 400;
   static const double _minTouchTarget = 48;
 
+  /// Total height the nav bar occupies above the bottom of the screen,
+  /// excluding the system bottom inset. Use this to pad scrollable content
+  /// so the last item isn't hidden behind the floating pill.
+  static const double navBarClearance = _height + _bottomOffset;
+
   static const List<_NavDestination> _destinations = [
     _NavDestination(
       label: 'Dashboard',
