@@ -55,7 +55,10 @@ class _StandaloneExerciseSetupScreenState
       appBar: AppBar(title: const Text('Personalize Exercise')),
       body: ResponsiveConstrainedPage(
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          padding: EdgeInsets.only(
+            top: AppSpacing.md,
+            bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
+          ),
           children: [
             Center(child: ExerciseIllustration(exercise: exercise, size: 160)),
             const SizedBox(height: AppSpacing.md),

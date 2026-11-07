@@ -21,6 +21,21 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Standalone workouts (created from the exercise library) live only in
+    // the in-memory WorkoutNotifier and are never persisted to the repository.
+    // Fall back to the session state for those IDs to avoid "Workout not found".
+    final bool isStandalone = workoutId.startsWith('standalone-');
+
+    if (isStandalone) {
+      final sessionWorkout = ref.watch(workoutProvider).workout;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Workout Detail')),
+        body: sessionWorkout != null && sessionWorkout.id == workoutId
+            ? _WorkoutDetailContent(workout: sessionWorkout, workoutId: workoutId)
+            : const Center(child: Text('Session no longer active.')),
+      );
+    }
+
     final workoutAsync = ref.watch(workoutByIdProvider(workoutId));
 
     return Scaffold(
@@ -110,29 +125,37 @@ class _WorkoutDetailContent extends ConsumerWidget {
         ),
 
         // Workout actions
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (workout.isGenerated) ...[
-                OutlinedButton.icon(
-                  onPressed: () => context.push(
-                    '/dashboard/workout/$workoutId/customize',
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (workout.isGenerated) ...[
+                  OutlinedButton.icon(
+                    onPressed: () => context.push(
+                      '/dashboard/workout/$workoutId/customize',
+                    ),
+                    icon: const Icon(Icons.tune),
+                    label: const Text('Customize Workout'),
                   ),
-                  icon: const Icon(Icons.tune),
-                  label: const Text('Customize Workout'),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                FilledButton.icon(
+                  onPressed: () {
+                    context.go('/dashboard/workout/$workoutId/active');
+                  },
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Start Workout'),
                 ),
-                const SizedBox(height: AppSpacing.sm),
               ],
-              FilledButton.icon(
-                onPressed: () {
-                  context.go('/dashboard/workout/$workoutId/active');
-                },
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Start Workout'),
-              ),
-            ],
+            ),
           ),
         ),
       ],
