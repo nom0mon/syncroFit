@@ -129,8 +129,15 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
           profile?.workoutAvailability.map((day) => day.index + 1) ?? const [],
     );
 
-    // Calculate goal percentage based on workouts completed.
-    final goalPercentage = _calculateGoalPercentage(history.length);
+    // Calculate goal percentage: primary sessions completed this calendar month
+    // vs. the user's schedule-derived monthly target.
+    final goalPercentage = _calculateGoalPercentage(
+      history: history,
+      scheduledWorkouts: scheduledWorkouts,
+      fallbackWeekdays:
+          profile?.workoutAvailability.map((day) => day.index + 1) ?? const [],
+      now: DateTime.now(),
+    );
 
     // A dashboard streak only represents consecutive completion days from the
     // current week. Older history must not carry a streak into a new week.
@@ -150,11 +157,63 @@ class DashboardNotifier extends AsyncNotifier<DashboardState> {
   }
 
   /// Calculates goal progress as a percentage (0–100).
-  /// Uses total workouts toward a monthly goal target.
-  int _calculateGoalPercentage(int totalWorkouts) {
-    // Target: 20 workouts per month as a reasonable fitness goal
-    const monthlyTarget = 20;
-    final percentage = ((totalWorkouts / monthlyTarget) * 100).round();
+  ///
+  /// Counts primary (non-bonus) sessions whose [WorkoutHistory.effectiveCompletedAt]
+  /// falls within the current calendar month, then divides by the user's
+  /// schedule-derived monthly target (scheduled days/week × number of weeks
+  /// that fit in the month, counting partial weeks).
+  ///
+  /// Falls back to a target of 4 if no schedule or availability profile is
+  /// available (reasonable for a once-a-week user with no plan set up yet).
+  int _calculateGoalPercentage({
+    required List<WorkoutHistory> history,
+    required List<Workout> scheduledWorkouts,
+    required Iterable<int> fallbackWeekdays,
+    required DateTime now,
+  }) {
+    // ── Monthly target ────────────────────────────────────────────────────
+    // Use the number of distinct scheduled weekdays from the plan, falling
+    // back to the profile's availability days if no plan exists.
+    final planWeekdays = scheduledWorkouts
+        .map((w) => _parseScheduledWeekday(w.dayOfWeek))
+        .whereType<int>()
+        .toSet();
+    final scheduledPerWeek = planWeekdays.isNotEmpty
+        ? planWeekdays.length
+        : fallbackWeekdays.where((d) => d >= 1 && d <= 7).length;
+
+    // Count how many of those scheduled weekdays fall within this calendar
+    // month (handles partial first/last weeks correctly).
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 1); // exclusive
+
+    int monthlyTarget = 0;
+    if (scheduledPerWeek > 0) {
+      final activeWeekdays = planWeekdays.isNotEmpty
+          ? planWeekdays
+          : fallbackWeekdays.where((d) => d >= 1 && d <= 7).toSet();
+      for (var d = monthStart; d.isBefore(monthEnd); d = d.add(const Duration(days: 1))) {
+        if (activeWeekdays.contains(d.weekday)) monthlyTarget++;
+      }
+    }
+    if (monthlyTarget == 0) monthlyTarget = 4; // safe fallback
+
+    // ── Completed this month ──────────────────────────────────────────────
+    // Count distinct primary (non-bonus) scheduled-day completions so that
+    // two sessions on the same day still count as one.
+    final completedDates = history
+        .where((r) =>
+            !r.isBonus &&
+            !r.effectiveCompletedAt.isBefore(monthStart) &&
+            r.effectiveCompletedAt.isBefore(monthEnd))
+        .map((r) {
+          final d = r.effectiveCompletedAt;
+          return DateTime(d.year, d.month, d.day);
+        })
+        .toSet();
+
+    final percentage =
+        ((completedDates.length / monthlyTarget) * 100).round();
     return percentage.clamp(0, 100);
   }
 }
