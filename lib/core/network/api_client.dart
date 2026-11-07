@@ -176,38 +176,50 @@ class ApiClient {
     T Function(dynamic json)? fromJson,
   }) {
     final data = response.data;
+    final statusCode = response.statusCode ?? 200;
+    final isHttpSuccess = statusCode >= 200 && statusCode < 300;
 
     if (data is Map<String, dynamic>) {
-      final success = data['success'] as bool? ?? false;
+      // Standard envelope: {"success": true/false, "data": ..., "message": ...}
+      final successFlag = data['success'];
 
-      if (success) {
+      if (successFlag == true) {
         if (fromJson != null) {
-          final parsed = fromJson(data['data']);
-          return Success(parsed);
+          return Success(fromJson(data['data']));
         }
-        // When T is void (e.g. delete calls) we must not cast data['data'] to
-        // T — the cast throws at runtime. Return null coerced to T instead.
         return Success(null as T);
-      } else {
-        // Server returned success: false in body
-        final message = data['message'] as String? ?? 'An error occurred';
-        final statusCode = response.statusCode ?? 500;
-
-        if (statusCode == 422) {
-          return Failure(_parseValidationError(data));
-        }
-
-        return Failure(
-          ServerError(statusCode: statusCode, serverMessage: message),
-        );
       }
+
+      // Some endpoints (e.g. DELETE) return a 200/204 with a plain message
+      // body that has no "success" key. Treat any 2xx without an explicit
+      // success:false as a success so void-return calls aren't rejected.
+      if (successFlag == null && isHttpSuccess) {
+        if (fromJson != null) {
+          return Success(fromJson(data['data'] ?? data));
+        }
+        return Success(null as T);
+      }
+
+      // Server explicitly returned success: false
+      final message = data['message'] as String? ?? 'An error occurred';
+      if (statusCode == 422) {
+        return Failure(_parseValidationError(data));
+      }
+      return Failure(ServerError(statusCode: statusCode, serverMessage: message));
     }
 
-    // Fallback: response is not a standard envelope (e.g. 204 No Content).
-    if (fromJson != null) {
-      return Success(fromJson(data));
+    // Fallback: response is not a JSON object (e.g. 204 No Content, plain text).
+    if (isHttpSuccess) {
+      if (fromJson != null && data != null) {
+        return Success(fromJson(data));
+      }
+      return Success(null as T);
     }
-    return Success(null as T);
+
+    return Failure(ServerError(
+      statusCode: statusCode,
+      serverMessage: 'Unexpected response format',
+    ));
   }
 
   /// Maps Dio exceptions to appropriate AppError subtypes.
