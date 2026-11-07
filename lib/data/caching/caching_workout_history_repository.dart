@@ -131,6 +131,12 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
       final result = await _remote.delete(id);
       if (result is Success<void, AppError>) {
         await _dao.deleteById(id);
+        // Invalidate the cache so the next getAll() re-fetches from the
+        // remote rather than serving stale data from the 15-minute window.
+        await _cacheMetadataDao.updateLastSynced(
+          _entityType,
+          DateTime.fromMillisecondsSinceEpoch(0),
+        );
         return result;
       }
 

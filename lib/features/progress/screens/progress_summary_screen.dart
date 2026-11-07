@@ -174,8 +174,25 @@ class ProgressSummaryScreen extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await ref.read(progressProvider.notifier).deleteWorkouts(ids);
+      final deleted =
+          await ref.read(progressProvider.notifier).deleteWorkouts(ids);
       ref.read(workoutSelectionProvider.notifier).cancel();
+
+      if (!context.mounted) return;
+
+      final failed = ids.length - deleted;
+      if (failed > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              failed == ids.length
+                  ? 'Could not delete the selected workout${ids.length == 1 ? '' : 's'}. Please try again.'
+                  : '$deleted deleted, $failed could not be removed. Please try again.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 }

@@ -132,11 +132,23 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
           'Exercise ${sessionState.currentExerciseIndex + 1} of ${sessionState.totalExercises}',
         ),
         actions: [
-          TextButton(
-            key: const Key('end-workout-action'),
-            onPressed: _onEndWorkout,
-            child: const Text('End'),
-          ),
+          // Spec 4A: when nothing has been logged yet the action is
+          // destructive ("Cancel Session"); once ≥ 1 exercise is done it
+          // becomes a neutral "End Workout".
+          sessionState.completedExercises.isEmpty
+              ? TextButton(
+                  key: const Key('end-workout-action'),
+                  onPressed: _onEndWorkout,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  child: const Text('Cancel'),
+                )
+              : TextButton(
+                  key: const Key('end-workout-action'),
+                  onPressed: _onEndWorkout,
+                  child: const Text('End'),
+                ),
         ],
       ),
       body: SafeArea(
@@ -260,6 +272,24 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   void _onSkipExercise() {
     final notifier = ref.read(workoutProvider.notifier);
     notifier.skipCurrentExercise();
+
+    // Spec 4C: if all exercises were skipped and nothing was logged, the
+    // notifier silently resets the session. Navigate to the dashboard and
+    // show a toast — do NOT proceed to the summary screen.
+    if (notifier.didAutoDiscard) {
+      if (mounted) {
+        context.go('/dashboard');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'ℹ️ Workout discarded — no exercises were completed.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
 
     final updated = ref.read(workoutProvider);
     if (updated.isCompleted) {

@@ -318,9 +318,32 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Skips the current exercise without completing it and advances.
   ///
-  /// If it's the last exercise, completes the workout.
+  /// If it's the last exercise **and** at least one exercise has already been
+  /// completed, the workout transitions to the completed state so the summary
+  /// screen can save the partial progress.
+  ///
+  /// If it's the last exercise **and** nothing has been logged yet (the user
+  /// skipped every single exercise), the session is silently discarded:
+  /// [resetSession] is called and [didAutoDiscard] is set to `true` so the
+  /// active screen can navigate away and show the appropriate toast.
+  bool _didAutoDiscard = false;
+
+  /// Whether the last [skipCurrentExercise] call triggered a silent
+  /// auto-discard because all exercises were skipped with zero data.
+  bool get didAutoDiscard => _didAutoDiscard;
+
   void skipCurrentExercise() {
+    _didAutoDiscard = false;
+
     if (state.isLastExercise) {
+      // Spec 4C: if nothing was logged, silently discard instead of showing
+      // the success screen.
+      if (state.completedExercises.isEmpty) {
+        _didAutoDiscard = true;
+        resetSession();
+        return;
+      }
+
       state = state.copyWith(
         isInProgress: false,
         isCompleted: true,
@@ -364,9 +387,14 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Builds and saves a [WorkoutHistory] from the current completed state.
   ///
-  /// Returns the saved record or null if the workout wasn't completed.
+  /// Returns the saved record or null if the workout wasn't completed or had
+  /// zero exercises logged (Spec 4D — empty sessions are silently dropped and
+  /// never written to the database).
   Future<WorkoutHistory?> saveCompletedSession() async {
     if (!state.isCompleted || state.workout == null) return null;
+
+    // Spec 4D: backend guardrail — never persist a zero-exercise session.
+    if (state.completedExercises.isEmpty) return null;
 
     final mutationId = _completionMutationId ??=
         'history-${DateTime.now().millisecondsSinceEpoch}';
