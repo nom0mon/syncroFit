@@ -7,6 +7,87 @@ class WeekRange {
   const WeekRange({required this.start, required this.end});
 }
 
+/// A single data point for the weekly-completion chart.
+///
+/// [label]  — display label for the X-axis, e.g. "Oct 28".
+/// [count]  — number of workouts completed during this week (0 for missed weeks).
+/// [range]  — the Monday-anchored calendar week this point represents.
+class WeeklyDataPoint {
+  final String label;
+  final int count;
+  final WeekRange range;
+
+  const WeeklyDataPoint({
+    required this.label,
+    required this.count,
+    required this.range,
+  });
+}
+
+// Short month names used by [_formatWeekLabel] — avoids an `intl` dependency.
+const _kMonthAbbr = [
+  '', // 1-indexed; index 0 unused
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/// Returns a short "Mmm D" label for a week starting on [date], e.g. "Oct 28".
+String _formatWeekLabel(DateTime date) =>
+    '${_kMonthAbbr[date.month]} ${date.day}';
+
+/// Builds a continuous, left-to-right chronological list of [WeeklyDataPoint]s
+/// covering the last [weekCount] complete ISO (Monday-anchored) weeks ending
+/// with the current week.
+///
+/// Weeks with no completed workouts are zero-filled so the timeline has no
+/// gaps, accurately reflecting missed training periods.
+///
+/// The returned list is sorted oldest → newest (index 0 = oldest).
+List<WeeklyDataPoint> buildWeeklyCompletionData({
+  required List<WorkoutHistory> sessions,
+  required DateTime referenceDate,
+  int weekCount = 6,
+}) {
+  // Normalise to midnight local time to avoid DST edge cases.
+  final today = DateTime(
+    referenceDate.year,
+    referenceDate.month,
+    referenceDate.day,
+  );
+
+  // Find the Monday of the current week (ISO weekday: Mon=1, Sun=7).
+  final currentWeekStart = today.subtract(Duration(days: today.weekday - 1));
+
+  final points = <WeeklyDataPoint>[];
+
+  for (var i = weekCount - 1; i >= 0; i--) {
+    final weekStart = currentWeekStart.subtract(Duration(days: 7 * i));
+    final weekEnd = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day + 6,
+      23,
+      59,
+      59,
+    );
+    final range = WeekRange(start: weekStart, end: weekEnd);
+
+    final count = sessions
+        .where(
+          (s) => isInRange(s.effectiveCompletedAt, range),
+        )
+        .length;
+
+    points.add(WeeklyDataPoint(
+      label: _formatWeekLabel(weekStart),
+      count: count,
+      range: range,
+    ));
+  }
+
+  return points; // already oldest → newest
+}
+
 /// Splits the reference month into stable buckets: days 1-7, 8-14, 15-21,
 /// 22-28, and (when present) 29 through the end of the month.
 List<WeekRange> computeWeekRanges(DateTime referenceDate) {
