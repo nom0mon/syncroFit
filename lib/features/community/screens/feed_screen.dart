@@ -151,7 +151,7 @@ class _FeedList extends StatelessWidget {
         ListView.builder(
           padding: const EdgeInsets.only(
             top: AppSpacing.md,
-            bottom: AppSpacing.xxl,
+            bottom: AppSpacing.md,
           ),
           itemCount: posts.length + leadingItems + (hasMore ? 1 : 0),
           itemBuilder: (context, index) {

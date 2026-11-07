@@ -139,7 +139,7 @@ class _DashboardContentState extends State<_DashboardContent> {
           SingleChildScrollView(
             padding: const EdgeInsets.only(
               top: AppSpacing.md,
-              bottom: 100,
+              bottom: AppSpacing.md,
             ),
             child: ResponsiveConstrainedPage(
               key: const Key('dashboard-content'),
