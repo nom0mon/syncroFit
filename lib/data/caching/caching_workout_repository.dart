@@ -152,6 +152,24 @@ class CachingWorkoutRepository
   }
 
   @override
+  Future<Result<Workout, AppError>> saveLocalCustomization(
+    String workoutId,
+    List<WorkoutExercise> exercises,
+    List<WorkoutExercise> baselineExercises,
+  ) async {
+    final cached = await _dao.getById(workoutId);
+    if (cached == null) {
+      return Failure(NotFoundError(entityType: 'Workout', id: workoutId));
+    }
+    final customized = cached.copyWith(
+      exercises: exercises,
+      baselineExercises: baselineExercises,
+    );
+    await _dao.upsert(customized);
+    return Success(customized);
+  }
+
+  @override
   Future<Result<GenerationResult, AppError>> generateRecommendation({
     List<int> includedExercises = const [],
     List<int> excludedExercises = const [],
@@ -238,6 +256,13 @@ class CachingWorkoutRepository
         .map((e) => e as Map<String, dynamic>)
         .toList();
 
+    final baselineJson = rows.first['baseline_exercises'] as String?;
+    final baselineList = baselineJson != null
+        ? (jsonDecode(baselineJson) as List<dynamic>)
+            .map((e) => e as Map<String, dynamic>)
+            .toList()
+        : null;
+
     return Workout.fromJson({
       'id': rows.first['id'],
       'user_id': rows.first['user_id'],
@@ -248,6 +273,7 @@ class CachingWorkoutRepository
       'is_generated': rows.first['is_generated'],
       'created_at': rows.first['created_at'],
       'updated_at': rows.first['updated_at'],
+      'baseline_exercises': baselineList,
     });
   }
 

@@ -131,6 +131,13 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
         title: Text(
           'Exercise ${sessionState.currentExerciseIndex + 1} of ${sessionState.totalExercises}',
         ),
+        actions: [
+          TextButton(
+            key: const Key('end-workout-action'),
+            onPressed: _onEndWorkout,
+            child: const Text('End'),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -258,6 +265,103 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
     if (updated.isCompleted) {
       context.go('/dashboard/workout/${widget.workoutId}/summary');
     }
+  }
+
+  /// Evaluates the current session when the user taps "End" and routes to the
+  /// appropriate completion path per the UX spec.
+  ///
+  /// - Zero exercises logged → offer to discard the session.
+  /// - Partially completed routine → confirm finishing with partial data.
+  /// - Fully completed → go straight to the summary screen.
+  Future<void> _onEndWorkout() async {
+    final sessionState = ref.read(workoutProvider);
+    final completedCount = sessionState.completedExercises.length;
+    final totalExercises = sessionState.totalExercises;
+
+    // Scenario C — fully completed: go straight to the summary screen.
+    if (completedCount > 0 && completedCount >= totalExercises) {
+      ref.read(workoutProvider.notifier).completeWorkoutEarly();
+      if (mounted) {
+        context.go('/dashboard/workout/${widget.workoutId}/summary');
+      }
+      return;
+    }
+
+    // Scenario A — zero exercises logged: offer to discard.
+    if (completedCount == 0) {
+      final discard = await _showDiscardDialog();
+      if (discard == true && mounted) {
+        ref.read(workoutProvider.notifier).resetSession();
+        if (mounted) context.go('/dashboard');
+      }
+      return;
+    }
+
+    // Scenario B — partially completed: confirm finishing anyway.
+    final finishAnyway =
+        await _showFinishAnywayDialog(completedCount, totalExercises);
+    if (finishAnyway == true && mounted) {
+      ref.read(workoutProvider.notifier).completeWorkoutEarly();
+      if (mounted) {
+        context.go('/dashboard/workout/${widget.workoutId}/summary');
+      }
+    }
+  }
+
+  /// Prompt for Scenario A: nothing has been logged yet.
+  Future<bool?> _showDiscardDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => SafeScrollableDialog(
+        title: const Text('Discard Session?'),
+        content: const Text(
+          "You haven't logged any exercises yet. Do you want to discard "
+          'this session?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Resume Workout'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            child: const Text('Discard Session'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Prompt for Scenario B: some exercises remain uncompleted.
+  Future<bool?> _showFinishAnywayDialog(
+    int completedCount,
+    int totalExercises,
+  ) {
+    final remaining = totalExercises - completedCount;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => SafeScrollableDialog(
+        title: const Text('Finish Workout?'),
+        content: Text(
+          'You still have $remaining uncompleted '
+          '${remaining == 1 ? 'exercise' : 'exercises'} left in this '
+          'program. Are you sure you want to finish?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Resume Workout'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Finish Anyway'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

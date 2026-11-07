@@ -52,6 +52,13 @@ class WorkoutSessionState {
   /// Whether we are currently in a rest period between completed sets.
   final bool isResting;
 
+  /// Whether the workout was ended early with only partial exercises logged.
+  ///
+  /// Set by [WorkoutNotifier.completeWorkoutEarly] so a partially-completed
+  /// routine can be distinguished from one where every planned exercise was
+  /// finished.
+  final bool isPartiallyCompleted;
+
   const WorkoutSessionState({
     this.workout,
     this.currentExerciseIndex = 0,
@@ -62,6 +69,7 @@ class WorkoutSessionState {
     this.startedAt,
     this.completedAt,
     this.isResting = false,
+    this.isPartiallyCompleted = false,
   });
 
   /// The current exercise being performed, or null if no workout is loaded.
@@ -115,6 +123,7 @@ class WorkoutSessionState {
     DateTime? startedAt,
     DateTime? completedAt,
     bool? isResting,
+    bool? isPartiallyCompleted,
   }) {
     return WorkoutSessionState(
       workout: workout ?? this.workout,
@@ -126,6 +135,8 @@ class WorkoutSessionState {
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
       isResting: isResting ?? this.isResting,
+      isPartiallyCompleted:
+          isPartiallyCompleted ?? this.isPartiallyCompleted,
     );
   }
 }
@@ -328,6 +339,27 @@ class WorkoutNotifier extends StateNotifier<WorkoutSessionState> {
   /// Skips the rest period and resumes the next set or exercise.
   void skipRest() {
     completeRest();
+  }
+
+  /// Marks the workout as completed early, preserving any partially-logged
+  /// exercises.
+  ///
+  /// Unlike [finishCurrentSet], which only completes the workout when the last
+  /// set of the last exercise is finished, this immediately transitions to the
+  /// completed state so the summary screen can save whatever has been logged
+  /// so far. When fewer than all planned exercises were finished,
+  /// [isPartiallyCompleted] is set so the record can be distinguished from a
+  /// fully completed routine.
+  void completeWorkoutEarly() {
+    final total = state.totalExercises;
+    final completed = state.completedExercises.length;
+    state = state.copyWith(
+      isInProgress: false,
+      isCompleted: true,
+      completedAt: DateTime.now(),
+      isResting: false,
+      isPartiallyCompleted: completed < total,
+    );
   }
 
   /// Builds and saves a [WorkoutHistory] from the current completed state.

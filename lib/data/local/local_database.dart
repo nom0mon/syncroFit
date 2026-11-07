@@ -45,7 +45,7 @@ abstract class LocalDatabase {
 /// sync queue mutations, and cache metadata.
 class LocalDatabaseImpl implements LocalDatabase {
   static const String _databaseName = 'syncrofit.db';
-  static const int _databaseVersion = 8;
+  static const int _databaseVersion = 9;
 
   Database? _database;
 
@@ -78,6 +78,12 @@ class LocalDatabaseImpl implements LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion == 8) {
+      await db.execute(
+          'ALTER TABLE workouts ADD COLUMN baseline_exercises TEXT');
+      return;
+    }
+
     if (oldVersion == 7) {
       await _addMuscleColumns(db);
       return;
@@ -206,7 +212,8 @@ class LocalDatabaseImpl implements LocalDatabase {
         exercises TEXT NOT NULL,
         is_generated INTEGER NOT NULL DEFAULT 0,
         created_at TEXT,
-        updated_at TEXT
+        updated_at TEXT,
+        baseline_exercises TEXT
       )
     ''');
 

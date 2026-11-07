@@ -74,6 +74,19 @@ class RemoteWorkoutRepository
     );
   }
 
+  @override
+  Future<Result<Workout, AppError>> saveLocalCustomization(
+    String workoutId,
+    List<WorkoutExercise> exercises,
+    List<WorkoutExercise> baselineExercises,
+  ) async {
+    // Local-only operation — not supported by the remote repository.
+    return Failure(ServerError(
+      statusCode: 0,
+      serverMessage: 'Local customization requires a local database.',
+    ));
+  }
+
   /// Generates new workouts via the recommendation engine.
   ///
   /// POST /api/workouts/generate

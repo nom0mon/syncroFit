@@ -125,6 +125,30 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
     return _saveLocallyAndQueue(record);
   }
 
+  @override
+  Future<Result<void, AppError>> delete(String id) async {
+    if (_connectivity.currentStatus == ConnectivityStatus.online) {
+      final result = await _remote.delete(id);
+      if (result is Success<void, AppError>) {
+        await _dao.deleteById(id);
+        return result;
+      }
+
+      // A connected interface does not guarantee the API is reachable.
+      // Delete locally and queue the mutation so the sync engine replays
+      // it when connectivity resumes.
+      if (result case Failure(error: final error)
+          when error is NetworkError ||
+              (error is ServerError && error.statusCode >= 500)) {
+        return _deleteLocallyAndQueue(id);
+      }
+
+      return result;
+    }
+
+    return _deleteLocallyAndQueue(id);
+  }
+
   /// Saves a completion locally and queues an idempotent remote mutation.
   Future<Result<WorkoutHistory, AppError>> _saveLocallyAndQueue(
     WorkoutHistory record,
@@ -142,6 +166,23 @@ class CachingWorkoutHistoryRepository implements WorkoutHistoryRepository {
     await _syncQueueDao.enqueue(mutation);
 
     return Success(record);
+  }
+
+  /// Deletes a record locally and queues an idempotent remote deletion.
+  Future<Result<void, AppError>> _deleteLocallyAndQueue(String id) async {
+    await _dao.deleteById(id);
+
+    final mutation = SyncMutation(
+      id: _uuid.v4(),
+      entityType: _entityType,
+      entityId: id,
+      operationType: 'delete',
+      payload: const {},
+      createdAt: DateTime.now(),
+    );
+    await _syncQueueDao.enqueue(mutation);
+
+    return const Success(null);
   }
 
   // ─── Private Helpers ──────────────────────────────────────────────────

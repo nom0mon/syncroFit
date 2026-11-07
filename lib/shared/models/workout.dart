@@ -13,6 +13,12 @@ class Workout {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// The original coach-validated exercises captured before the user
+  /// customizes the workout, or `null` if the workout has never been
+  /// customized. Used to detect deviation ([isCustomized]) and to restore
+  /// the recommended plan.
+  final List<WorkoutExercise>? baselineExercises;
+
   const Workout({
     required this.id,
     this.userId,
@@ -25,6 +31,7 @@ class Workout {
     this.isAccepted = true,
     this.createdAt,
     this.updatedAt,
+    this.baselineExercises,
   });
 
   factory Workout.fromJson(Map<String, dynamic> json) {
@@ -52,6 +59,11 @@ class Workout {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      baselineExercises: json['baseline_exercises'] != null
+          ? (json['baseline_exercises'] as List<dynamic>)
+              .map((e) => WorkoutExercise.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 
@@ -67,7 +79,49 @@ class Workout {
         'is_accepted': isAccepted,
         'created_at': createdAt?.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
+        if (baselineExercises != null)
+          'baseline_exercises': baselineExercises!.map((e) => e.toJson()).toList(),
       };
+
+  /// Returns a copy of this workout with the given fields replaced.
+  Workout copyWith({
+    String? id,
+    String? userId,
+    String? planId,
+    String? name,
+    String? dayOfWeek,
+    int? estimatedDurationMinutes,
+    List<WorkoutExercise>? exercises,
+    bool? isGenerated,
+    bool? isAccepted,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<WorkoutExercise>? baselineExercises,
+  }) {
+    return Workout(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      planId: planId ?? this.planId,
+      name: name ?? this.name,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      estimatedDurationMinutes:
+          estimatedDurationMinutes ?? this.estimatedDurationMinutes,
+      exercises: exercises ?? this.exercises,
+      isGenerated: isGenerated ?? this.isGenerated,
+      isAccepted: isAccepted ?? this.isAccepted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      baselineExercises: baselineExercises ?? this.baselineExercises,
+    );
+  }
+
+  /// Whether the current exercises deviate from the coach's original
+  /// recommendation (the [baselineExercises]).
+  bool get isCustomized {
+    final baseline = baselineExercises;
+    if (baseline == null) return false;
+    return !_listEquals(exercises, baseline);
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -84,7 +138,12 @@ class Workout {
           isGenerated == other.isGenerated &&
           isAccepted == other.isAccepted &&
           createdAt == other.createdAt &&
-          updatedAt == other.updatedAt;
+          updatedAt == other.updatedAt &&
+          ((baselineExercises == null &&
+                  other.baselineExercises == null) ||
+              (baselineExercises != null &&
+                  other.baselineExercises != null &&
+                  _listEquals(baselineExercises!, other.baselineExercises!)));
 
   @override
   int get hashCode => Object.hash(
@@ -99,6 +158,7 @@ class Workout {
         isAccepted,
         createdAt,
         updatedAt,
+        Object.hashAll(baselineExercises ?? const []),
       );
 
   static bool _listEquals(List<WorkoutExercise> a, List<WorkoutExercise> b) {

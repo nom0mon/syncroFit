@@ -69,6 +69,15 @@ class WorkoutHistoryDao {
     await _database.delete(_table);
   }
 
+  /// Deletes a single workout history record by its [id].
+  Future<void> deleteById(String id) async {
+    await _database.delete(
+      _table,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// Converts a database row to a [WorkoutHistory] model.
   WorkoutHistory _fromRow(Map<String, dynamic> row) {
     return WorkoutHistory.fromJson({

@@ -54,6 +54,11 @@ class RemoteWorkoutHistoryRepository implements WorkoutHistoryRepository {
     );
   }
 
+  @override
+  Future<Result<void, AppError>> delete(String id) {
+    return _apiClient.delete('/api/workout-history/$id');
+  }
+
   /// Parses a list of workout history records from the API response.
   List<WorkoutHistory> _parseWorkoutHistoryList(dynamic json) {
     if (json is List) {

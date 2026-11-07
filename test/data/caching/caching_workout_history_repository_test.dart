@@ -37,6 +37,10 @@ class _FakeRemoteHistoryRepository implements WorkoutHistoryRepository {
       saveResult;
 
   @override
+  Future<Result<void, AppError>> delete(String id) async =>
+      const Success(null);
+
+  @override
   Future<Result<List<WorkoutHistory>, AppError>> getAll(String userId) async =>
       const Success([]);
 

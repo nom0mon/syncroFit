@@ -162,6 +162,27 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
     );
   }
 
+  /// Deletes the workout history records with the given [ids].
+  ///
+  /// Returns the number of records that were successfully deleted. After
+  /// deletion the [workoutHistoryRefreshProvider] is bumped so this notifier
+  /// (and the Dashboard) rebuild with fresh data.
+  Future<int> deleteWorkouts(Set<String> ids) async {
+    var deleted = 0;
+    for (final id in ids) {
+      final result = await _historyRepo.delete(id);
+      if (result is Success<void, AppError>) {
+        deleted++;
+      }
+    }
+
+    // Bump the refresh counter so this notifier recomputes weekly stats,
+    // recent history, and totals from the updated cache.
+    final refresh = ref.read(workoutHistoryRefreshProvider.notifier);
+    refresh.state = refresh.state + 1;
+    return deleted;
+  }
+
   /// Returns the Monday 00:00:00 → Sunday 23:59:59 range for the current week.
   /// Groups workout history records by ISO week and counts workouts per week.
   List<WeeklyStat> _computeWeeklyStats(List<WorkoutHistory> history) {
@@ -182,12 +203,12 @@ class ProgressNotifier extends AsyncNotifier<ProgressState> {
         .toList();
   }
 
-  /// Returns an ISO week label like "2024-W23" for the given date.
+  /// Returns the ISO week's Monday date as a sortable string "yyyy-MM-dd"
+  /// for the given date. Used to group workouts by calendar week.
   String _getIsoWeekLabel(DateTime date) {
-    // Calculate ISO week number
-    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-    final weekday = date.weekday; // 1=Mon, 7=Sun
-    final weekNumber = ((dayOfYear - weekday + 10) / 7).floor();
-    return '${date.year}-W${weekNumber.toString().padLeft(2, '0')}';
+    // Find the Monday of this date's ISO week (weekday: 1=Mon, 7=Sun)
+    final monday = date.subtract(Duration(days: date.weekday - 1));
+    final d = DateTime(monday.year, monday.month, monday.day);
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 }

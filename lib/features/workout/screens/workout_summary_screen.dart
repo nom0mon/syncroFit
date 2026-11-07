@@ -66,7 +66,9 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
         title: const Text('Workout Complete'),
         automaticallyImplyLeading: false,
       ),
-      body: Padding(
+      body: SafeArea(
+        top: false,
+        child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
@@ -163,6 +165,7 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
           ],
+        ),
         ),
       ),
     );

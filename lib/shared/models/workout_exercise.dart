@@ -15,6 +15,25 @@ class WorkoutExercise {
     required this.order,
   });
 
+  /// Returns a copy of this exercise with the given fields replaced.
+  WorkoutExercise copyWith({
+    int? exerciseId,
+    int? sets,
+    int? reps,
+    int? durationSeconds,
+    int? restSeconds,
+    int? order,
+  }) {
+    return WorkoutExercise(
+      exerciseId: exerciseId ?? this.exerciseId,
+      sets: sets ?? this.sets,
+      reps: reps ?? this.reps,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      restSeconds: restSeconds ?? this.restSeconds,
+      order: order ?? this.order,
+    );
+  }
+
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
     return WorkoutExercise(
       exerciseId: json['exercise_id'] as int,

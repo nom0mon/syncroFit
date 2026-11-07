@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,8 +12,10 @@ import '../../../shared/widgets/edge_fade_gradient.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/safe_layout.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/progress_provider.dart';
+import '../providers/workout_selection_provider.dart';
 import '../utils/bmi_utils.dart';
 import '../widgets/progress_log_timeline.dart';
 
@@ -39,49 +42,141 @@ class ProgressSummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(progressProvider);
     final bmiAsync = ref.watch(bmiProvider);
+    final selection = ref.watch(workoutSelectionProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Progress'),
-        actions: [
-          IconButton(
-            tooltip: 'Log Progress',
-            onPressed: () => context.push('/progress/log'),
-            icon: const Icon(Icons.add_a_photo_outlined),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: progressAsync.when(
-          loading: () => const ResponsiveConstrainedPage(
-            child: Center(child: LoadingIndicator()),
-          ),
-          error: (error, _) => RefreshIndicator(
-            onRefresh: () => _onRefresh(ref),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
+    final recentIds = progressAsync.valueOrNull?.recentHistory
+            .map((record) => record.id)
+            .toSet() ??
+        const <String>{};
+
+    return PopScope(
+      canPop: !selection.inSelectionMode,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          ref.read(workoutSelectionProvider.notifier).cancel();
+        }
+      },
+      child: Scaffold(
+        appBar: selection.inSelectionMode
+            ? AppBar(
+                leading: IconButton(
+                  tooltip: 'Cancel',
+                  icon: const Icon(Icons.close),
+                  onPressed: () =>
+                      ref.read(workoutSelectionProvider.notifier).cancel(),
+                ),
+                title: Text('${selection.selectedIds.length} Selected'),
+                actions: [
+                  TextButton(
+                    onPressed: () => ref
+                        .read(workoutSelectionProvider.notifier)
+                        .selectAll(recentIds),
+                    child: const Text('Select All'),
+                  ),
+                ],
+              )
+            : AppBar(
+                title: const Text('Progress'),
+                actions: [
+                  IconButton(
+                    tooltip: 'Log Progress',
+                    onPressed: () => context.push('/progress/log'),
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                  ),
+                ],
+              ),
+        body: SafeArea(
+          top: false,
+          child: progressAsync.when(
+            loading: () => const ResponsiveConstrainedPage(
+              child: Center(child: LoadingIndicator()),
+            ),
+            error: (error, _) => RefreshIndicator(
+              onRefresh: () => _onRefresh(ref),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  ResponsiveConstrainedPage(
+                    child: ErrorDisplay(
+                      message: error.toString(),
+                      onRetry: () => ref.invalidate(progressProvider),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            data: (state) => Stack(
               children: [
-                ResponsiveConstrainedPage(
-                  child: ErrorDisplay(
-                    message: error.toString(),
-                    onRetry: () => ref.invalidate(progressProvider),
+                RefreshIndicator(
+                  onRefresh: () => _onRefresh(ref),
+                  child: _ProgressContent(
+                    state: state,
+                    bmiAsync: bmiAsync,
+                    photosSection:
+                        photosSection ?? const ProgressLogTimeline(),
+                    extraBottomPadding:
+                        selection.inSelectionMode ? 80.0 : 0.0,
                   ),
                 ),
+                if (selection.inSelectionMode)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _SelectionBottomBar(
+                      selectedCount: selection.selectedIds.length,
+                      onDelete: () => _confirmDelete(
+                        context,
+                        ref,
+                        selection.selectedIds,
+                      ),
+                    ),
+                  ),
               ],
-            ),
-          ),
-          data: (state) => RefreshIndicator(
-            onRefresh: () => _onRefresh(ref),
-            child: _ProgressContent(
-              state: state,
-              bmiAsync: bmiAsync,
-              photosSection: photosSection ?? const ProgressLogTimeline(),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// Shows a confirmation dialog before deleting the selected workout logs.
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Set<String> ids,
+  ) async {
+    final count = ids.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => SafeScrollableDialog(
+        title: const Text('Delete Workouts?'),
+        content: Text(
+          'Are you sure you want to delete $count workout '
+          '${count == 1 ? 'log' : 'logs'}? Your Weekly Statistics will be '
+          'updated. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await ref.read(progressProvider.notifier).deleteWorkouts(ids);
+      ref.read(workoutSelectionProvider.notifier).cancel();
+    }
   }
 }
 
@@ -90,11 +185,13 @@ class _ProgressContent extends StatelessWidget {
     required this.state,
     required this.bmiAsync,
     this.photosSection,
+    this.extraBottomPadding = 0,
   });
 
   final ProgressState state;
   final AsyncValue<BmiResult?> bmiAsync;
   final Widget? photosSection;
+  final double extraBottomPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +201,9 @@ class _ProgressContent extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.only(
             top: AppSpacing.md,
-            bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
+            bottom: MediaQuery.paddingOf(context).bottom +
+                AppSpacing.md +
+                extraBottomPadding,
           ),
           child: ResponsiveConstrainedPage(
             child: Column(
@@ -395,9 +494,21 @@ class _WeeklyStatsChart extends StatelessWidget {
   final int weeklyGoal;
 
   String _labelFor(String label, ChartLabelDensity density) {
-    if (density == ChartLabelDensity.full) return label;
-    final weekMarker = label.lastIndexOf('W');
-    return weekMarker >= 0 ? label.substring(weekMarker) : label;
+    // label is "yyyy-MM-dd" (the Monday of the week).
+    // Parse and format as "MMM d" e.g. "Nov 3".
+    try {
+      final parts = label.split('-');
+      if (parts.length == 3) {
+        final month = int.parse(parts[1]);
+        final day = int.parse(parts[2]);
+        const months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        ];
+        return '${months[month - 1]} $day';
+      }
+    } catch (_) {}
+    return label;
   }
 
   @override
@@ -414,7 +525,7 @@ class _WeeklyStatsChart extends StatelessWidget {
         observedMax > weeklyGoal ? observedMax : weeklyGoal.toDouble();
     final semanticSummary = data
         .map((entry) =>
-            '${entry.weekLabel}: ${entry.workoutsCompleted} workouts')
+            '${_labelFor(entry.weekLabel, ChartLabelDensity.full)}: ${entry.workoutsCompleted} workouts')
         .join(', ');
 
     return Column(
@@ -600,63 +711,140 @@ class _RecentWorkouts extends StatelessWidget {
   }
 }
 
-class _WorkoutHistoryTile extends StatelessWidget {
+/// Sticky bottom action bar shown during multi-select mode.
+class _SelectionBottomBar extends StatelessWidget {
+  const _SelectionBottomBar({
+    required this.selectedCount,
+    required this.onDelete,
+  });
+
+  final int selectedCount;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      elevation: 8,
+      color: theme.colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: FilledButton.icon(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+            label: Text('Delete ($selectedCount)'),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkoutHistoryTile extends ConsumerWidget {
   const _WorkoutHistoryTile({required this.record});
 
   final WorkoutHistory record;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final exercises = record.exercises;
+    final selection = ref.watch(workoutSelectionProvider);
+    final isSelected = selection.selectedIds.contains(record.id);
 
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(record.workoutName, style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              formatDate(record.completedAt),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      color: isSelected
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+          : null,
+      child: InkWell(
+        onTap: selection.inSelectionMode
+            ? () => ref
+                .read(workoutSelectionProvider.notifier)
+                .toggleSelection(record.id)
+            : null,
+        onLongPress: () {
+          HapticFeedback.selectionClick();
+          ref
+              .read(workoutSelectionProvider.notifier)
+              .enterSelection(record.id);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: selection.inSelectionMode
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: AppSpacing.md),
+                        child: Icon(
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.xl,
-              runSpacing: AppSpacing.sm,
-              children: [
-                _HistoryMetric(
-                  label: 'Duration',
-                  value: formatDuration(record.totalDurationSeconds),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(record.workoutName, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      formatDate(record.completedAt),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.xl,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        _HistoryMetric(
+                          label: 'Duration',
+                          value: formatDuration(record.totalDurationSeconds),
+                        ),
+                        _HistoryMetric(
+                            label: 'Exercises', value: '${exercises.length}'),
+                      ],
+                    ),
+                    if (exercises.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      const Divider(height: 1),
+                      const SizedBox(height: AppSpacing.sm),
+                      const _ExerciseTableRow(
+                        name: 'Exercise',
+                        sets: 'Sets',
+                        amount: 'Reps / Time',
+                        header: true,
+                      ),
+                      ...exercises.map((exercise) => _ExerciseTableRow(
+                            name: exercise.exerciseName,
+                            sets: '${exercise.setsCompleted}',
+                            amount: exercise.isDuration
+                                ? '${exercise.repsOrDuration} sec'
+                                : '${exercise.repsOrDuration} reps',
+                          )),
+                    ],
+                  ],
                 ),
-                _HistoryMetric(
-                    label: 'Exercises', value: '${exercises.length}'),
-              ],
-            ),
-            if (exercises.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              const Divider(height: 1),
-              const SizedBox(height: AppSpacing.sm),
-              const _ExerciseTableRow(
-                name: 'Exercise',
-                sets: 'Sets',
-                amount: 'Reps / Time',
-                header: true,
               ),
-              ...exercises.map((exercise) => _ExerciseTableRow(
-                    name: exercise.exerciseName,
-                    sets: '${exercise.setsCompleted}',
-                    amount: exercise.isDuration
-                        ? '${exercise.repsOrDuration} sec'
-                        : '${exercise.repsOrDuration} reps',
-                  )),
             ],
-          ],
+          ),
         ),
       ),
     );

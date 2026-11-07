@@ -63,6 +63,10 @@ class _RecordingHistoryRepository implements WorkoutHistoryRepository {
   Future<Result<WorkoutHistory, AppError>> save(WorkoutHistory record) async {
     return Success(record);
   }
+
+  @override
+  Future<Result<void, AppError>> delete(String id) async =>
+      const Success(null);
 }
 
 /// Minimal [WorkoutRepository] stub that returns no planned workouts.

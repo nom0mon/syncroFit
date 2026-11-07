@@ -110,6 +110,15 @@ class _WorkoutDetailContent extends ConsumerWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (workout.isCustomized) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Chip(
+                  avatar: const Icon(Icons.tune, size: 16),
+                  label: const Text('Customized'),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
 
               // Exercise list

@@ -16,4 +16,9 @@ abstract class WorkoutHistoryRepository {
   ///
   /// When offline, the record is saved locally and queued for sync.
   Future<Result<WorkoutHistory, AppError>> save(WorkoutHistory record);
+
+  /// Deletes a workout history record by its [id].
+  ///
+  /// When offline, the deletion is applied locally and queued for sync.
+  Future<Result<void, AppError>> delete(String id);
 }

@@ -18,6 +18,19 @@ abstract class WorkoutCustomizationRepository {
     String workoutId,
     List<int> exerciseIds,
   );
+
+  /// Applies user-customized exercise parameters (sets, reps, rest) to the
+  /// locally cached workout.
+  ///
+  /// The backend only accepts exercise IDs and recomputes parameters
+  /// server-side, so per-exercise parameter overrides are stored in the
+  /// local cache alongside the captured [baselineExercises] so the
+  /// "Restore Recommended Plan" action and "Customized" indicator work.
+  Future<Result<Workout, AppError>> saveLocalCustomization(
+    String workoutId,
+    List<WorkoutExercise> exercises,
+    List<WorkoutExercise> baselineExercises,
+  );
 }
 
 /// Result of a workout generation call.

@@ -91,6 +91,11 @@ class WorkoutDao {
       'is_generated': row['is_generated'],
       'created_at': row['created_at'],
       'updated_at': row['updated_at'],
+      'baseline_exercises': row['baseline_exercises'] != null
+          ? (jsonDecode(row['baseline_exercises'] as String) as List<dynamic>)
+              .map((e) => e as Map<String, dynamic>)
+              .toList()
+          : null,
     });
   }
 
@@ -108,6 +113,11 @@ class WorkoutDao {
       'is_generated': workout.isGenerated ? 1 : 0,
       'created_at': workout.createdAt?.toIso8601String(),
       'updated_at': workout.updatedAt?.toIso8601String(),
+      'baseline_exercises': workout.baselineExercises != null
+          ? jsonEncode(
+              workout.baselineExercises!.map((e) => e.toJson()).toList(),
+            )
+          : null,
     };
   }
 }
