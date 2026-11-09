@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'store']);
     Route::get('/workout-history', [\App\Http\Controllers\WorkoutHistoryController::class, 'index']);
     Route::get('/workout-history/stats', [\App\Http\Controllers\WorkoutHistoryController::class, 'stats']);
+    Route::delete('/workout-history/{id}', [\App\Http\Controllers\WorkoutHistoryController::class, 'destroy']);
 
     // Private progress logs
     Route::get('/progress-logs', [\App\Http\Controllers\ProgressLogController::class, 'index']);

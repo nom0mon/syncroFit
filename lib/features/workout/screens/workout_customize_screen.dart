@@ -154,11 +154,24 @@ class _WorkoutCustomizeScreenState
   }
 
   Future<void> _pick(List<Exercise> exercises, String? environment) async {
+    // Infer the workout's own environment from the equipment of its existing
+    // exercises, rather than using the profile's current preference which may
+    // differ from the environment the workout was generated for.
+    // Priority: if any existing exercise uses non-bodyweight equipment, the
+    // workout is a gym workout. If all are bodyweight/pull_up_bar, fall back
+    // to the profile preference, which may itself be 'home' or 'outdoor'.
+    final byId = <int, Exercise>{
+      for (final e in exercises)
+        if (int.tryParse(e.id) case final int id) id: e,
+    };
+    final workoutEnvironment = _inferWorkoutEnvironment(_editable!, byId, environment);
+
     final available = exercises
         .where((exercise) => !_editable!
             .any((e) => e.exerciseId == int.tryParse(exercise.id)))
         .where((exercise) =>
-            environment == null || exercise.environments.contains(environment))
+            workoutEnvironment == null ||
+            exercise.environments.contains(workoutEnvironment))
         .toList();
 
     final selected = await showModalBottomSheet<int>(
@@ -169,7 +182,7 @@ class _WorkoutCustomizeScreenState
           height: MediaQuery.sizeOf(context).height * .7,
           child: available.isEmpty
               ? Center(
-                  child: Text(environment == null
+                  child: Text(workoutEnvironment == null
                       ? 'No more exercises available.'
                       : 'No more exercises are available for your selected environment.'),
                 )
@@ -277,6 +290,35 @@ class _WorkoutCustomizeScreenState
     }
     return true;
   }
+
+  /// Infers the workout's training environment from the equipment of its
+  /// existing exercises.
+  ///
+  /// If any exercise in the workout uses gym equipment (anything other than
+  /// 'bodyweight' or 'pull_up_bar'), the workout is treated as a gym workout.
+  /// This prevents the picker from incorrectly filtering out gym exercises
+  /// when the user's profile preference was later changed to 'home' or
+  /// 'outdoor' after the workout was originally generated.
+  ///
+  /// Falls back to [profileEnvironment] when the exercise library is not yet
+  /// loaded or all exercises are bodyweight-only.
+  static String? _inferWorkoutEnvironment(
+    List<_EditableExercise> editable,
+    Map<int, Exercise> byId,
+    String? profileEnvironment,
+  ) {
+    for (final e in editable) {
+      final exercise = byId[e.exerciseId];
+      if (exercise == null) continue;
+      final equipment = exercise.equipment?.toLowerCase() ?? '';
+      if (equipment.isNotEmpty &&
+          equipment != 'bodyweight' &&
+          equipment != 'pull_up_bar') {
+        return 'gym';
+      }
+    }
+    return profileEnvironment;
+  }
 }
 
 /// Mutable copy of a [WorkoutExercise] used for in-place editing.
@@ -345,14 +387,22 @@ class _ExerciseEditCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.drag_handle),
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.drag_handle),
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: theme.textTheme.titleMedium),
+                      Text(
+                        name,
+                        style: theme.textTheme.titleMedium,
+                        softWrap: true,
+                      ),
                       if (subtitle != null)
                         Text(
                           subtitle!,
@@ -367,11 +417,18 @@ class _ExerciseEditCard extends StatelessWidget {
                   tooltip: 'Remove exercise',
                   onPressed: canRemove ? onRemove : null,
                   icon: const Icon(Icons.remove_circle_outline),
+                  // Compact density keeps the button from pushing the card
+                  // height up unnecessarily.
+                  visualDensity: VisualDensity.compact,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            Row(
+            // Wrap lets the steppers reflow to a second line on narrow cards
+            // instead of overflowing the card boundary.
+            Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.xs,
               children: [
                 _Stepper(
                   label: 'Sets',
@@ -383,7 +440,6 @@ class _ExerciseEditCard extends StatelessWidget {
                     onChanged();
                   },
                 ),
-                const SizedBox(width: AppSpacing.md),
                 if (isDuration)
                   _Stepper(
                     label: 'Seconds',

@@ -241,9 +241,28 @@ class WorkoutController extends Controller
 
         $ids = array_map('intval', $validated['exercise_ids']);
         $models = \App\Models\Exercise::whereIn('id', $ids)->get()->keyBy('id');
+
+        // Infer the workout's training environment from the equipment of
+        // its existing exercises rather than the profile's current preference.
+        // The profile preference may have changed since the workout was
+        // generated (e.g. user was at the gym but later switched profile to
+        // outdoor). If any existing workout exercise uses gym equipment
+        // (anything other than bodyweight or pull_up_bar), the workout is
+        // treated as a gym workout regardless of the profile value.
+        $existingExerciseIds = collect($workout->exercises)->pluck('exercise_id')->filter()->toArray();
+        $existingModels = \App\Models\Exercise::whereIn('id', $existingExerciseIds)->get();
+        $workoutEnvironment = $profile->workout_preference;
+        foreach ($existingModels as $existingExercise) {
+            $equipment = strtolower(trim($existingExercise->equipment ?? ''));
+            if ($equipment !== '' && $equipment !== 'bodyweight' && $equipment !== 'pull_up_bar') {
+                $workoutEnvironment = 'gym';
+                break;
+            }
+        }
+
         $ineligible = $models->first(
             fn (\App\Models\Exercise $exercise) => !in_array(
-                $profile->workout_preference,
+                $workoutEnvironment,
                 $exercise->environments ?? [],
                 true
             )
@@ -253,7 +272,7 @@ class WorkoutController extends Controller
                 'success' => false,
                 'message' => 'An exercise is unavailable in your selected workout environment.',
                 'errors' => [
-                    'exercise_ids' => ["{$ineligible->name} is not classified for {$profile->workout_preference} workouts."],
+                    'exercise_ids' => ["{$ineligible->name} is not classified for {$workoutEnvironment} workouts."],
                 ],
             ], 422);
         }

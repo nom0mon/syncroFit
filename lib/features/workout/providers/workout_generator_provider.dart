@@ -240,13 +240,25 @@ class WorkoutGeneratorNotifier extends StateNotifier<WorkoutGeneratorState> {
       return;
     }
     final generationRepository = repository as WorkoutGenerationRepository;
+    // When the user has not overridden a dropdown but wants to save their
+    // current selections, fall back to the profile's stored values so that
+    // the backend $overrides map is never empty and the save is always
+    // executed rather than silently skipped.
+    final profile = _ref.read(profileProvider).valueOrNull;
+    final effectiveLevel = state.fitnessLevel ?? profile?.fitnessLevel;
+    final effectiveGoal = state.fitnessGoal ?? profile?.fitnessGoal;
+    final effectivePreference =
+        state.workoutPreference ?? profile?.workoutPreference;
+
     final result = await generationRepository.generateRecommendation(
       includedExercises: [...state.includedExerciseIds],
       excludedExercises: [...state.excludedExerciseIds],
       focusMuscles: [...state.focusMuscles],
-      fitnessLevel: state.fitnessLevel,
-      fitnessGoal: state.fitnessGoal,
-      workoutPreference: state.workoutPreference,
+      fitnessLevel: state.saveOptionsToProfile ? effectiveLevel : state.fitnessLevel,
+      fitnessGoal: state.saveOptionsToProfile ? effectiveGoal : state.fitnessGoal,
+      workoutPreference: state.saveOptionsToProfile
+          ? effectivePreference
+          : state.workoutPreference,
       saveOptionsToProfile: state.saveOptionsToProfile,
     );
 

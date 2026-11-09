@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/models/enums.dart';
 import '../../../shared/models/exercise.dart';
 import '../../../shared/widgets/exercise_media.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/safe_layout.dart';
 import '../../exercise_library/providers/exercise_provider.dart';
+import '../providers/timer_controller.dart';
 import '../providers/workout_provider.dart';
 
 /// Displays the currently active exercise as a per-set flow.
@@ -25,6 +27,11 @@ class WorkoutActiveScreen extends ConsumerStatefulWidget {
 class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   bool _initialized = false;
   String? _loadError;
+
+  // Track the last set/exercise combination so we only restart the timer
+  // when a new set begins, not on every rebuild.
+  int? _lastTimerSet;
+  int? _lastTimerExerciseIndex;
 
   @override
   void initState() {
@@ -125,6 +132,35 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
         ? formatDuration(currentExercise.durationSeconds)
         : '${currentExercise.reps} reps';
 
+    // Start (or restart) the exercise countdown whenever a new timed set
+    // begins. Guard with _lastTimerSet / _lastTimerExerciseIndex so the
+    // timer is only restarted when the set or exercise actually changes,
+    // not on every rebuild triggered by the countdown itself.
+    if (isDuration) {
+      final exerciseIndex = sessionState.currentExerciseIndex;
+      final setNumber = sessionState.currentSet;
+      if (setNumber != _lastTimerSet || exerciseIndex != _lastTimerExerciseIndex) {
+        _lastTimerSet = setNumber;
+        _lastTimerExerciseIndex = exerciseIndex;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref
+                .read(timerControllerProvider.notifier)
+                .start(currentExercise.durationSeconds);
+          }
+        });
+      }
+    }
+
+    // When a timed set completes, automatically advance to the next set
+    // exactly as if the user tapped "Finish Set".
+    ref.listen<TimerControllerState>(timerControllerProvider, (prev, next) {
+      if (prev?.state != TimerState.completed &&
+          next.state == TimerState.completed) {
+        if (mounted) _onFinishSet(sessionState.isLastSet);
+      }
+    });
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
@@ -214,6 +250,7 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
                         setNumber: sessionState.currentSet,
                         totalSets: currentExercise.sets,
                         perSetLabel: perSetLabel,
+                        isDuration: isDuration,
                       ),
                       if (details != null &&
                           details.instructions.isNotEmpty) ...[
@@ -258,6 +295,8 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   }
 
   void _onFinishSet(bool _) {
+    // Cancel any running exercise countdown before advancing.
+    ref.read(timerControllerProvider.notifier).reset();
     final notifier = ref.read(workoutProvider.notifier);
     notifier.finishCurrentSet();
 
@@ -270,6 +309,8 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   }
 
   void _onSkipExercise() {
+    // Cancel any running exercise countdown before skipping.
+    ref.read(timerControllerProvider.notifier).reset();
     final notifier = ref.read(workoutProvider.notifier);
     notifier.skipCurrentExercise();
 
@@ -395,20 +436,33 @@ class _WorkoutActiveScreenState extends ConsumerState<WorkoutActiveScreen> {
   }
 }
 
-class _CurrentSetCard extends StatelessWidget {
+class _CurrentSetCard extends ConsumerWidget {
   const _CurrentSetCard({
     required this.setNumber,
     required this.totalSets,
     required this.perSetLabel,
+    required this.isDuration,
   });
 
   final int setNumber;
   final int totalSets;
   final String perSetLabel;
+  final bool isDuration;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // For timed sets, show the live countdown from the timer controller.
+    // Fall back to the static label while the timer is idle (e.g. the very
+    // first frame before the postFrameCallback fires).
+    String displayLabel = perSetLabel;
+    if (isDuration) {
+      final timerState = ref.watch(timerControllerProvider);
+      if (timerState.state != TimerState.idle) {
+        displayLabel = formatDuration(timerState.remainingSeconds);
+      }
+    }
 
     return ResponsiveCard(
       padding: const EdgeInsets.symmetric(
@@ -427,13 +481,25 @@ class _CurrentSetCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            perSetLabel,
+            displayLabel,
             style: theme.textTheme.displaySmall?.copyWith(
-              color: theme.colorScheme.onSurface,
+              color: isDuration
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
           ),
+          if (isDuration)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                'seconds remaining',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
         ],
       ),
     );

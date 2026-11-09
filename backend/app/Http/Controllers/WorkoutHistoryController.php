@@ -99,4 +99,25 @@ class WorkoutHistoryController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Delete a workout history record belonging to the authenticated user.
+     */
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $record = WorkoutHistory::where('user_id', $request->user()->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Workout history record not found.',
+            ], 404);
+        }
+
+        $record->delete();
+
+        return response()->json(['success' => true], 200);
+    }
 }
