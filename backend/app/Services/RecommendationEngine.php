@@ -81,6 +81,80 @@ class RecommendationEngine
     ];
 
     /**
+     * Derive BMI from profile height (cm) and weight (kg).
+     *
+     * Returns null when either value is missing or invalid to avoid producing
+     * NaN or infinity that would break downstream comparisons.
+     */
+    private function calculateBmi(mixed $weight, mixed $height): ?float
+    {
+        $w = (float) $weight;
+        $h = (float) $height;
+
+        if ($w <= 0 || $h <= 0) {
+            return null;
+        }
+
+        return $w / pow($h / 100, 2);
+    }
+
+    /**
+     * Derive BMI modifier overrides from a calculated BMI value and goal.
+     *
+     * Public so WorkoutController::customize() can reuse the same modifiers
+     * for customization prescriptions without duplicating logic.
+     *
+     * Returns an array with the following keys:
+     *   forceLowImpact  (bool)     – Rule B: auto low-impact for Obesity
+     *   restBuffer      (int)      – Rule C: extra rest seconds for Overweight/Obesity
+     *   maxSets         (int|null) – Rule A: set cap for Obesity (null = no cap)
+     *   preferCompound  (bool)     – Rule D: compound bias for Underweight + Build Muscle
+     */
+    public function publicBmiModifiers(?float $bmi, string $goal): array
+    {
+        return $this->bmiModifiers($bmi, $goal);
+    }
+
+    /**
+     * Derive BMI modifier overrides from a calculated BMI value and goal.
+     *
+     * Returns an array with the following keys:
+     *   forceLowImpact  (bool)  – Rule B: auto low-impact for Obesity
+     *   restBuffer      (int)   – Rule C: extra rest seconds for Overweight/Obesity
+     *   maxSets         (int|null) – Rule A: set cap for Obesity (null = no cap)
+     *   preferCompound  (bool)  – Rule D: compound bias for Underweight + Build Muscle
+     */
+    private function bmiModifiers(?float $bmi, string $goal): array
+    {
+        if ($bmi === null) {
+            return [
+                'forceLowImpact' => false,
+                'restBuffer'     => 0,
+                'maxSets'        => null,
+                'preferCompound' => false,
+            ];
+        }
+
+        $isObesity    = $bmi >= 30.0;
+        $isOverweight = $bmi >= 25.0 && $bmi < 30.0;
+        $isUnderweight = $bmi < 18.5;
+
+        return [
+            // Rule B: Obesity forces all exercises to low-impact.
+            'forceLowImpact' => $isObesity,
+
+            // Rule C: Overweight and Obesity both add +30 s rest per set.
+            'restBuffer' => ($isObesity || $isOverweight) ? 30 : 0,
+
+            // Rule A: Obesity caps working sets to 2 regardless of fitness level.
+            'maxSets' => $isObesity ? 2 : null,
+
+            // Rule D: Underweight + Build Muscle biases toward compound lifts.
+            'preferCompound' => $isUnderweight && $goal === 'build_muscle',
+        ];
+    }
+
+    /**
      * Generate a personalized weekly workout plan for the user.
      *
      * @param  User  $user
@@ -105,6 +179,16 @@ class RecommendationEngine
         $availabilityDays = $profile->availability_days ?? [];
         // Low-impact is a hard constraint: only exercises tagged impact_level=low qualify.
         $lowImpactOnly = (bool) ($profileOverrides['low_impact_only'] ?? $profile->low_impact_only ?? false);
+
+        // --- BMI modifiers ---
+        // BMI is calculated dynamically from the current profile so any weight
+        // update in Profile Settings immediately affects the next generated plan.
+        $bmi = $this->calculateBmi($profile->weight_kg ?? null, $profile->height_cm ?? null);
+        $bmiMods = $this->bmiModifiers($bmi, $goal);
+
+        // Rule B merges with the user's own low-impact preference: once either
+        // source sets the flag the filter is active for the entire generation.
+        $lowImpactOnly = $lowImpactOnly || $bmiMods['forceLowImpact'];
 
         $includedExerciseIds = array_map('intval', $includedExerciseIds);
         $excludedExerciseIds = array_map('intval', $excludedExerciseIds);
@@ -154,7 +238,8 @@ class RecommendationEngine
                     $includedExerciseIds,
                     $excludedExerciseIds,
                     $lowImpactOnly,
-                    $focusMuscles
+                    $focusMuscles,
+                    $bmiMods['preferCompound']
                 );
 
                 if ($candidate === null) {
@@ -172,7 +257,7 @@ class RecommendationEngine
                 $selectedExercises[] = $candidate;
             }
 
-            $exerciseList = $this->buildExerciseList($selectedExercises, $goal, $fitnessLevel, $adaptationFactor);
+            $exerciseList = $this->buildExerciseList($selectedExercises, $goal, $fitnessLevel, $adaptationFactor, $bmiMods);
             $estimatedDuration = $this->calculateDuration($exerciseList);
 
             $workouts[] = [
@@ -198,7 +283,8 @@ class RecommendationEngine
             $adaptationFactor,
             $excludedExerciseIds,
             $includedExerciseIds,
-            $lowImpactOnly
+            $lowImpactOnly,
+            $bmiMods
         );
 
         $coverage = $this->computeCoverage($workouts);
@@ -316,7 +402,8 @@ class RecommendationEngine
         array $includedExerciseIds,
         array $excludedExerciseIds,
         bool $lowImpactOnly = false,
-        array $focusMuscles = []
+        array $focusMuscles = [],
+        bool $preferCompound = false
     ): ?Exercise {
         // Try each pattern pool in order ("X OR Y").
         //
@@ -370,7 +457,8 @@ class RecommendationEngine
                     $mappedGoal,
                     $usedExerciseIds,
                     $includedExerciseIds,
-                    $focusMuscles
+                    $focusMuscles,
+                    $preferCompound
                 );
                 if ($score > $bestScore) {
                     $bestScore = $score;
@@ -409,6 +497,7 @@ class RecommendationEngine
      *   +20   secondary muscle matches a focus muscle
      *   +20   exercise not yet used this week (variety)
      *   +10   compound movement type
+     *   +2    compound movement type (BMI Rule D: Underweight + Build Muscle bias)
      *   +0–5  random tie-breaker
      */
     private function scoreCandidate(
@@ -416,7 +505,8 @@ class RecommendationEngine
         string $mappedGoal,
         array $usedExerciseIds,
         array $includedExerciseIds,
-        array $focusMuscles = []
+        array $focusMuscles = [],
+        bool $preferCompound = false
     ): int {
         $score = 0;
 
@@ -458,6 +548,13 @@ class RecommendationEngine
             $score += 10;
         }
 
+        // Rule D (BMI): Underweight + Build Muscle adds an extra compound bias
+        // on top of the standard +10 so compound lifts are strongly preferred
+        // over isolation movements for maximum CNS recruitment and mass stimulus.
+        if ($preferCompound && $exercise->exercise_type === 'compound') {
+            $score += 2;
+        }
+
         // Small tie-breaker randomness so equally-valid candidates vary.
         $score += random_int(0, 5);
 
@@ -468,15 +565,16 @@ class RecommendationEngine
      * Build the output exercise list with sets/reps/duration/order.
      *
      * @param  Exercise[]  $exercises
-     * @return array<int, array{exercise_id:int, sets:int, reps:int, duration_seconds:int, order:int}>
+     * @param  array{forceLowImpact:bool,restBuffer:int,maxSets:int|null,preferCompound:bool}  $bmiMods
+     * @return array<int, array{exercise_id:int, sets:int, reps:int, duration_seconds:int, rest_seconds:int, order:int}>
      */
-    private function buildExerciseList(array $exercises, string $goal, string $fitnessLevel, float $adaptationFactor): array
+    private function buildExerciseList(array $exercises, string $goal, string $fitnessLevel, float $adaptationFactor, array $bmiMods = []): array
     {
         $policy = new WorkoutPrescriptionPolicy();
         $list = [];
         $order = 1;
         foreach ($exercises as $exercise) {
-            $list[] = $policy->prescribe($exercise, $fitnessLevel, $goal, $order);
+            $list[] = $policy->prescribe($exercise, $fitnessLevel, $goal, $order, $bmiMods);
             $order++;
         }
 
@@ -510,7 +608,8 @@ class RecommendationEngine
         float $adaptationFactor,
         array $excludedExerciseIds,
         array $includedExerciseIds,
-        bool $lowImpactOnly = false
+        bool $lowImpactOnly = false,
+        array $bmiMods = []
     ): void {
         foreach (self::REQUIRED_MUSCLES as $muscle) {
             $coverage = $this->computeCoverage($workouts);
@@ -563,7 +662,8 @@ class RecommendationEngine
                     array_values($workouts[$wIndex]['_selected']),
                     $goal,
                     $fitnessLevel,
-                    $adaptationFactor
+                    $adaptationFactor,
+                    $bmiMods
                 );
                 $workouts[$wIndex]['exercises'] = $exerciseList;
                 $workouts[$wIndex]['estimated_duration_minutes'] = $this->calculateDuration($exerciseList);

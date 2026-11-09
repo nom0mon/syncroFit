@@ -99,6 +99,31 @@ class WorkoutController extends Controller
                 : null,
         ], fn ($value) => $value !== null);
 
+        // --- BMI-based goal safety guard ---
+        // Resolve the effective goal (override or profile) and validate it
+        // against the user's current BMI so clinically unsafe combinations
+        // are rejected before the engine runs.
+        $effectiveGoal = $overrides['goal'] ?? $profile->goal;
+        $bmiForGuard = ($profile->weight_kg > 0 && $profile->height_cm > 0)
+            ? (float) $profile->weight_kg / pow((float) $profile->height_cm / 100, 2)
+            : null;
+
+        if ($bmiForGuard !== null && $effectiveGoal !== null) {
+            $allowedGoals = $this->allowedGoalsForBmi($bmiForGuard);
+            if (!in_array($effectiveGoal, $allowedGoals, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected fitness goal is not available for your current BMI category.',
+                    'errors' => [
+                        'goal' => [
+                            'Your BMI category restricts the available fitness goals. Please choose from: '
+                            . implode(', ', array_map(fn ($g) => str_replace('_', ' ', $g), $allowedGoals)) . '.',
+                        ],
+                    ],
+                ], 422);
+            }
+        }
+
         if (($validated['save_options_to_profile'] ?? false) && $overrides !== []) {
             $profile->update($overrides);
             $profile->refresh();
@@ -252,6 +277,13 @@ class WorkoutController extends Controller
         $muscleSets = [];
         $prescriptions = [];
 
+        // Compute BMI modifiers once so the customization prescription
+        // respects the same set-cap and rest-buffer rules as generation.
+        $bmiForCustomize = ($profile->weight_kg > 0 && $profile->height_cm > 0)
+            ? (float) $profile->weight_kg / pow((float) $profile->height_cm / 100, 2)
+            : null;
+        $bmiModsForCustomize = (new \App\Services\RecommendationEngine())->publicBmiModifiers($bmiForCustomize, $profile->goal);
+
         foreach ($ids as $index => $id) {
             $exercise = $models[$id];
             $patternKey = ($exercise->muscle_group ?? 'unknown').'|'.($exercise->movement_pattern ?? 'unknown');
@@ -260,7 +292,7 @@ class WorkoutController extends Controller
                 return response()->json(['success' => false, 'message' => 'Too many exercises repeat the same muscle and movement pattern.', 'errors' => ['exercise_ids' => ['Choose a different movement pattern to avoid redundant fatigue.']]], 422);
             }
 
-            $prescription = $policy->prescribe($exercise, $profile->fitness_level, $profile->goal, $index + 1);
+            $prescription = $policy->prescribe($exercise, $profile->fitness_level, $profile->goal, $index + 1, $bmiModsForCustomize);
             foreach (($exercise->primary_muscles ?? [$exercise->muscle_group]) as $muscle) {
                 $muscleSets[$muscle] = ($muscleSets[$muscle] ?? 0) + $prescription['sets'];
                 if ($muscleSets[$muscle] > 10) {
@@ -276,5 +308,24 @@ class WorkoutController extends Controller
         ]);
 
         return response()->json(['success' => true, 'data' => $workout->fresh()]);
+    }
+    /**
+     * Returns the fitness goals that are clinically appropriate for a given BMI.
+     *
+     * Underweight (< 18.5)       : Build Muscle, Improve Endurance only.
+     * Healthy (18.5-24.9)        : all four goals are available.
+     * Overweight / Obesity (>= 25): Lose Weight, Build Muscle, Improve Endurance.
+     *
+     * @return string[]
+     */
+    private function allowedGoalsForBmi(float $bmi): array
+    {
+        if ($bmi < 18.5) {
+            return ['build_muscle', 'increase_stamina'];
+        }
+        if ($bmi <= 24.9) {
+            return ['lose_weight', 'build_muscle', 'stay_fit', 'increase_stamina'];
+        }
+        return ['lose_weight', 'build_muscle', 'increase_stamina'];
     }
 }

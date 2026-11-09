@@ -31,8 +31,11 @@ class StoreProfileRequest extends FormRequest
                 Rule::unique('users', 'username')->ignore($this->user()?->id),
             ],
             'age' => ['required', 'integer', 'min:13', 'max:120'],
-            'height_cm' => ['required', 'numeric', 'min:50', 'max:300'],
-            'weight_kg' => ['required', 'numeric', 'min:20', 'max:500'],
+            // Constrained to absolute verified human records:
+            // shortest: Chandra Bahadur Dangi (54.6 cm), tallest: Robert Wadlow (272 cm).
+            'height_cm' => ['required', 'numeric', 'min:54', 'max:272'],
+            // lightest recorded adult: Lucía Zárate (~2.1 kg), heaviest: Jon Brower Minnoch (~635 kg).
+            'weight_kg' => ['required', 'numeric', 'min:2', 'max:635'],
             'gender' => ['required', 'string', 'in:male,female,other'],
             'goal' => ['required', 'string', 'in:lose_weight,build_muscle,stay_fit,increase_stamina'],
             'fitness_level' => ['required', 'string', 'in:beginner,intermediate,advanced'],

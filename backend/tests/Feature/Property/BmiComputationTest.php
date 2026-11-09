@@ -31,9 +31,10 @@ class BmiComputationTest extends TestCase
     public function test_bmi_computation_correctness_on_creation_property(): void
     {
         for ($i = 0; $i < 100; $i++) {
-            // Generate random valid height and weight within spec bounds
-            $heightCm = mt_rand(500, 3000) / 10; // 50.0 to 300.0
-            $weightKg = mt_rand(200, 5000) / 10; // 20.0 to 500.0
+            // Generate random valid height and weight within the human-record bounds:
+            // height 54–272 cm (Dangi / Wadlow), weight 2–635 kg (Zárate / Minnoch).
+            $heightCm = mt_rand(540, 2720) / 10; // 54.0 to 272.0
+            $weightKg = mt_rand(20, 6350) / 10;  // 2.0 to 635.0
 
             // Expected BMI formula: weight_kg / (height_cm / 100)^2 rounded to 2 decimals
             $expectedBmi = round($weightKg / pow($heightCm / 100, 2), 2);
@@ -95,9 +96,9 @@ class BmiComputationTest extends TestCase
             // Clear cached relationship so the update endpoint sees the profile
             $user->unsetRelation('profile');
 
-            // Generate random new height and weight for update
-            $newHeightCm = mt_rand(500, 3000) / 10; // 50.0 to 300.0
-            $newWeightKg = mt_rand(200, 5000) / 10; // 20.0 to 500.0
+            // Generate random new height and weight for update — within human-record bounds.
+            $newHeightCm = mt_rand(540, 2720) / 10; // 54.0 to 272.0
+            $newWeightKg = mt_rand(20, 6350) / 10;  // 2.0 to 635.0
 
             $expectedBmi = round($newWeightKg / pow($newHeightCm / 100, 2), 2);
 

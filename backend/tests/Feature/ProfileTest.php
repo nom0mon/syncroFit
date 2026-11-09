@@ -77,9 +77,9 @@ class ProfileTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/profile', [
-            'age' => 10,          // below min 13
-            'height_cm' => 30,    // below min 50
-            'weight_kg' => 10,    // below min 20
+            'age' => 10,           // below min:13
+            'height_cm' => 20,     // below min:54 (Chandra Bahadur Dangi record)
+            'weight_kg' => 1,      // below min:2  (Lucía Zárate record)
             'gender' => 'invalid',
             'goal' => 'invalid_goal',
             'fitness_level' => 'expert',
